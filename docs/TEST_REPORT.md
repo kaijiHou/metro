@@ -4,7 +4,7 @@
 
 - 日期：2026-09-30
 - 基线 commit：`a65bf0f31023f6e8c0b9651ed27df1d7dc590cae`
-- Phase 1.1 最终实现 commit：PENDING（本地验证完成后提交）
+- Phase 1.1 最终实现 commit：`48b6f350fb5e268a74bb9022de5fc4a47912a760`
 - Windows / PowerShell 7
 - Node.js 20.12.1、npm 10.5.0
 - Python 3.10.20
@@ -22,7 +22,7 @@
 | `npm audit --audit-level=moderate` | PASS；0 个已知漏洞。 |
 | `pip install -r validation/requirements.txt` | PASS；在全新 `.venv` 中安装。 |
 | `python validation/browser_flow.py` | PASS；针对生产 preview，无页面 JavaScript 异常。 |
-| GitHub Actions CI | PENDING；将在 push 后检查实际结果。 |
+| GitHub Actions CI | PASS；[运行 #36676002899](https://github.com/kaijiHou/metro/actions/runs/36676002899) 在 Ubuntu / Node.js 20 完成 lint、17 项测试和生产构建。 |
 
 ### Phase 1.1 新增验证
 
