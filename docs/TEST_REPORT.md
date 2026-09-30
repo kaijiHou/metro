@@ -1,46 +1,66 @@
 # 测试报告
 
-日期：2026-09-30。环境：Windows、PowerShell 7、Node.js 20.12.1、npm 10.5.0；浏览器使用本机 Chrome 的无界面模式，窗口为 1440 × 900，并检查了 1100 × 760 和 390 × 780。浏览器交互由 `validation/browser_flow.py` 驱动，截图经人工查看。生产构建通过 Vite preview 在 `127.0.0.1:4173` 验证。
+## Phase 1.1 收口验证
 
-## 命令结果
+- 日期：2026-09-30
+- 基线 commit：`a65bf0f31023f6e8c0b9651ed27df1d7dc590cae`
+- Phase 1.1 最终实现 commit：PENDING（本地验证完成后提交）
+- Windows / PowerShell 7
+- Node.js 20.12.1、npm 10.5.0
+- Python 3.10.20
+- Playwright 1.63.0（从 `validation/requirements.txt` 安装到全新 `.venv`）
+- 浏览器：本机 Chrome，通过 `METRO_BROWSER_CHANNEL=chrome` 运行
+
+### 命令结果
 
 | 命令 | 结果 |
 | --- | --- |
-| `npm install` | PASS；首次网络中断，重试成功。 |
+| `npm ci` | PASS；严格使用 `package-lock.json` 完成冷安装。 |
+| `npm run lint` | PASS；ESLint 无错误、无警告。 |
+| `npm test` | PASS；17 项测试全部通过，其中 Store 核心行为 10 项。 |
 | `npm run build` | PASS；TypeScript 严格检查与 Vite 生产构建通过。 |
-| `npm test` | PASS；3 项 GeoJSON / 导入校验测试。 |
-| `npm audit` | PASS；0 项已知依赖漏洞。 |
-| `npm run lint` | NOT TESTED；项目未配置 lint 命令。 |
-| `python validation/browser_flow.py`（生产预览地址） | PASS；无页面 JavaScript 异常。 |
+| `npm audit --audit-level=moderate` | PASS；0 个已知漏洞。 |
+| `pip install -r validation/requirements.txt` | PASS；在全新 `.venv` 中安装。 |
+| `python validation/browser_flow.py` | PASS；针对生产 preview，无页面 JavaScript 异常。 |
+| GitHub Actions CI | PENDING；将在 push 后检查实际结果。 |
 
-## 浏览器场景
+### Phase 1.1 新增验证
 
-| 场景 | 结果 | 证据 / 说明 |
-| --- | --- | --- |
-| 1 启动项目 | PASS | 地图组件加载；武汉真实底图显示，底图署名可见。 |
-| 2 新建线路 | PASS | 线路列表新增并选中。 |
-| 3 连续添加 3 个站 | PASS | 3 个 Marker、3 条有序站点记录，UUID 不冲突。 |
-| 4 三站正确连线 | PASS | 截图中 GeoJSON 线路经过三个站点；单站不生成 LineString 的单元测试通过。 |
-| 5 改线路颜色 | PASS | 导出 JSON 中颜色更新，地图线路随之更新。 |
-| 6 改站点名称 | PASS | 线路站点列表和导出 JSON 显示新名称。 |
-| 7 拖动站点 | PASS | 导出 JSON 中经度发生变化。 |
-| 8 线路同步变化 | PASS | 拖动后地图线路端点跟随站点；截图人工检查。 |
-| 9 创建第二条线路 | PASS | 两条线路同时显示。 |
-| 10 已有站点加入第二条线路 | PASS | 两条线路引用同一 Station ID。 |
-| 11 换乘站显示 | PASS | 两个共享站点显示换乘样式；未保存 `isTransfer`。 |
-| 12 删除第二条线路 | PASS | 仅线路删除，原线路和 3 个站点保留。 |
-| 13 第一条线路不受影响 | PASS | 删除第二条线后原线仍有 3 个站。 |
-| 14 导出 JSON | PASS | 下载内容为版本 1 JSON，含预期线路和站点。 |
-| 15 新建空项目 | PASS | 地图站点和侧栏线路清空。 |
-| 16 重新导入 JSON | PASS | 线路和 3 个站点恢复。 |
-| 17 地图恢复数据 | PASS | Marker 与线路立即重新显示。 |
-| 18 刷新浏览器 | PASS | 导入后的项目自动从 localStorage 恢复。 |
+- Store：覆盖 `createLine`、`createStation`、无线路创建保护、`addStationToLine` 去重、`deleteLine`、`deleteStation`、`updateStation` 非法坐标保护、`loadProject`、`resetProject`、`removeStationFromLine`。
+- Marker：创建 3 个站点后保存第一个 Marker DOM identity；修改线路颜色和名称后验证仍是同一已连接 DOM 节点。实现已从全量 remove/recreate 改为按 stationId 增量新增、更新和删除。
+- Migration：version 1 原样通过；version 99、缺失 version、字符串 version 和非整数 version 明确拒绝。
+- localStorage：坏 JSON 返回空项目和 warning；读取失败时不覆盖原数据；用户随后修改项目时正常写入新数据。
+- 测试发现：`tests/index.test.ts` 聚合全部 `src/**/*.test.ts` 模块，Windows 与 Ubuntu 使用相同命令。
 
-补充通过：未选线路时进入添加模式显示错误；普通浏览点击不新增站点；共享站点拖动后两条线路仍引用同一更新站点；无效版本导入不改变当前项目；损坏的 localStorage 数据触发错误提示并回退空项目；删除站点从全部线路移除引用；重置项目；缩放按钮、窗口调整及窄屏无水平溢出。异常引用的 GeoJSON 容错和坐标次序由单元测试覆盖。
+### 浏览器回归场景
 
-## 已知问题与限制
+| 场景 | 结果 |
+| --- | --- |
+| 未选择线路时添加站点保护 | PASS |
+| 新建线路并连续创建 3 个站 | PASS |
+| 三站按顺序自动连线 | PASS |
+| 修改线路名称、颜色和站点名称 | PASS |
+| 线路编辑后 Marker DOM identity 保持 | PASS |
+| 拖动站点且线路同步 | PASS |
+| 创建第二条线路并加入已有站点 | PASS |
+| 动态换乘样式 | PASS |
+| 共享站点拖动后两线共用更新坐标 | PASS |
+| 删除第二条线路且保留站点和第一条线 | PASS |
+| JSON 导出、新建项目、重新导入 | PASS |
+| 刷新后 localStorage 恢复 | PASS |
+| 错误版本 JSON 不覆盖当前项目 | PASS |
+| 损坏 localStorage 回退并提示 | PASS |
+| 删除 Station 清理所有线路引用 | PASS |
+| 缩放、resize、390 px 移动端布局 | PASS |
 
-- OpenFreeMap 是在线底图；当前网络下初次加载矢量瓦片可能需要数秒到数十秒。断网时底图不可用，已创建的站点和线路仍保存在本地。
-- OpenFreeMap Liberty 样式在浏览器控制台可能输出道路盾牌过滤条件的警告；未影响本次地图显示或编辑。
-- 构建成功但 Vite 提示 MapLibre 主包超过 500 kB 的默认提示阈值。该包是核心地图依赖，第一阶段未拆分。
-- 本阶段线路只按站点顺序连接直线，不支持控制点、重排序或撤销重做。
+## GitHub Actions
+
+CI 位于 `.github/workflows/ci.yml`，在 push 和 pull request 时使用 Ubuntu 与 Node.js 20 执行 `npm ci`、lint、全部单元测试和生产构建。浏览器流程依赖 OpenFreeMap 公网服务，保留为本地自动化验证，避免 CI 因外部地图服务波动假失败。
+
+## Known Issues
+
+- OpenFreeMap 是在线底图；网络较慢时初次加载矢量瓦片可能需要数秒。断网时底图不可用，本地项目数据仍可保存。
+- OpenFreeMap Liberty 样式偶尔输出道路盾牌过滤条件警告，未影响本次地图显示或编辑。
+- Vite 提示 MapLibre 主包超过默认 500 kB 阈值；MapLibre 是第一阶段核心依赖，本次不为提示进行业务无关拆分。
+- Node.js 20.12.1 安装依赖时会提示 MapLibre 间接依赖声明 Node 22，但 lint、测试、构建和浏览器回归均在 Node 20.12.1 通过；GitHub CI 使用 Node 20 最新维护版本。
+- 本阶段仍只有 schema v1 和直线站点序列；Waypoint、nodes、重排序与 Undo/Redo 未实现。

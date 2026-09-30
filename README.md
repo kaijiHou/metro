@@ -19,16 +19,50 @@ Vite、React 18、TypeScript（严格检查）、MapLibre GL JS、Zustand、GeoJ
 需要 Node.js 20 和 npm。
 
 ```sh
-npm install
+npm ci
 npm run dev
 ```
 
-打开终端显示的本地地址。构建与测试：
+打开终端显示的本地地址。构建、检查与测试：
 
 ```sh
+npm run lint
 npm run build
 npm test
 ```
+
+GitHub Actions 会在每次 push 和 pull request 时使用 Node.js 20 执行 `npm ci`、lint、全部单元测试和生产构建。
+
+## 浏览器回归验证
+
+浏览器流程使用 Python Playwright，依赖锁定在 `validation/requirements.txt`。在 Windows PowerShell 中准备一次环境：
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r validation\requirements.txt
+python -m playwright install chromium
+```
+
+如果机器已经安装 Chrome，可跳过最后一条浏览器下载命令，并在运行脚本前设置 `$env:METRO_BROWSER_CHANNEL = 'chrome'`。不设置该变量时，脚本使用 Playwright 安装的 Chromium。
+
+先在一个终端启动生产预览：
+
+```powershell
+npm ci
+npm run build
+npm run preview
+```
+
+再在已激活虚拟环境的另一个终端运行：
+
+```powershell
+$env:METRO_URL = 'http://127.0.0.1:4173/'
+$env:METRO_BROWSER_CHANNEL = 'chrome' # 仅在复用本机 Chrome 时设置
+python validation\browser_flow.py
+```
+
+该流程需要访问 OpenFreeMap，因此作为本地回归验证运行，不放入 GitHub CI。脚本验证完整编辑流程，并确认线路改名、改色后原 Marker DOM 节点保持不变。
 
 ## 使用
 
@@ -52,3 +86,7 @@ npm test
 线路目前是相邻站点之间的直线段；尚无 Waypoint、站点重排序、撤销重做、GeoJSON/KML 导出或截图。这些属于下一阶段，不在当前版本中。项目保存在当前浏览器，不跨设备同步；清理浏览器数据会清除本地副本，请导出 JSON 备份。
 
 详细设计见 [架构说明](docs/ARCHITECTURE.md)，数据文件见 [数据格式](docs/DATA_FORMAT.md)。
+
+## License
+
+项目代码采用 [MIT License](LICENSE)。MetroDreamin 仅作为产品交互与数据建模研究参考，本项目没有复制其非平凡源码。

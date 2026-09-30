@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import * as maplibregl from 'maplibre-gl'
-import type { GeoJSONSource, Map, Marker } from 'maplibre-gl'
+import type { GeoJSONSource, Map as MapLibreMap, Marker } from 'maplibre-gl'
 import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { INITIAL_CENTER, INITIAL_ZOOM, MAP_STYLE_URL } from '../config/map'
@@ -9,36 +9,63 @@ import { lineFeatureCollection, stationFeatureCollection } from '../utils/geojso
 
 maplibregl.setWorkerUrl(mapWorkerUrl)
 
-function syncMarkers(map: Map, markers: { current: Marker[] }) {
+type MarkerRecord = {
+  marker: Marker
+  element: HTMLButtonElement
+}
+
+function markerClass(transfer: boolean, selected: boolean): string {
+  return `map-station${transfer ? ' map-station--transfer' : ''}${selected ? ' map-station--selected' : ''}`
+}
+
+function syncMarkers(map: MapLibreMap, markers: Map<string, MarkerRecord>) {
   const { project, selectedStationId } = useMetroStore.getState()
-  markers.current.forEach((marker) => marker.remove())
-  markers.current = []
+  const currentIds = new Set<string>()
   for (const feature of stationFeatureCollection(project, selectedStationId).features) {
-    const station = project.stations[feature.properties.id]
-    const element = document.createElement('button')
-    element.type = 'button'
-    element.className = `map-station${feature.properties.transfer ? ' map-station--transfer' : ''}${feature.properties.selected ? ' map-station--selected' : ''}`
-    element.title = `${station.name}${feature.properties.transfer ? ' · 换乘站' : ''}`
-    element.setAttribute('aria-label', `选择站点 ${station.name}`)
-    element.addEventListener('click', (event) => {
-      event.stopPropagation()
-      useMetroStore.getState().selectStation(station.id)
-    })
-    const marker = new maplibregl.Marker({ element, draggable: true, anchor: 'center' })
-      .setLngLat([station.lng, station.lat])
-      .addTo(map)
-    marker.on('dragend', () => {
-      const { lng, lat } = marker.getLngLat()
-      useMetroStore.getState().updateStation(station.id, { lng, lat })
-    })
-    markers.current.push(marker)
+    const stationId = feature.properties.id
+    const station = project.stations[stationId]
+    currentIds.add(stationId)
+    let record = markers.get(stationId)
+    if (!record) {
+      const element = document.createElement('button')
+      element.type = 'button'
+      element.addEventListener('click', (event) => {
+        event.stopPropagation()
+        useMetroStore.getState().selectStation(stationId)
+      })
+      const marker = new maplibregl.Marker({ element, draggable: true, anchor: 'center' })
+        .setLngLat([station.lng, station.lat])
+        .addTo(map)
+      marker.on('dragend', () => {
+        const state = useMetroStore.getState()
+        if (!state.project.stations[stationId]) return
+        const { lng, lat } = marker.getLngLat()
+        state.updateStation(stationId, { lng, lat })
+      })
+      record = { marker, element }
+      markers.set(stationId, record)
+    }
+
+    const position = record.marker.getLngLat()
+    if (position.lng !== station.lng || position.lat !== station.lat) {
+      record.marker.setLngLat([station.lng, station.lat])
+    }
+    record.element.className = markerClass(feature.properties.transfer, feature.properties.selected)
+    record.element.title = `${station.name}${feature.properties.transfer ? ' · 换乘站' : ''}`
+    record.element.setAttribute('aria-label', `选择站点 ${station.name}`)
+  }
+
+  for (const [stationId, record] of markers) {
+    if (currentIds.has(stationId)) continue
+    record.marker.remove()
+    markers.delete(stationId)
   }
 }
 
 export function MapCanvas() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const mapRef = useRef<Map | null>(null)
-  const markersRef = useRef<Marker[]>([])
+  const mapRef = useRef<MapLibreMap | null>(null)
+  const markersRef = useRef<Map<string, MarkerRecord>>(new Map())
   const project = useMetroStore((state) => state.project)
   const selectedLineId = useMetroStore((state) => state.selectedLineId)
   const selectedStationId = useMetroStore((state) => state.selectedStationId)
@@ -47,6 +74,7 @@ export function MapCanvas() {
   useEffect(() => {
     const container = containerRef.current
     if (!container || mapRef.current) return
+    const markerRecords = markersRef.current
     const map = new maplibregl.Map({
       container,
       style: MAP_STYLE_URL,
@@ -86,8 +114,8 @@ export function MapCanvas() {
       resizeObserver.disconnect()
       map.off('style.load', onLoad)
       map.off('click', onMapClick)
-      markersRef.current.forEach((marker) => marker.remove())
-      markersRef.current = []
+      markerRecords.forEach(({ marker }) => marker.remove())
+      markerRecords.clear()
       map.remove()
       mapRef.current = null
     }
@@ -103,7 +131,7 @@ export function MapCanvas() {
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
-    syncMarkers(map, markersRef)
+    syncMarkers(map, markersRef.current)
   }, [project, selectedStationId])
 
   return (

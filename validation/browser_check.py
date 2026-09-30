@@ -6,7 +6,7 @@ ROOT = Path(__file__).parent
 URL = os.environ.get('METRO_URL', 'http://127.0.0.1:5173/')
 
 with sync_playwright() as playwright:
-    browser = playwright.chromium.launch(channel='chrome', headless=True, args=['--enable-webgl', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
+    browser = playwright.chromium.launch(channel=os.environ.get('METRO_BROWSER_CHANNEL') or None, headless=True, args=['--enable-webgl', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
     context = browser.new_context(viewport={'width': 1440, 'height': 900}, accept_downloads=True)
     page = context.new_page()
     errors = []
@@ -18,6 +18,7 @@ with sync_playwright() as playwright:
     page.on('response', lambda response: pbf.append((response.url, response.status)) if '.pbf' in response.url else (failed.append((response.url, response.status)) if response.status >= 400 else None))
     page.on('console', lambda message: console.append((message.type, message.text)) if message.type in ('error', 'warning') else None)
     page.goto(URL, wait_until='domcontentloaded')
+    page.wait_for_load_state('networkidle', timeout=60000)
     page.locator('.maplibregl-canvas').wait_for(timeout=20000)
     page.wait_for_timeout(30000)
     page.screenshot(path=str(ROOT / 'initial.png'), full_page=True)

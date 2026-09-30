@@ -19,9 +19,9 @@
 4. **Station**：`id/name/lng/lat`，稳定 UUID；名字可改，坐标可拖动更新。
 5. **MetroLine**：`id/name/color/stationIds`；站点顺序由数组顺序定义，删除线路不删除站点。
 6. **Waypoint 扩展**：当前只有站点；将几何生成集中在 `src/utils/geojson.ts`。第二阶段可把线路序列迁移到带类型的 `nodes`，并在该模块解析 waypoint 坐标。
-7. **地图生命周期**：React effect 只初始化 Map 一次，监听成对注册/移除；当前操作状态通过 ref 给回调读取，避免反复绑定。ResizeObserver 调用 `map.resize()`，卸载释放 Map 和 Marker。
+7. **地图生命周期**：React effect 只初始化 Map 一次，监听成对注册/移除；地图事件通过 `useMetroStore.getState()` 读取最新操作状态，避免因 React 渲染反复绑定或读取过期快照。ResizeObserver 调用 `map.resize()`，卸载释放 Map 和 Marker。
 8. **GeoJSON 刷新**：Zustand 项目变化时重新生成 FeatureCollection，已加载的 source 用 `setData` 更新。少于两个有效站点时不生成 LineString。异常引用跳过并记开发日志。
-9. **保存**：版本 1 JSON 自动写入 localStorage；导入先完整校验再原子替换项目，错误提示用户；导出下载标准 JSON。旧数据异常时回退空项目并给出提示。
+9. **保存**：版本 1 JSON 自动写入 localStorage；导入与本地恢复均先经过 migration pipeline，再完整校验并原子替换项目。当前迁移入口只接受 schema v1，未知版本明确拒绝；旧数据异常时回退空项目并给出提示。
 
 ## 许可证
 

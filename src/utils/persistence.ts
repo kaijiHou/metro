@@ -1,21 +1,30 @@
 import { emptyProject, type MetroProject } from '../models/metro'
+import { migrateProjectToCurrent } from './migrations'
 import { validateProject } from './validation'
 
 export const STORAGE_KEY = 'metro-planner.project.v1'
 
-export function readStoredProject(): { project: MetroProject; warning: string | null } {
+export type ProjectStorage = Pick<Storage, 'getItem' | 'setItem'>
+
+function browserStorage(): ProjectStorage | undefined {
+  return typeof localStorage === 'undefined' ? undefined : localStorage
+}
+
+export function readStoredProject(storage = browserStorage()): { project: MetroProject; warning: string | null } {
+  if (!storage) return { project: emptyProject(), warning: null }
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = storage.getItem(STORAGE_KEY)
     if (!raw) return { project: emptyProject(), warning: null }
-    return { project: validateProject(JSON.parse(raw)), warning: null }
+    return { project: validateProject(migrateProjectToCurrent(JSON.parse(raw))), warning: null }
   } catch (error) {
     console.warn('无法恢复本地项目', error)
     return { project: emptyProject(), warning: '本地保存的数据无效，已打开空项目。原数据未覆盖，编辑后才会保存。' }
   }
 }
 
-export function saveProject(project: MetroProject): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(project))
+export function saveProject(project: MetroProject, storage = browserStorage()): void {
+  if (!storage) return
+  storage.setItem(STORAGE_KEY, JSON.stringify(project))
 }
 
 export function parseProjectJson(text: string): MetroProject {
@@ -25,7 +34,7 @@ export function parseProjectJson(text: string): MetroProject {
   } catch {
     throw new Error('JSON 格式错误，请检查文件内容。')
   }
-  return validateProject(value)
+  return validateProject(migrateProjectToCurrent(value))
 }
 
 export function downloadProject(project: MetroProject): void {

@@ -7,13 +7,14 @@ ROOT = Path(__file__).parent
 URL = os.environ.get('METRO_URL', 'http://127.0.0.1:5173/')
 
 with sync_playwright() as playwright:
-    browser = playwright.chromium.launch(channel='chrome', headless=True, args=['--enable-webgl', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
+    browser = playwright.chromium.launch(channel=os.environ.get('METRO_BROWSER_CHANNEL') or None, headless=True, args=['--enable-webgl', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
     context = browser.new_context(viewport={'width': 1440, 'height': 900}, accept_downloads=True)
     page = context.new_page()
     errors = []
     page.on('pageerror', lambda error: errors.append(str(error)))
     page.on('dialog', lambda dialog: dialog.accept('恢复测试' if dialog.type == 'prompt' else None))
     page.goto(URL, wait_until='domcontentloaded')
+    page.wait_for_load_state('networkidle', timeout=60000)
     page.locator('.maplibregl-canvas').wait_for()
 
     page.get_by_role('button', name='添加站点', exact=True).click()
@@ -33,9 +34,13 @@ with sync_playwright() as playwright:
     page.wait_for_timeout(5000)
     page.screenshot(path=str(ROOT / 'three-stations.png'), full_page=True)
 
+    first_marker = page.locator('.map-station').first
+    first_marker.evaluate("element => { window.__metroMarkerIdentity = element }")
     page.locator('#line-color').fill('#e33455')
+    assert first_marker.evaluate("element => window.__metroMarkerIdentity === element && element.isConnected")
     page.locator('#line-name').fill('测试红线')
     page.locator('#line-name').blur()
+    assert first_marker.evaluate("element => window.__metroMarkerIdentity === element && element.isConnected")
     page.locator('#project-name').fill('武汉测试规划')
     page.locator('#project-name').blur()
     page.locator('#station-name').fill('第三站')
@@ -140,10 +145,11 @@ with sync_playwright() as playwright:
     bad_context.add_init_script("localStorage.setItem('metro-planner.project.v1', '{broken')")
     bad_page = bad_context.new_page()
     bad_page.goto(URL, wait_until='domcontentloaded')
+    bad_page.wait_for_load_state('networkidle', timeout=60000)
     assert '本地保存的数据无效' in bad_page.get_by_role('alert').inner_text()
     assert bad_page.locator('.line-item').count() == 0
     bad_context.close()
-    print('PASS: empty-line guard, three stations, ordered line, color/name edit, drag, shared transfer, shared drag, delete line, export/import, localStorage reload, invalid import, invalid localStorage, delete station, zoom/resize, reset, mobile layout')
+    print('PASS: empty-line guard, three stations, ordered line, marker identity after line edits, color/name edit, drag, shared transfer, shared drag, delete line, export/import, localStorage reload, invalid import, invalid localStorage, delete station, zoom/resize, reset, mobile layout')
     print('line id:', line_id, 'station ids:', ids)
     print('drag before/after:', before_drag['stations'][station_id]['lng'], after_drag['stations'][station_id]['lng'])
     print('page errors:', errors)
