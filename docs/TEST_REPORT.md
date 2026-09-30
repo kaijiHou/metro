@@ -4,7 +4,7 @@
 
 - 日期：2026-09-30
 - 开始基线：`eb818ead29bff1dce7bdb6eaaf21e248b0bc4e82`
-- 实现提交：待本地验证后填写
+- 实现提交：`5e76ee13ee1439a811d03f2bbcbfd08dd1a2bb67`
 - Windows / PowerShell 7；Node.js 20.12.1；本机 Chrome；Python 3.10.20 + Playwright 1.63.0
 
 | 验证 | 结果 |
@@ -15,13 +15,13 @@
 | `npm run build` | PASS；TypeScript strict 与 Vite 生产构建通过。 |
 | `npm audit --audit-level=moderate` | PASS；0 个已知漏洞。 |
 | 本机 Chrome 浏览器流程 | PASS；针对生产 preview，无页面 JavaScript 异常。 |
-| GitHub Actions CI | 待 push 后检查。 |
+| GitHub Actions CI | PASS；[运行 #36684355954](https://github.com/kaijiHou/metro/actions/runs/36684355954) 完成 Ubuntu / Node.js 20 安装、Lint、43 项测试与生产构建。 |
 
 新增覆盖：v1 单/多线路与共享站迁移、空线路、v2 passthrough、错误版本；v2 节点和经纬度严格校验；控制点插入、拖动后的坐标更新、删除及孤点清理；上下排序与越界保护；互斥选择；station/waypoint GeoJSON 顺序与换乘隔离；旧 localStorage 键成功迁移、写入失败不删旧键、v1 JSON 导入后转 v2。
 
 浏览器回归继续覆盖 Phase 1.1 的三站、共享换乘、拖动、线路编辑、导入导出、刷新恢复、坏数据提示、移动端布局。Phase 2 额外验证：在站点之间插入控制点；拖动后坐标改变；控制点 Marker 在线路改名改色和拖动后保持同一 DOM；节点上移、下移及删除；v2 导出有 `waypoints` / `nodes` 而无 v1 字段；v1/v2 fixture 导入；旧浏览器键自动升级并删除；坏旧键保持原值。
 
-已知限制：底图依赖 OpenFreeMap 在线服务；MapLibre 主包仍触发 Vite 500 kB 提示；Node 20.12.1 安装时仍提示一个间接依赖声明 Node 22，但全部检查和浏览器流程通过。Undo/Redo 与其他后续功能未进入 Phase 2。
+已知限制：底图依赖 OpenFreeMap 在线服务；MapLibre 主包仍触发 Vite 500 kB 提示；Node 20.12.1 安装时仍提示一个间接依赖声明 Node 22，但全部检查和浏览器流程通过。GitHub Actions 另提示现用 `checkout@v4`、`setup-node@v4` 的运行时将从 Node 20 转到 Node 24；本次 CI 仍通过。Undo/Redo 与其他后续功能未进入 Phase 2。
 
 ## Phase 1.1 收口验证
 
