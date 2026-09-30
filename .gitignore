@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.log
+*.tsbuildinfo
+coverage/
+playwright-report/
+test-results/
+/validation/*.png
+/validation/exported-project.json
