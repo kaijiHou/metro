@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "name": "旧版双线示例",
+  "stations": {
+    "s1": { "id": "s1", "name": "甲站", "lng": 114.3, "lat": 30.5 },
+    "s2": { "id": "s2", "name": "换乘站", "lng": 114.4, "lat": 30.55 },
+    "s3": { "id": "s3", "name": "乙站", "lng": 114.5, "lat": 30.6 }
+  },
+  "lines": {
+    "l1": { "id": "l1", "name": "一号线", "color": "#d94c4c", "stationIds": ["s1", "s2"] },
+    "l2": { "id": "l2", "name": "二号线", "color": "#2878b9", "stationIds": ["s2", "s3"] }
+  }
+}

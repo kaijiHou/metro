@@ -25,27 +25,69 @@ with sync_playwright() as playwright:
     for index, position in enumerate([(350, 300), (500, 400), (650, 300)]):
         canvas.click(position={'x': position[0], 'y': position[1]})
         if index == 0:
-            assert page.locator('.station-order li').count() == 1
+            assert page.locator('.node-order li').count() == 1
     page.wait_for_timeout(2000)
-    print('counts after click:', page.locator('.map-station').count(), page.locator('.station-order li').count(), 'errors:', errors)
+    print('counts after click:', page.locator('.map-station').count(), page.locator('.node-order li').count(), 'errors:', errors)
     page.screenshot(path=str(ROOT / 'after-clicks.png'), full_page=True)
     assert page.locator('.map-station').count() == 3
-    assert page.locator('.station-order li').count() == 3
+    assert page.locator('.node-order li').count() == 3
     page.wait_for_timeout(5000)
     page.screenshot(path=str(ROOT / 'three-stations.png'), full_page=True)
 
     first_marker = page.locator('.map-station').first
     first_marker.evaluate("element => { window.__metroMarkerIdentity = element }")
+    page.get_by_role('button', name='＋ 插入控制点').first.click()
+    canvas.click(position={'x': 425, 'y': 350})
+    assert page.locator('.node-order li').count() == 4
+    assert page.locator('.map-waypoint').count() == 1
+    assert '控制点' in page.locator('.node-order li').nth(1).inner_text()
+    page.screenshot(path=str(ROOT / 'waypoint.png'), full_page=True)
+    waypoint_marker = page.locator('.map-waypoint').first
+    waypoint_marker.evaluate("element => { window.__metroWaypointIdentity = element }")
     page.locator('#line-color').fill('#e33455')
     assert first_marker.evaluate("element => window.__metroMarkerIdentity === element && element.isConnected")
+    assert waypoint_marker.evaluate("element => window.__metroWaypointIdentity === element && element.isConnected")
     page.locator('#line-name').fill('测试红线')
     page.locator('#line-name').blur()
     assert first_marker.evaluate("element => window.__metroMarkerIdentity === element && element.isConnected")
+    assert waypoint_marker.evaluate("element => window.__metroWaypointIdentity === element && element.isConnected")
     page.locator('#project-name').fill('武汉测试规划')
     page.locator('#project-name').blur()
+    page.locator('#station-select').select_option(index=3)
     page.locator('#station-name').fill('第三站')
     page.locator('#station-name').blur()
-    assert page.locator('.station-order li').nth(2).inner_text().startswith('第三站')
+    assert '第三站' in page.locator('.node-order li').nth(3).inner_text()
+
+    with page.expect_download() as download_info:
+        page.get_by_role('button', name='导出 JSON').click()
+    waypoint_export_path = ROOT / 'exported-project.json'
+    download_info.value.save_as(waypoint_export_path)
+    waypoint_before = json.loads(waypoint_export_path.read_text(encoding='utf-8'))
+    waypoint_line_id = next(iter(waypoint_before['lines']))
+    waypoint_nodes = waypoint_before['lines'][waypoint_line_id]['nodes']
+    assert [node['type'] for node in waypoint_nodes] == ['station', 'waypoint', 'station', 'station']
+    waypoint_id = waypoint_nodes[1]['id']
+    old_waypoint_lng = waypoint_before['waypoints'][waypoint_id]['lng']
+    box = waypoint_marker.bounding_box()
+    assert box is not None
+    center = (box['x'] + box['width'] / 2, box['y'] + box['height'] / 2)
+    page.mouse.move(*center)
+    page.mouse.down()
+    page.mouse.move(center[0] + 55, center[1] + 35, steps=12)
+    page.mouse.up()
+    with page.expect_download() as download_info:
+        page.get_by_role('button', name='导出 JSON').click()
+    download_info.value.save_as(waypoint_export_path)
+    waypoint_after = json.loads(waypoint_export_path.read_text(encoding='utf-8'))
+    assert waypoint_after['waypoints'][waypoint_id]['lng'] != old_waypoint_lng
+    assert waypoint_marker.evaluate("element => window.__metroWaypointIdentity === element && element.isConnected")
+    page.get_by_role('button', name='下移 控制点 1').click()
+    assert '控制点' in page.locator('.node-order li').nth(2).inner_text()
+    page.get_by_role('button', name='上移 控制点 1').click()
+    assert '控制点' in page.locator('.node-order li').nth(1).inner_text()
+    page.get_by_role('button', name='从当前线路移除 控制点 1').click()
+    assert page.locator('.map-waypoint').count() == 0
+    assert page.locator('.node-order li').count() == 3
 
     with page.expect_download() as download_info:
         page.get_by_role('button', name='导出 JSON').click()
@@ -54,7 +96,10 @@ with sync_playwright() as playwright:
     download.save_as(export_path)
     before_drag = json.loads(export_path.read_text(encoding='utf-8'))
     line_id = next(iter(before_drag['lines']))
-    ids = before_drag['lines'][line_id]['stationIds']
+    ids = [node['id'] for node in before_drag['lines'][line_id]['nodes']]
+    assert before_drag['version'] == 2 and 'waypoints' in before_drag
+    assert 'stationIds' not in before_drag['lines'][line_id]
+    assert before_drag['waypoints'] == {}
     assert len(ids) == 3 and before_drag['lines'][line_id]['color'] == '#e33455'
     assert before_drag['lines'][line_id]['name'] == '测试红线'
     assert before_drag['name'] == '武汉测试规划'
@@ -96,7 +141,7 @@ with sync_playwright() as playwright:
     download_info.value.save_as(export_path)
     shared_project = json.loads(export_path.read_text(encoding='utf-8'))
     assert len(shared_project['lines']) == 2
-    assert all(station_id in line['stationIds'] for line in shared_project['lines'].values())
+    assert all(any(node == {'type': 'station', 'id': station_id} for node in line['nodes']) for line in shared_project['lines'].values())
     assert shared_project['stations'][station_id]['lng'] != after_drag['stations'][station_id]['lng']
     page.screenshot(path=str(ROOT / 'transfer.png'), full_page=True)
     page.get_by_role('button', name='删除这条线路').click()
@@ -117,7 +162,7 @@ with sync_playwright() as playwright:
     page.reload(wait_until='domcontentloaded')
     assert page.locator('.line-item').count() == 1
     assert page.locator('.map-station').count() == 3
-    assert json.loads(page.evaluate("localStorage.getItem('metro-planner.project.v1')"))['version'] == 1
+    assert json.loads(page.evaluate("localStorage.getItem('metro-planner.project')"))['version'] == 2
     page.locator('input[type=file]').set_input_files({'name': 'bad.json', 'mimeType': 'application/json', 'buffer': b'{"version":99}'})
     assert 'JSON' in page.get_by_role('alert').inner_text() or '版本' in page.get_by_role('alert').inner_text()
     assert page.locator('.line-item').count() == 1
@@ -131,7 +176,19 @@ with sync_playwright() as playwright:
     download_info.value.save_as(export_path)
     deleted_project = json.loads(export_path.read_text(encoding='utf-8'))
     assert station_id not in deleted_project['stations']
-    assert all(station_id not in line['stationIds'] for line in deleted_project['lines'].values())
+    assert all(not any(node == {'type': 'station', 'id': station_id} for node in line['nodes']) for line in deleted_project['lines'].values())
+    page.locator('input[type=file]').set_input_files(str(ROOT / 'fixtures' / 'project-v1.json'))
+    assert page.locator('.line-item').count() == 2
+    assert page.locator('.map-station--transfer').count() == 1
+    with page.expect_download() as download_info:
+        page.get_by_role('button', name='导出 JSON').click()
+    download_info.value.save_as(export_path)
+    migrated_file = json.loads(export_path.read_text(encoding='utf-8'))
+    assert migrated_file['version'] == 2 and migrated_file['waypoints'] == {}
+    assert [node['id'] for node in migrated_file['lines']['l1']['nodes']] == ['s1', 's2']
+    assert 'stationIds' not in migrated_file['lines']['l1']
+    page.locator('input[type=file]').set_input_files(str(ROOT / 'fixtures' / 'project-v2.json'))
+    assert page.locator('.map-waypoint').count() == 1
     page.locator('.maplibregl-ctrl-zoom-in').click()
     page.set_viewport_size({'width': 1100, 'height': 760})
     assert page.locator('.map-canvas').bounding_box()['width'] > 500
@@ -146,10 +203,19 @@ with sync_playwright() as playwright:
     bad_page = bad_context.new_page()
     bad_page.goto(URL, wait_until='domcontentloaded')
     bad_page.wait_for_load_state('networkidle', timeout=60000)
-    assert '本地保存的数据无效' in bad_page.get_by_role('alert').inner_text()
+    assert '本地项目升级或读取失败' in bad_page.get_by_role('alert').inner_text()
     assert bad_page.locator('.line-item').count() == 0
+    assert bad_page.evaluate("localStorage.getItem('metro-planner.project.v1')") == '{broken'
     bad_context.close()
-    print('PASS: empty-line guard, three stations, ordered line, marker identity after line edits, color/name edit, drag, shared transfer, shared drag, delete line, export/import, localStorage reload, invalid import, invalid localStorage, delete station, zoom/resize, reset, mobile layout')
+    legacy_context = browser.new_context(viewport={'width': 1100, 'height': 760})
+    legacy_context.add_init_script("localStorage.setItem('metro-planner.project.v1', JSON.stringify({version:1,name:'旧浏览器项目',stations:{s:{id:'s',name:'旧站',lng:114.3,lat:30.5}},lines:{l:{id:'l',name:'旧线',color:'#2878b9',stationIds:['s']}}}))")
+    legacy_page = legacy_context.new_page()
+    legacy_page.goto(URL, wait_until='domcontentloaded')
+    assert legacy_page.locator('.line-item').count() == 1
+    assert json.loads(legacy_page.evaluate("localStorage.getItem('metro-planner.project')"))['version'] == 2
+    assert legacy_page.evaluate("localStorage.getItem('metro-planner.project.v1')") is None
+    legacy_context.close()
+    print('PASS: Phase 1.1 regression, waypoint insert/drag/reorder/delete, marker identity, v2 export, v1/v2 import, legacy storage migration, mobile layout')
     print('line id:', line_id, 'station ids:', ids)
     print('drag before/after:', before_drag['stations'][station_id]['lng'], after_drag['stations'][station_id]['lng'])
     print('page errors:', errors)

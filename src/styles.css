@@ -172,7 +172,7 @@ button:disabled {
 }
 .mode-switch {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   background: #e8f0f3;
   border-radius: 8px;
   padding: 4px;
@@ -184,7 +184,7 @@ button:disabled {
   border-radius: 6px;
   padding: 9px 3px;
   color: #546d7a;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
 }
 .mode-switch button.active {
@@ -338,52 +338,73 @@ select:focus {
 .station-order-heading span {
   color: #8da1aa;
 }
-.station-order {
+.node-order {
   margin: 0;
   padding: 0;
   list-style: none;
-  counter-reset: station;
   display: grid;
   gap: 4px;
-  max-height: 170px;
+  max-height: 260px;
   overflow: auto;
 }
-.station-order li {
-  counter-increment: station;
+.node-row {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 4px;
   min-height: 30px;
   font-size: 12px;
   color: #334f5f;
+  border-radius: 5px;
 }
-.station-order li:before {
-  content: counter(station);
-  border: 1px solid #d7e3e8;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  display: grid;
-  place-items: center;
-  flex: none;
-  font-size: 10px;
-  color: #6c8792;
+.node-row--selected {
+  background: #e9f5f7;
 }
-.station-order li span {
+.node-select {
   flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-align: left;
+  color: #334f5f;
+  font-size: 12px;
 }
-.station-order li button {
+.node-row button {
   border: 0;
   background: none;
-  color: #94a6ae;
-  font-size: 18px;
-  line-height: 1;
+  padding: 4px;
 }
-.station-order li button:hover {
+.node-action {
+  color: #6d8995;
+  font-size: 16px;
+}
+.node-action:disabled {
+  opacity: 0.3;
+}
+.node-action--remove:hover {
   color: #b43737;
+}
+.node-symbol--station { color: #0d697c; }
+.node-symbol--waypoint { color: #b78024; }
+.insert-waypoint {
+  display: block;
+  margin: 1px 0 5px 22px;
+  padding: 3px 6px;
+  border: 0;
+  border-left: 1px dashed #9db5bf;
+  background: transparent;
+  color: #68818e;
+  font-size: 11px;
+}
+.insert-waypoint--active, .insert-waypoint:hover {
+  color: #087f96;
+  background: #e9f5f7;
+}
+.waypoint-references {
+  margin: 4px 0 0;
+  padding-left: 20px;
+  color: #516b79;
+  font-size: 12px;
 }
 .quiet {
   margin: 8px 0;
@@ -537,6 +558,27 @@ select:focus {
     0 0 0 4px #ffd367,
     0 1px 10px #0a263b91;
 }
+.map-waypoint {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 0;
+  background: transparent;
+  cursor: grab;
+  padding: 0;
+}
+.map-waypoint::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border: 2px solid #fff;
+  border-radius: 2px;
+  background: #bd8629;
+  box-shadow: 0 1px 6px #0a263b91;
+  transform: rotate(45deg);
+}
+.map-waypoint:active { cursor: grabbing; }
+.map-waypoint--selected::before { box-shadow: 0 0 0 3px #ffd367, 0 1px 8px #0a263b91; }
 .notice {
   position: fixed;
   right: 24px;

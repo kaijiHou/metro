@@ -1,23 +1,26 @@
 import type { Feature, FeatureCollection, LineString, Point } from 'geojson'
-import type { MetroProject } from '../models/metro'
+import type { LineNode, MetroProject } from '../models/metro'
 import { validCoordinates } from './validation'
 
 type LineProperties = { id: string; name: string; color: string; selected: boolean }
 type StationProperties = { id: string; name: string; transfer: boolean; selected: boolean }
 
-// The ordered-node coordinate resolution lives here so future waypoint nodes
-// can be added without changing map components.
+export function resolveLineNodeCoordinate(project: MetroProject, node: LineNode): [number, number] | null {
+  const point = node.type === 'station' ? project.stations[node.id] : project.waypoints[node.id]
+  if (!point || !validCoordinates(point.lng, point.lat)) {
+    if (import.meta.env?.DEV) console.warn(`跳过无效 ${node.type} 节点引用: ${node.id}`)
+    return null
+  }
+  return [point.lng, point.lat]
+}
+
 export function lineFeatureCollection(project: MetroProject, selectedLineId: string | null): FeatureCollection<LineString, LineProperties> {
   const features: Feature<LineString, LineProperties>[] = []
   for (const line of Object.values(project.lines)) {
     const coordinates: [number, number][] = []
-    for (const stationId of line.stationIds) {
-      const station = project.stations[stationId]
-      if (!station || !validCoordinates(station.lng, station.lat)) {
-        console.warn(`线路 ${line.id} 跳过无效站点引用: ${stationId}`)
-        continue
-      }
-      coordinates.push([station.lng, station.lat])
+    for (const node of line.nodes) {
+      const coordinate = resolveLineNodeCoordinate(project, node)
+      if (coordinate) coordinates.push(coordinate)
     }
     if (coordinates.length < 2) continue
     features.push({
@@ -32,7 +35,9 @@ export function lineFeatureCollection(project: MetroProject, selectedLineId: str
 export function stationLineCounts(project: MetroProject): Record<string, number> {
   const counts: Record<string, number> = Object.create(null)
   for (const line of Object.values(project.lines)) {
-    for (const id of new Set(line.stationIds)) counts[id] = (counts[id] ?? 0) + 1
+    for (const id of new Set(line.nodes.filter((node) => node.type === 'station').map((node) => node.id))) {
+      counts[id] = (counts[id] ?? 0) + 1
+    }
   }
   return counts
 }

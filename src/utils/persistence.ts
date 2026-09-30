@@ -2,9 +2,10 @@ import { emptyProject, type MetroProject } from '../models/metro'
 import { migrateProjectToCurrent } from './migrations'
 import { validateProject } from './validation'
 
-export const STORAGE_KEY = 'metro-planner.project.v1'
+export const STORAGE_KEY = 'metro-planner.project'
+export const LEGACY_STORAGE_KEY = 'metro-planner.project.v1'
 
-export type ProjectStorage = Pick<Storage, 'getItem' | 'setItem'>
+export type ProjectStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
 
 function browserStorage(): ProjectStorage | undefined {
   return typeof localStorage === 'undefined' ? undefined : localStorage
@@ -14,11 +15,28 @@ export function readStoredProject(storage = browserStorage()): { project: MetroP
   if (!storage) return { project: emptyProject(), warning: null }
   try {
     const raw = storage.getItem(STORAGE_KEY)
-    if (!raw) return { project: emptyProject(), warning: null }
-    return { project: validateProject(migrateProjectToCurrent(JSON.parse(raw))), warning: null }
+    if (raw !== null) {
+      const parsed: unknown = JSON.parse(raw)
+      const project = validateProject(migrateProjectToCurrent(parsed))
+      if (typeof parsed === 'object' && parsed !== null && 'version' in parsed && parsed.version === 1) {
+        saveProject(project, storage)
+      }
+      return { project, warning: null }
+    }
+    const legacy = storage.getItem(LEGACY_STORAGE_KEY)
+    if (legacy === null) return { project: emptyProject(), warning: null }
+    const project = validateProject(migrateProjectToCurrent(JSON.parse(legacy)))
+    saveProject(project, storage)
+    try {
+      storage.removeItem(LEGACY_STORAGE_KEY)
+      return { project, warning: null }
+    } catch (error) {
+      console.warn('无法清理旧版浏览器数据', error)
+      return { project, warning: '项目已升级并保存，但旧版浏览器数据清理失败。' }
+    }
   } catch (error) {
     console.warn('无法恢复本地项目', error)
-    return { project: emptyProject(), warning: '本地保存的数据无效，已打开空项目。原数据未覆盖，编辑后才会保存。' }
+    return { project: emptyProject(), warning: '本地项目升级或读取失败，已打开空项目。原数据未删除；请先检查浏览器存储或导出备份。' }
   }
 }
 

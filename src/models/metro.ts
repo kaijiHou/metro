@@ -5,25 +5,30 @@ export type Station = {
   lat: number
 }
 
+export type Waypoint = { id: string; lng: number; lat: number }
+export type LineNode = { type: 'station' | 'waypoint'; id: string }
+
 export type MetroLine = {
   id: string
   name: string
   color: string
-  stationIds: string[]
+  nodes: LineNode[]
 }
 
 export type MetroProject = {
-  version: 1
+  version: 2
   name: string
   stations: Record<string, Station>
+  waypoints: Record<string, Waypoint>
   lines: Record<string, MetroLine>
 }
 
-export type EditorMode = 'browse' | 'add-station'
+export type EditorMode = 'browse' | 'add-station' | 'add-waypoint'
 
 export const emptyProject = (name = '我的地铁规划'): MetroProject => ({
-  version: 1,
+  version: 2,
   name,
   stations: {},
+  waypoints: {},
   lines: {},
 })
