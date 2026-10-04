@@ -21,6 +21,10 @@ Vite、React 18、TypeScript（严格检查）、MapLibre GL JS、Zustand、GeoJ
 
 需要 Node.js 20 和 npm。
 
+Windows 本机已安装依赖后，双击 `scripts/start-metro.cmd` 即可启动并自动打开浏览器。地址固定为 `http://127.0.0.1:5173/`；使用期间保留启动窗口，关闭窗口即可停止服务。已在运行时会直接打开页面。
+
+手动安装与启动：
+
 ```sh
 npm ci
 npm run dev
