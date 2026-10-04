@@ -5,7 +5,8 @@
 - 日期：2026-10-04；基线：`33a89de9310aaa1fa248b66c094b45303fbb062c`。
 - 常用城市快捷入口与世界城市名称搜索已接入。城市切换只改变地图视角，不修改项目 JSON；视角单独保存在 `metro-planner.map-view`。
 - 本机 Chrome 浏览器流程：先跳转北京、刷新后确认视角恢复；再通过真实 Nominatim 搜索“巴黎”并定位；随后返回武汉。点击站点名称就地改名；`Ctrl+Z` 撤销、`Ctrl+Y` 重做；进入添加控制点模式后连续点击线路两次，得到两站之间的两个有序控制点。Phase 1.1 和 Phase 2 回归仍通过，页面无 JavaScript 异常。
-- 单元测试新增线段位置判断、撤销/重做、恢复被删控制点，以及重复保存原值不占用撤销步骤、不清除重做历史，当前总数 47 项。`npm run lint`、`npm test`（47/47）、`npm run build`：PASS。本机 Chrome 流程在最终修复后复验通过，覆盖顶部撤销/重做按钮及未改名输入框的聚焦、失焦；页面 JavaScript 异常为 0。GitHub CI：待推送后检查。
+- 单元测试新增线段位置判断、撤销/重做、恢复被删控制点，以及重复保存原值不占用撤销步骤、不清除重做历史，当前总数 47 项。`npm run lint`、`npm test`（47/47）、`npm run build`：PASS。本机 Chrome 流程在最终修复后复验通过，覆盖顶部撤销/重做按钮及未改名输入框的聚焦、失焦；页面 JavaScript 异常为 0。
+- 实现提交：`a43968f56c9014c819771e6ffc1a7bd2ef00bf07`；GitHub Actions CI：PASS，[运行 #37204668245](https://github.com/kaijiHou/metro/actions/runs/37204668245) 完成安装、Lint、47 项单元测试和生产构建。
 
 ## Phase 2 验证
 
