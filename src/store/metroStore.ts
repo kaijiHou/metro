@@ -12,6 +12,8 @@ export type MetroState = {
   selectedWaypointId: string | null
   editorMode: EditorMode
   pendingInsertIndex: number | null
+  canUndo: boolean
+  canRedo: boolean
   notice: Notice
   setNotice: (text: string, kind?: 'info' | 'error') => void
   clearNotice: () => void
@@ -35,6 +37,8 @@ export type MetroState = {
   startWaypointInsert: (index: number) => void
   loadProject: (project: MetroProject) => void
   resetProject: (name?: string) => void
+  undo: () => void
+  redo: () => void
 }
 
 type CreateMetroStoreOptions = {
@@ -69,6 +73,9 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
     : readStoredProject()
   const idFactory = options.idFactory ?? (() => crypto.randomUUID())
   const persist = options.persist ?? saveProject
+  const past: MetroProject[] = []
+  const future: MetroProject[] = []
+  let applyingHistory = false
 
   const store = create<MetroState>((set, get) => ({
     project: restored.project,
@@ -77,13 +84,15 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
     selectedWaypointId: null,
     editorMode: 'browse',
     pendingInsertIndex: null,
+    canUndo: false,
+    canRedo: false,
     notice: restored.warning ? { text: restored.warning, kind: 'error' } : null,
 
     setNotice: (text, kind = 'info') => set({ notice: { text, kind } }),
     clearNotice: () => set({ notice: null }),
     renameProject: (name) => {
       const trimmed = name.trim()
-      if (trimmed) set((state) => ({ project: { ...state.project, name: trimmed } }))
+      if (trimmed) set((state) => trimmed === state.project.name ? state : { project: { ...state.project, name: trimmed } })
     },
     createLine: () => set((state) => {
       const id = idFactory()
@@ -103,6 +112,7 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
       if (!line) return state
       const updated = { ...line, ...patch }
       if (!updated.name.trim() || !/^#[0-9a-fA-F]{6}$/.test(updated.color)) return state
+      if (updated.name === line.name && updated.color === line.color) return state
       return { project: { ...state.project, lines: { ...state.project.lines, [id]: updated } } }
     }),
     deleteLine: (id) => set((state) => {
@@ -148,6 +158,7 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
       if (!station) return state
       const updated = { ...station, ...patch }
       if (!updated.name.trim() || !validCoordinates(updated.lng, updated.lat)) return state
+      if (updated.name === station.name && updated.lng === station.lng && updated.lat === station.lat) return state
       return { project: { ...state.project, stations: { ...state.project.stations, [id]: updated } } }
     }),
     deleteStation: (id) => set((state) => {
@@ -173,7 +184,9 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
           waypoints: { ...state.project.waypoints, [id]: waypoint },
           lines: { ...state.project.lines, [lineId]: { ...line, nodes: insertAt(line.nodes, { type: 'waypoint', id }, insertIndex) } },
         },
-        selectedWaypointId: id, selectedStationId: null, editorMode: 'browse', pendingInsertIndex: null, notice: null,
+        selectedWaypointId: id, selectedStationId: null,
+        editorMode: state.editorMode === 'add-waypoint' && state.pendingInsertIndex === null ? 'add-waypoint' : 'browse',
+        pendingInsertIndex: null, notice: null,
       }
     }),
     updateWaypoint: (id, patch) => set((state) => {
@@ -181,6 +194,7 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
       if (!waypoint) return state
       const updated = { ...waypoint, ...patch }
       if (!validCoordinates(updated.lng, updated.lat)) return state
+      if (updated.lng === waypoint.lng && updated.lat === waypoint.lat) return state
       return { project: { ...state.project, waypoints: { ...state.project.waypoints, [id]: updated } } }
     }),
     deleteWaypoint: (id) => set((state) => {
@@ -246,10 +260,50 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
     }),
     loadProject: (project) => set({ project, selectedLineId: Object.keys(project.lines)[0] ?? null, selectedStationId: null, selectedWaypointId: null, editorMode: 'browse', pendingInsertIndex: null, notice: { text: '项目已导入。', kind: 'info' } }),
     resetProject: (name) => set({ project: emptyProject(name), selectedLineId: null, selectedStationId: null, selectedWaypointId: null, editorMode: 'browse', pendingInsertIndex: null, notice: { text: '已创建空项目。', kind: 'info' } }),
+    undo: () => {
+      const project = past.pop()
+      if (!project) return
+      future.push(get().project)
+      applyingHistory = true
+      try {
+        set((state) => ({
+          project,
+          selectedLineId: state.selectedLineId && project.lines[state.selectedLineId] ? state.selectedLineId : (Object.keys(project.lines)[0] ?? null),
+          selectedStationId: state.selectedStationId && project.stations[state.selectedStationId] ? state.selectedStationId : null,
+          selectedWaypointId: state.selectedWaypointId && project.waypoints[state.selectedWaypointId] ? state.selectedWaypointId : null,
+          editorMode: 'browse', pendingInsertIndex: null,
+          canUndo: past.length > 0, canRedo: true,
+          notice: { text: '已撤销上一步。', kind: 'info' },
+        }))
+      } finally { applyingHistory = false }
+    },
+    redo: () => {
+      const project = future.pop()
+      if (!project) return
+      past.push(get().project)
+      applyingHistory = true
+      try {
+        set((state) => ({
+          project,
+          selectedLineId: state.selectedLineId && project.lines[state.selectedLineId] ? state.selectedLineId : (Object.keys(project.lines)[0] ?? null),
+          selectedStationId: state.selectedStationId && project.stations[state.selectedStationId] ? state.selectedStationId : null,
+          selectedWaypointId: state.selectedWaypointId && project.waypoints[state.selectedWaypointId] ? state.selectedWaypointId : null,
+          editorMode: 'browse', pendingInsertIndex: null,
+          canUndo: true, canRedo: future.length > 0,
+          notice: { text: '已重做上一步。', kind: 'info' },
+        }))
+      } finally { applyingHistory = false }
+    },
   }))
 
   store.subscribe((state, previous) => {
     if (state.project === previous.project) return
+    if (!applyingHistory) {
+      past.push(previous.project)
+      if (past.length > 50) past.shift()
+      future.length = 0
+      store.setState({ canUndo: true, canRedo: false })
+    }
     try {
       persist(state.project)
     } catch (error) {

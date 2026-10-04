@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { emptyProject, type MetroProject } from '../models/metro'
-import { lineFeatureCollection, resolveLineNodeCoordinate, stationLineCounts } from './geojson'
+import { lineFeatureCollection, nearestLineInsertIndex, resolveLineNodeCoordinate, stationLineCounts } from './geojson'
 import { validateProject } from './validation'
 
 const sample = (): MetroProject => ({
@@ -43,6 +43,14 @@ describe('v2 GeoJSON', () => {
     assert.equal(counts.a, 2)
     assert.equal(counts.b, 1)
     assert.equal(counts.w, undefined)
+  })
+
+  it('finds the segment when adding a second waypoint between two stations', () => {
+    const project = sample()
+    const toPixel = ([lng, lat]: [number, number]): [number, number] => [lng * 1000, lat * 1000]
+    assert.equal(nearestLineInsertIndex(project, 'red', [114.425, 30.525], toPixel), 1)
+    assert.equal(nearestLineInsertIndex(project, 'red', [114.475, 30.575], toPixel), 2)
+    assert.equal(nearestLineInsertIndex(project, 'missing', [114.425, 30.525], toPixel), null)
   })
 })
 

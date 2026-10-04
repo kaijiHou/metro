@@ -12,6 +12,7 @@ export function LinePanel() {
   const selectLine = useMetroStore((state) => state.selectLine)
   const selectStation = useMetroStore((state) => state.selectStation)
   const selectWaypoint = useMetroStore((state) => state.selectWaypoint)
+  const updateStation = useMetroStore((state) => state.updateStation)
   const updateLine = useMetroStore((state) => state.updateLine)
   const deleteLine = useMetroStore((state) => state.deleteLine)
   const addStationToLine = useMetroStore((state) => state.addStationToLine)
@@ -21,9 +22,12 @@ export function LinePanel() {
   const lines = Object.values(project.lines)
   const line = selectedLineId ? project.lines[selectedLineId] : undefined
   const [lineName, setLineName] = useState(line?.name ?? '')
+  const selectedStation = selectedStationId ? project.stations[selectedStationId] : undefined
+  const [stationName, setStationName] = useState(selectedStation?.name ?? '')
   const [existingId, setExistingId] = useState('')
   useEffect(() => setLineName(line?.name ?? ''), [line?.name, selectedLineId])
   useEffect(() => setExistingId(''), [selectedLineId])
+  useEffect(() => setStationName(selectedStation?.name ?? ''), [selectedStation?.name, selectedStationId])
   const available = Object.values(project.stations).filter((station) =>
     !line?.nodes.some((node) => node.type === 'station' && node.id === station.id))
 
@@ -40,6 +44,7 @@ export function LinePanel() {
       <label className="field-label" htmlFor="line-color">线路颜色</label>
       <div className="color-row"><input id="line-color" type="color" value={line.color} onChange={(event) => updateLine(line.id, { color: event.target.value })} /><span>{line.color.toUpperCase()}</span></div>
       <div className="subheading station-order-heading">节点顺序 <span>{line.nodes.length}</span></div>
+      <p className="quiet">点站名可改名；点 ↑ ↓ 调整顺序。</p>
       {line.nodes.length ? <ol className="node-order">{line.nodes.map((node, index) => {
         const label = node.type === 'station' ? project.stations[node.id]?.name ?? '无效站点' : `控制点 ${line.nodes.slice(0, index + 1).filter((item) => item.type === 'waypoint').length}`
         const selected = node.type === 'station' ? selectedStationId === node.id : selectedWaypointId === node.id
@@ -52,6 +57,13 @@ export function LinePanel() {
             <button type="button" className="node-action" disabled={index === line.nodes.length - 1} onClick={() => moveLineNode(line.id, index, index + 1)} aria-label={`下移 ${label}`}>↓</button>
             <button type="button" className="node-action node-action--remove" onClick={() => removeNodeFromLine(line.id, index)} aria-label={`从当前线路移除 ${label}`}>×</button>
           </div>
+          {node.type === 'station' && selected && <div className="inline-station-edit">
+            <label htmlFor={`node-name-${node.id}`}>站点名称</label>
+            <input id={`node-name-${node.id}`} value={stationName} onChange={(event) => setStationName(event.target.value)} onBlur={() => {
+              updateStation(node.id, { name: stationName })
+              setStationName(useMetroStore.getState().project.stations[node.id]?.name ?? '')
+            }} onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur() }} />
+          </div>}
           {index < line.nodes.length - 1 && <button type="button" className={`insert-waypoint${editorMode === 'add-waypoint' && pendingInsertIndex === index + 1 ? ' insert-waypoint--active' : ''}`} onClick={() => startWaypointInsert(index + 1)}>＋ 插入控制点</button>}
         </li>
       })}</ol> : <p className="quiet">地图上添加站点或控制点，按节点顺序连接。</p>}

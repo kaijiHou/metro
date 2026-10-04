@@ -14,6 +14,35 @@ export function resolveLineNodeCoordinate(project: MetroProject, node: LineNode)
   return [point.lng, point.lat]
 }
 
+export function nearestLineInsertIndex(
+  project: MetroProject,
+  lineId: string,
+  coordinate: [number, number],
+  toPixel: (coordinate: [number, number]) => [number, number],
+): number | null {
+  const line = project.lines[lineId]
+  if (!line || line.nodes.length < 2) return null
+  const [px, py] = toPixel(coordinate)
+  let closestIndex: number | null = null
+  let closestDistance = Infinity
+  for (let index = 0; index < line.nodes.length - 1; index += 1) {
+    const start = resolveLineNodeCoordinate(project, line.nodes[index])
+    const end = resolveLineNodeCoordinate(project, line.nodes[index + 1])
+    if (!start || !end) continue
+    const [ax, ay] = toPixel(start)
+    const [bx, by] = toPixel(end)
+    const dx = bx - ax
+    const dy = by - ay
+    const fraction = dx === 0 && dy === 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)))
+    const distance = (px - ax - fraction * dx) ** 2 + (py - ay - fraction * dy) ** 2
+    if (distance < closestDistance) {
+      closestDistance = distance
+      closestIndex = index + 1
+    }
+  }
+  return closestIndex
+}
+
 export function lineFeatureCollection(project: MetroProject, selectedLineId: string | null): FeatureCollection<LineString, LineProperties> {
   const features: Feature<LineString, LineProperties>[] = []
   for (const line of Object.values(project.lines)) {

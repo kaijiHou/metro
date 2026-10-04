@@ -17,6 +17,18 @@ with sync_playwright() as playwright:
     page.wait_for_load_state('networkidle', timeout=60000)
     page.locator('.maplibregl-canvas').wait_for()
 
+    page.get_by_role('button', name='北京', exact=True).click()
+    page.wait_for_function("() => { const raw = localStorage.getItem('metro-planner.map-view'); if (!raw) return false; const view = JSON.parse(raw); return Math.abs(view.center[0] - 116.4074) < 0.1 }")
+    page.reload(wait_until='domcontentloaded')
+    assert abs(json.loads(page.evaluate("localStorage.getItem('metro-planner.map-view')"))['center'][0] - 116.4074) < 0.1
+    page.get_by_role('textbox', name='城市名称').fill('巴黎')
+    page.get_by_role('button', name='搜索', exact=True).click()
+    page.locator('.city-results button').first.wait_for(timeout=30000)
+    page.locator('.city-results button').first.click()
+    page.wait_for_function("() => { const raw = localStorage.getItem('metro-planner.map-view'); if (!raw) return false; const view = JSON.parse(raw); return Math.abs(view.center[0] - 2.35) < 1 }")
+    page.get_by_role('button', name='武汉', exact=True).click()
+    page.wait_for_function("() => { const raw = localStorage.getItem('metro-planner.map-view'); if (!raw) return false; const view = JSON.parse(raw); return Math.abs(view.center[0] - 114.3) < 0.1 }")
+
     page.get_by_role('button', name='添加站点', exact=True).click()
     assert '请先选择或创建线路' in page.get_by_role('alert').inner_text()
     page.get_by_role('button', name='＋ 新建线路').click()
@@ -33,6 +45,40 @@ with sync_playwright() as playwright:
     assert page.locator('.node-order li').count() == 3
     page.wait_for_timeout(5000)
     page.screenshot(path=str(ROOT / 'three-stations.png'), full_page=True)
+
+    page.keyboard.press('Control+z')
+    assert page.locator('.node-order li').count() == 2
+    page.keyboard.press('Control+y')
+    assert page.locator('.node-order li').count() == 3
+    page.locator('.node-order .node-select').first.click()
+    page.locator('.inline-station-edit input').fill('第一站')
+    page.locator('.inline-station-edit input').blur()
+    assert '第一站' in page.locator('.node-order li').first.inner_text()
+    page.locator('.inline-station-edit input').focus()
+    page.locator('.inline-station-edit input').blur()
+    page.get_by_role('button', name='撤销', exact=True).click()
+    assert '站点 1' in page.locator('.node-order li').first.inner_text()
+    page.locator('.inline-station-edit input').focus()
+    page.locator('.inline-station-edit input').blur()
+    page.get_by_role('button', name='重做', exact=True).click()
+    assert '第一站' in page.locator('.node-order li').first.inner_text()
+
+    page.get_by_role('button', name='添加控制点', exact=True).click()
+    canvas.click(position={'x': 425, 'y': 350})
+    assert page.locator('.map-waypoint').count() == 1
+    page.wait_for_timeout(400)
+    canvas.click(position={'x': 460, 'y': 373})
+    assert page.locator('.map-waypoint').count() == 2
+    assert [page.locator('.node-order li').nth(i).locator('.node-symbol--waypoint').count() for i in range(5)] == [0, 1, 1, 0, 0]
+    page.keyboard.press('Control+z')
+    assert page.locator('.map-waypoint').count() == 1
+    page.keyboard.press('Control+y')
+    assert page.locator('.map-waypoint').count() == 2
+    page.get_by_role('button', name='浏览 / 选择').click()
+    page.get_by_role('button', name='从当前线路移除 控制点 1').click()
+    page.get_by_role('button', name='从当前线路移除 控制点 1').click()
+    assert page.locator('.map-waypoint').count() == 0
+    assert page.locator('.node-order li').count() == 3
 
     first_marker = page.locator('.map-station').first
     first_marker.evaluate("element => { window.__metroMarkerIdentity = element }")
@@ -188,6 +234,7 @@ with sync_playwright() as playwright:
     assert [node['id'] for node in migrated_file['lines']['l1']['nodes']] == ['s1', 's2']
     assert 'stationIds' not in migrated_file['lines']['l1']
     page.locator('input[type=file]').set_input_files(str(ROOT / 'fixtures' / 'project-v2.json'))
+    page.locator('.map-waypoint').first.wait_for(timeout=5000)
     assert page.locator('.map-waypoint').count() == 1
     page.locator('.maplibregl-ctrl-zoom-in').click()
     page.set_viewport_size({'width': 1100, 'height': 760})
@@ -215,7 +262,7 @@ with sync_playwright() as playwright:
     assert json.loads(legacy_page.evaluate("localStorage.getItem('metro-planner.project')"))['version'] == 2
     assert legacy_page.evaluate("localStorage.getItem('metro-planner.project.v1')") is None
     legacy_context.close()
-    print('PASS: Phase 1.1 regression, waypoint insert/drag/reorder/delete, marker identity, v2 export, v1/v2 import, legacy storage migration, mobile layout')
+    print('PASS: global city search, saved map position, inline station rename, Ctrl+Z/Y undo/redo, two waypoints inserted by clicking the line, Phase 1.1 and Phase 2 regression, mobile layout')
     print('line id:', line_id, 'station ids:', ids)
     print('drag before/after:', before_drag['stations'][station_id]['lng'], after_drag['stations'][station_id]['lng'])
     print('page errors:', errors)

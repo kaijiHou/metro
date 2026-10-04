@@ -3,11 +3,34 @@ import * as maplibregl from 'maplibre-gl'
 import type { GeoJSONSource, Map as MapLibreMap, Marker } from 'maplibre-gl'
 import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { INITIAL_CENTER, INITIAL_ZOOM, MAP_STYLE_URL } from '../config/map'
+import { INITIAL_CENTER, INITIAL_ZOOM, MAP_STYLE_URL, type MapTarget } from '../config/map'
 import { useMetroStore } from '../store/metroStore'
-import { lineFeatureCollection, stationFeatureCollection } from '../utils/geojson'
+import { lineFeatureCollection, nearestLineInsertIndex, stationFeatureCollection } from '../utils/geojson'
+import { validCoordinates } from '../utils/validation'
 
 maplibregl.setWorkerUrl(mapWorkerUrl)
+
+const MAP_VIEW_KEY = 'metro-planner.map-view'
+
+function initialMapView(): { center: [number, number]; zoom: number } {
+  try {
+    const raw = localStorage.getItem(MAP_VIEW_KEY)
+    if (raw) {
+      const view: unknown = JSON.parse(raw)
+      if (typeof view === 'object' && view !== null && 'center' in view && 'zoom' in view &&
+          Array.isArray(view.center) && view.center.length === 2 &&
+          typeof view.center[0] === 'number' && typeof view.center[1] === 'number' &&
+          validCoordinates(view.center[0], view.center[1]) && typeof view.zoom === 'number' &&
+          Number.isFinite(view.zoom) && view.zoom >= 1 && view.zoom <= 20) {
+        return { center: [view.center[0], view.center[1]], zoom: view.zoom }
+      }
+    }
+  } catch {
+    // Map position is an optional browser preference.
+  }
+  const station = Object.values(useMetroStore.getState().project.stations)[0]
+  return station ? { center: [station.lng, station.lat], zoom: INITIAL_ZOOM } : { center: INITIAL_CENTER, zoom: INITIAL_ZOOM }
+}
 
 type MarkerRecord = {
   marker: Marker
@@ -97,7 +120,7 @@ function syncWaypointMarkers(map: MapLibreMap, markers: Map<string, MarkerRecord
   }
 }
 
-export function MapCanvas() {
+export function MapCanvas({ target }: { target: MapTarget | null }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
   const markersRef = useRef<Map<string, MarkerRecord>>(new Map())
@@ -107,17 +130,19 @@ export function MapCanvas() {
   const selectedStationId = useMetroStore((state) => state.selectedStationId)
   const selectedWaypointId = useMetroStore((state) => state.selectedWaypointId)
   const editorMode = useMetroStore((state) => state.editorMode)
+  const pendingInsertIndex = useMetroStore((state) => state.pendingInsertIndex)
 
   useEffect(() => {
     const container = containerRef.current
     if (!container || mapRef.current) return
     const markerRecords = markersRef.current
     const waypointMarkerRecords = waypointMarkersRef.current
+    const initialView = initialMapView()
     const map = new maplibregl.Map({
       container,
       style: MAP_STYLE_URL,
-      center: INITIAL_CENTER,
-      zoom: INITIAL_ZOOM,
+      center: initialView.center,
+      zoom: initialView.zoom,
     })
     mapRef.current = map
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right')
@@ -143,20 +168,49 @@ export function MapCanvas() {
       const state = useMetroStore.getState()
       if (state.editorMode === 'add-station') state.createStation(event.lngLat.lng, event.lngLat.lat)
       else if (state.editorMode === 'add-waypoint' && state.selectedLineId) {
-        state.createWaypoint(event.lngLat.lng, event.lngLat.lat, state.selectedLineId, state.pendingInsertIndex ?? undefined)
+        let insertIndex = state.pendingInsertIndex ?? undefined
+        if (insertIndex === undefined && (state.project.lines[state.selectedLineId]?.nodes.length ?? 0) >= 2) {
+          if (!map.getLayer('metro-lines')) return
+          const pad = 10
+          const features = map.queryRenderedFeatures(
+            [[event.point.x - pad, event.point.y - pad], [event.point.x + pad, event.point.y + pad]],
+            { layers: ['metro-lines'] },
+          )
+          if (!features.some((feature) => feature.properties?.id === state.selectedLineId)) {
+            state.setNotice('请点击当前线路上的一段，再拖动新控制点调整走向。', 'info')
+            return
+          }
+          insertIndex = nearestLineInsertIndex(
+            state.project,
+            state.selectedLineId,
+            [event.lngLat.lng, event.lngLat.lat],
+            ([lng, lat]) => { const point = map.project([lng, lat]); return [point.x, point.y] },
+          ) ?? undefined
+        }
+        state.createWaypoint(event.lngLat.lng, event.lngLat.lat, state.selectedLineId, insertIndex)
       } else {
         state.selectStation(null)
         state.selectWaypoint(null)
+      }
+    }
+    const onMapMoveEnd = () => {
+      const center = map.getCenter()
+      try {
+        localStorage.setItem(MAP_VIEW_KEY, JSON.stringify({ center: [center.lng, center.lat], zoom: map.getZoom() }))
+      } catch {
+        // Project storage errors are handled separately; losing map position is harmless.
       }
     }
     const resizeObserver = new ResizeObserver(() => map.resize())
     resizeObserver.observe(container)
     map.on('style.load', onLoad)
     map.on('click', onMapClick)
+    map.on('moveend', onMapMoveEnd)
     return () => {
       resizeObserver.disconnect()
       map.off('style.load', onLoad)
       map.off('click', onMapClick)
+      map.off('moveend', onMapMoveEnd)
       markerRecords.forEach(({ marker }) => marker.remove())
       markerRecords.clear()
       waypointMarkerRecords.forEach(({ marker }) => marker.remove())
@@ -165,6 +219,10 @@ export function MapCanvas() {
       mapRef.current = null
     }
   }, [])
+
+  useEffect(() => {
+    if (target) mapRef.current?.flyTo({ center: target.center, zoom: target.zoom, essential: true })
+  }, [target])
 
   useEffect(() => {
     const map = mapRef.current
@@ -185,7 +243,7 @@ export function MapCanvas() {
       <div ref={containerRef} className="map-canvas" aria-label="地铁线路规划地图" />
       <div className="map-hint" role="status">
         <span className={`mode-dot${editorMode !== 'browse' ? ' mode-dot--active' : ''}`} />
-        {editorMode === 'add-station' ? '点击地图添加站点 · 拖动站点调整位置' : editorMode === 'add-waypoint' ? '点击地图添加控制点 · 拖动控制点调整线路' : '浏览模式 · 点击节点编辑，拖动节点调整位置'}
+        {editorMode === 'add-station' ? '点击地图添加站点 · 拖动站点调整位置' : editorMode === 'add-waypoint' ? pendingInsertIndex === null ? '点击线路插入控制点 · 拖动控制点调整走向' : '点击地图放置两节点间的控制点' : '浏览模式 · 点击节点编辑，拖动节点调整位置'}
       </div>
     </main>
   )

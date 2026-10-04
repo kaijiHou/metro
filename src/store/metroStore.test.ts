@@ -88,14 +88,14 @@ describe('metro store core actions', () => {
     assert.deepEqual(store.getState().project.stations.s1, { id: 's1', name: '新站名', lng: 115, lat: 31 })
   })
 
-  it('creates a waypoint at the line tail and exits add mode', () => {
+  it('creates a waypoint at the line tail and stays in continuous add mode', () => {
     const store = testStore(sharedProject())
     store.getState().setEditorMode('add-waypoint')
     store.getState().createWaypoint(114.6, 30.7, 'l1')
     assert.deepEqual(store.getState().project.lines.l1.nodes.at(-1), { type: 'waypoint', id: 'id-1' })
     assert.deepEqual(store.getState().project.waypoints['id-1'], { id: 'id-1', lng: 114.6, lat: 30.7 })
     assert.equal(store.getState().selectedWaypointId, 'id-1')
-    assert.equal(store.getState().editorMode, 'browse')
+    assert.equal(store.getState().editorMode, 'add-waypoint')
   })
 
   it('inserts a waypoint between stations using pendingInsertIndex', () => {
@@ -197,5 +197,51 @@ describe('metro store core actions', () => {
     assert.equal(store.getState().selectedWaypointId, null)
     assert.equal(store.getState().pendingInsertIndex, null)
     assert.equal(store.getState().editorMode, 'browse')
+  })
+
+  it('undoes and redoes project edits, then clears redo after a new edit', () => {
+    const store = testStore()
+    store.getState().createLine()
+    store.getState().createStation(114.3, 30.5)
+    assert.equal(store.getState().canUndo, true)
+    store.getState().undo()
+    assert.deepEqual(store.getState().project.stations, {})
+    assert.equal(store.getState().canRedo, true)
+    store.getState().redo()
+    assert.equal(Object.keys(store.getState().project.stations).length, 1)
+    store.getState().undo()
+    store.getState().createStation(114.4, 30.6)
+    assert.equal(store.getState().canRedo, false)
+  })
+
+  it('does not consume undo steps or clear redo when existing values are saved again', () => {
+    const store = testStore(sharedProject())
+    store.getState().updateStation('s1', { name: '改名后的站' })
+    store.getState().undo()
+    const project = store.getState().project
+    store.getState().renameProject(project.name)
+    store.getState().updateLine('l1', { name: project.lines.l1.name })
+    store.getState().updateLine('l1', { color: project.lines.l1.color })
+    store.getState().updateStation('s1', { name: project.stations.s1.name })
+    store.getState().updateStation('s1', { lng: project.stations.s1.lng, lat: project.stations.s1.lat })
+    store.getState().updateWaypoint('w1', { lng: project.waypoints.w1.lng, lat: project.waypoints.w1.lat })
+    assert.equal(store.getState().canUndo, false)
+    assert.equal(store.getState().canRedo, true)
+    store.getState().redo()
+    assert.equal(store.getState().project.stations.s1.name, '改名后的站')
+  })
+
+  it('restores a deleted waypoint and its line reference with undo', () => {
+    const store = testStore(sharedProject())
+    store.getState().updateWaypoint('w1', { lng: 115 })
+    store.getState().deleteWaypoint('w1')
+    assert.equal(store.getState().project.waypoints.w1, undefined)
+    store.getState().undo()
+    assert.equal(store.getState().project.waypoints.w1.lng, 115)
+    assert.deepEqual(store.getState().project.lines.l1.nodes[1], { type: 'waypoint', id: 'w1' })
+    store.getState().undo()
+    assert.equal(store.getState().project.waypoints.w1.lng, 114.35)
+    store.getState().redo()
+    assert.equal(store.getState().project.waypoints.w1.lng, 115)
   })
 })
