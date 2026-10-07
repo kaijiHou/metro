@@ -63,6 +63,6 @@ export function ProjectName() {
     <label htmlFor="project-name" className="eyebrow">当前项目</label>
     <input id="project-name" className="project-name" value={name} onChange={(event) => setName(event.target.value)} onBlur={() => { renameProject(name); setName(useMetroStore.getState().project.name) }} onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur() }} />
     <p>更改会自动保存在此浏览器中</p>
-    <button type="button" className="reset-link" onClick={() => { if (window.confirm('清空当前项目的全部线路和站点？建议先导出 JSON。')) resetProject(projectName) }}>重置项目</button>
+    <button type="button" className="reset-link" onClick={() => { if (window.confirm('清空当前项目的全部线路和站点？建议先导出 JSON。')) resetProject(projectName, true) }}>重置项目</button>
   </div>
 }

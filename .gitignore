@@ -16,3 +16,4 @@ playwright-report/
 test-results/
 /validation/*.png
 /validation/exported-project.json
+/validation/transit-source/*.json

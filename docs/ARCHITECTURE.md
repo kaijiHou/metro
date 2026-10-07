@@ -4,9 +4,11 @@
 
 `App` 组合顶部项目操作、左侧模式、线路、站点与控制点面板和右侧 `MapCanvas`。Zustand 的 `metroStore` 保存唯一 `MetroProject` 与临时编辑状态。`createMetroStore()` 可创建隔离测试实例；生产 Store 订阅项目变化后自动保存。
 
-城市导航由 `CitySearch` 在用户提交搜索时调用 OpenStreetMap Nominatim，限制结果数量且不做输入时自动请求。常用城市直接使用静态中心坐标。选择结果后，`App` 把目标坐标传给 `MapCanvas`，后者调用 `flyTo()`；项目数据不变。MapLibre 的 `moveend` 将视角保存到独立的 `metro-planner.map-view` 浏览器键，刷新后恢复。导入带站点的项目时，地图定位到第一个站点。地图视角不写入项目 JSON。
+`scripts/update-transit.py` 从高德地铁图当前接口生成 `public/transit/catalog.json` 与每城快照。`CityNetworkPanel` 按需加载并严格校验项目；首次使用时自动打开武汉，旧项目（含损坏数据）不自动替换。城市切换先将旧项目归档到 `metro-planner.city.<cityId>` 或 `.custom`，再加载目标城市的修改副本或原始快照，并清空撤销历史；保存失败时留在原项目。原有 `CitySearch` 仍可调用 OpenStreetMap Nominatim 搜索世界其他城市。`App` 把目标范围传给 `MapCanvas`，后者用 `fitBounds()` 定位内置线网；MapLibre 的 `moveend` 保存独立视角，刷新后恢复。地图视角不写入项目 JSON。
 
 schema v2 把 `stations`、`waypoints`、`lines` 分别按 ID 存放。`MetroLine.nodes` 是 `{ type: 'station' | 'waypoint', id }[]` 有序引用。Waypoint 没有名称，只控制几何；同一 Station 在多条线路中出现才是换乘。面板保持互斥的 `selectedStationId` / `selectedWaypointId`。`pendingInsertIndex` 只用于下一次地图点击，不持久化。
+
+内置城市使用可选 `cityId`；环线使用可选 `closed: true`，绘制时追加首站坐标，插入控制点时也检查闭合线段。第三方站点由 GCJ-02 转为 WGS84（台湾源坐标保持原值），站序与换乘 ID 留在可编辑项目里；UI 注明快照来源、获取日期和直线连接的几何限制。
 
 `removeNodeFromLine()` 只移除指定线路中的节点。Station 本体保留；Waypoint 若已无任何线路引用便清理。`deleteStation()` 和 `deleteWaypoint()` 则删除本体并清除所有线路引用。`moveLineNode()` 只改变数组顺序，非法索引不更新项目。
 

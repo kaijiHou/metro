@@ -12,6 +12,7 @@ const isColor = (value: unknown): value is string =>
 export function validateProject(value: unknown): MetroProject {
   if (!isRecord(value)) throw new Error('项目文件必须是 JSON 对象。')
   if (value.version !== 2) throw new Error('不支持的项目版本。当前仅校验 version: 2。')
+  if (value.cityId !== undefined && (typeof value.cityId !== 'string' || !/^[a-z][a-z0-9-]{0,63}$/.test(value.cityId))) throw new Error('无效的城市标识。')
   if (typeof value.name !== 'string' || !value.name.trim()) throw new Error('项目名称不能为空。')
   if (!isRecord(value.stations)) throw new Error('缺少有效的 stations 对象。')
   if (!isRecord(value.waypoints)) throw new Error('缺少有效的 waypoints 对象。')
@@ -42,6 +43,7 @@ export function validateProject(value: unknown): MetroProject {
       throw new Error(`线路 ${id} 的字段无效。`)
     }
     const nodes: LineNode[] = []
+    if (raw.closed !== undefined && typeof raw.closed !== 'boolean') throw new Error(`线路 ${id} 的环线标记无效。`)
     const seen = new Set<string>()
     for (const node of raw.nodes) {
       if (!isRecord(node) || (node.type !== 'station' && node.type !== 'waypoint') || typeof node.id !== 'string') {
@@ -54,7 +56,7 @@ export function validateProject(value: unknown): MetroProject {
       if (node.type === 'waypoint' && !Object.hasOwn(waypoints, node.id)) throw new Error(`线路 ${id} 引用了不存在的控制点 ${node.id}。`)
       nodes.push({ type: node.type, id: node.id })
     }
-    lines[id] = { id, name: raw.name.trim(), color: raw.color, nodes }
+    lines[id] = { id, name: raw.name.trim(), color: raw.color, nodes, ...(raw.closed !== undefined ? { closed: raw.closed } : {}) }
   }
-  return { version: 2, name: value.name.trim(), stations, waypoints, lines }
+  return { version: 2, name: value.name.trim(), stations, waypoints, lines, ...(typeof value.cityId === 'string' ? { cityId: value.cityId } : {}) }
 }

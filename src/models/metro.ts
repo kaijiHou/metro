@@ -13,10 +13,12 @@ export type MetroLine = {
   name: string
   color: string
   nodes: LineNode[]
+  closed?: boolean
 }
 
 export type MetroProject = {
   version: 2
+  cityId?: string
   name: string
   stations: Record<string, Station>
   waypoints: Record<string, Waypoint>

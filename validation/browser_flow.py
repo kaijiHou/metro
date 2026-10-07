@@ -29,6 +29,10 @@ with sync_playwright() as playwright:
     page.get_by_role('button', name='武汉', exact=True).click()
     page.wait_for_function("() => { const raw = localStorage.getItem('metro-planner.map-view'); if (!raw) return false; const view = JSON.parse(raw); return Math.abs(view.center[0] - 114.3) < 0.1 }")
 
+    # Continue the original blank-project editor regression in the separate custom workspace.
+    page.locator('#transit-city').select_option('')
+    page.wait_for_function("() => !JSON.parse(localStorage.getItem('metro-planner.project') || '{}').cityId")
+
     page.get_by_role('button', name='添加站点', exact=True).click()
     assert '请先选择或创建线路' in page.get_by_role('alert').inner_text()
     page.get_by_role('button', name='＋ 新建线路').click()

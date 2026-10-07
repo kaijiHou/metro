@@ -25,9 +25,9 @@ export function nearestLineInsertIndex(
   const [px, py] = toPixel(coordinate)
   let closestIndex: number | null = null
   let closestDistance = Infinity
-  for (let index = 0; index < line.nodes.length - 1; index += 1) {
+  for (let index = 0; index < line.nodes.length - (line.closed ? 0 : 1); index += 1) {
     const start = resolveLineNodeCoordinate(project, line.nodes[index])
-    const end = resolveLineNodeCoordinate(project, line.nodes[index + 1])
+    const end = resolveLineNodeCoordinate(project, line.nodes[(index + 1) % line.nodes.length])
     if (!start || !end) continue
     const [ax, ay] = toPixel(start)
     const [bx, by] = toPixel(end)
@@ -52,6 +52,7 @@ export function lineFeatureCollection(project: MetroProject, selectedLineId: str
       if (coordinate) coordinates.push(coordinate)
     }
     if (coordinates.length < 2) continue
+    if (line.closed) coordinates.push(coordinates[0])
     features.push({
       type: 'Feature',
       geometry: { type: 'LineString', coordinates },

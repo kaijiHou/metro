@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { INITIAL_CENTER, type MapTarget } from '../config/map'
 import { validCoordinates } from '../utils/validation'
+import { CityNetworkPanel } from './CityNetworkPanel'
+import { findTransitCity, type TransitCity } from '../utils/transit'
 
 type CityResult = { id: string; name: string; description: string; center: [number, number] }
 
@@ -36,6 +38,8 @@ function parseResults(value: unknown): CityResult[] {
 }
 
 export function CitySearch({ onSelectCity }: { onSelectCity: (target: MapTarget) => void }) {
+  const [cities, setCities] = useState<TransitCity[]>([])
+  const [requestedTarget, setRequestedTarget] = useState<MapTarget | null>(null)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<CityResult[]>([])
   const [loading, setLoading] = useState(false)
@@ -48,16 +52,24 @@ export function CitySearch({ onSelectCity }: { onSelectCity: (target: MapTarget)
     requestController.current?.abort()
     requestController.current = null
     setLoading(false)
-    onSelectCity({ center, zoom: 10, label: name })
+    const target = { center, zoom: 10, label: name }
+    setRequestedTarget(target)
+    if (!findTransitCity(cities, name)) onSelectCity(target)
     setQuery(name)
     setResults([])
-    setMessage(`已定位到${name}。原有线路仍保留。`)
+    setMessage(findTransitCity(cities, name) ? '' : `已定位到${name}。此地未提供内置线网，当前规划仍保留。`)
   }
 
   const search = async (event: FormEvent) => {
     event.preventDefault()
     const city = query.trim()
     if (!city || loading) return
+    const local = cities.filter((item) => [item.name, item.id, ...item.aliases].some((name) => name.toLowerCase().includes(city.toLowerCase().replace(/市$/, ''))))
+    if (local.length) {
+      setResults(local.map((item) => ({ id: item.id, name: item.name, description: `${item.name} · ${item.lineCount} 条线路 / 支线 · ${item.stationCount} 站`, center: item.center })))
+      setMessage('选择城市，载入真实线路或恢复你的修改。')
+      return
+    }
     if (Date.now() - lastRequestAt.current < 1100) {
       setMessage('请稍等一秒再搜索。')
       return
@@ -88,7 +100,8 @@ export function CitySearch({ onSelectCity }: { onSelectCity: (target: MapTarget)
   }
 
   return <section className="panel-section city-search" aria-labelledby="city-search-title">
-    <div className="section-header"><h2 id="city-search-title">前往城市</h2></div>
+    <div className="section-header"><h2 id="city-search-title">城市与真实线路</h2></div>
+    <CityNetworkPanel requestedTarget={requestedTarget} onSelectCity={onSelectCity} onCatalogLoaded={setCities} />
     <form onSubmit={(event) => void search(event)} className="city-search-form">
       <input value={query} onChange={(event) => {
         requestController.current?.abort()
@@ -105,6 +118,6 @@ export function CitySearch({ onSelectCity }: { onSelectCity: (target: MapTarget)
       <button type="button" onClick={() => goTo(city.name, city.center)}>{city.description}</button>
     </li>)}</ul>}
     <div className="city-shortcuts" aria-label="常用城市">{popularCities.map((city) => <button type="button" key={city.name} onClick={() => goTo(city.name, city.center)}>{city.name}</button>)}</div>
-    <p className="city-search-credit">支持搜索世界各地城市 · 数据 © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a></p>
+    <p className="city-search-credit">港澳及台湾线网已纳入；跨市线路按线网合并。世界城市搜索 © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a></p>
   </section>
 }

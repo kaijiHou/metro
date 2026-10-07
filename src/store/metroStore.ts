@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { emptyProject, type EditorMode, type MetroLine, type MetroProject, type Station, type Waypoint } from '../models/metro'
-import { readStoredProject, saveProject } from '../utils/persistence'
+import { readStoredProject, saveProject, type ProjectStorage } from '../utils/persistence'
+import { saveCityProject } from '../utils/cityProjects'
 import { validCoordinates } from '../utils/validation'
 
 export type Notice = { text: string; kind: 'info' | 'error' } | null
@@ -19,7 +20,7 @@ export type MetroState = {
   clearNotice: () => void
   renameProject: (name: string) => void
   createLine: () => void
-  updateLine: (id: string, patch: Pick<MetroLine, 'name'> | Pick<MetroLine, 'color'>) => void
+  updateLine: (id: string, patch: Pick<MetroLine, 'name'> | Pick<MetroLine, 'color'> | Pick<MetroLine, 'closed'>) => void
   deleteLine: (id: string) => void
   createStation: (lng: number, lat: number) => void
   updateStation: (id: string, patch: Partial<Pick<Station, 'name' | 'lng' | 'lat'>>) => void
@@ -36,7 +37,8 @@ export type MetroState = {
   setEditorMode: (mode: EditorMode) => void
   startWaypointInsert: (index: number) => void
   loadProject: (project: MetroProject) => void
-  resetProject: (name?: string) => void
+  switchCity: (project: MetroProject) => boolean
+  resetProject: (name?: string, keepCity?: boolean) => void
   undo: () => void
   redo: () => void
 }
@@ -46,6 +48,7 @@ type CreateMetroStoreOptions = {
   initialWarning?: string | null
   idFactory?: () => string
   persist?: (project: MetroProject) => void
+  cityStorage?: ProjectStorage
 }
 
 const colors = ['#d94c4c', '#2878b9', '#22936f', '#9a63bb', '#db8c25', '#26a2aa']
@@ -73,9 +76,11 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
     : readStoredProject()
   const idFactory = options.idFactory ?? (() => crypto.randomUUID())
   const persist = options.persist ?? saveProject
+  const cityStorage = options.cityStorage ?? (typeof localStorage === 'undefined' ? undefined : localStorage)
   const past: MetroProject[] = []
   const future: MetroProject[] = []
   let applyingHistory = false
+  let switchingCity = false
 
   const store = create<MetroState>((set, get) => ({
     project: restored.project,
@@ -112,7 +117,7 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
       if (!line) return state
       const updated = { ...line, ...patch }
       if (!updated.name.trim() || !/^#[0-9a-fA-F]{6}$/.test(updated.color)) return state
-      if (updated.name === line.name && updated.color === line.color) return state
+      if (updated.name === line.name && updated.color === line.color && updated.closed === line.closed) return state
       return { project: { ...state.project, lines: { ...state.project.lines, [id]: updated } } }
     }),
     deleteLine: (id) => set((state) => {
@@ -245,7 +250,13 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
       selectedStationId: null, selectedWaypointId: null,
       editorMode: 'browse', pendingInsertIndex: null,
     })),
-    selectStation: (id) => set((state) => ({ selectedStationId: id && state.project.stations[id] ? id : null, selectedWaypointId: null })),
+    selectStation: (id) => set((state) => {
+      const selectedStationId = id && state.project.stations[id] ? id : null
+      const currentLine = state.selectedLineId ? state.project.lines[state.selectedLineId] : undefined
+      const line = selectedStationId && !currentLine?.nodes.some((node) => node.type === 'station' && node.id === selectedStationId)
+        ? Object.values(state.project.lines).find((item) => item.nodes.some((node) => node.type === 'station' && node.id === selectedStationId)) : undefined
+      return { selectedStationId, selectedWaypointId: null, ...(line ? { selectedLineId: line.id, pendingInsertIndex: null } : {}) }
+    }),
     selectWaypoint: (id) => set((state) => ({ selectedWaypointId: id && state.project.waypoints[id] ? id : null, selectedStationId: null })),
     setEditorMode: (mode) => set((state) => {
       if (mode === 'add-waypoint' && (!state.selectedLineId || !state.project.lines[state.selectedLineId])) {
@@ -259,7 +270,30 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
       return { editorMode: 'add-waypoint', pendingInsertIndex: index }
     }),
     loadProject: (project) => set({ project, selectedLineId: Object.keys(project.lines)[0] ?? null, selectedStationId: null, selectedWaypointId: null, editorMode: 'browse', pendingInsertIndex: null, notice: { text: '项目已导入。', kind: 'info' } }),
-    resetProject: (name) => set({ project: emptyProject(name), selectedLineId: null, selectedStationId: null, selectedWaypointId: null, editorMode: 'browse', pendingInsertIndex: null, notice: { text: '已创建空项目。', kind: 'info' } }),
+    switchCity: (project) => {
+      try {
+        // Keep the outgoing project recoverable before changing the active project.
+        saveCityProject(get().project, cityStorage)
+        saveCityProject(project, cityStorage)
+        persist(project)
+      } catch {
+        set({ notice: { text: '城市切换前保存失败，当前规划已保留。请先导出 JSON 备份。', kind: 'error' } })
+        return false
+      }
+      switchingCity = true
+      past.length = 0
+      future.length = 0
+      try {
+        set({ project, selectedLineId: Object.keys(project.lines)[0] ?? null, selectedStationId: null, selectedWaypointId: null, editorMode: 'browse', pendingInsertIndex: null, canUndo: false, canRedo: false, notice: { text: `已打开${project.name}，站点和线路均可直接编辑。`, kind: 'info' } })
+      } finally { switchingCity = false }
+      return true
+    },
+    resetProject: (name, keepCity = false) => set((state) => ({
+      project: { ...emptyProject(name), ...(keepCity && state.project.cityId ? { cityId: state.project.cityId } : {}) },
+      selectedLineId: null, selectedStationId: null, selectedWaypointId: null,
+      editorMode: 'browse', pendingInsertIndex: null,
+      notice: { text: keepCity ? '已清空当前城市规划。' : '已创建空项目。', kind: 'info' },
+    })),
     undo: () => {
       const project = past.pop()
       if (!project) return
@@ -297,7 +331,7 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
   }))
 
   store.subscribe((state, previous) => {
-    if (state.project === previous.project) return
+    if (state.project === previous.project || switchingCity) return
     if (!applyingHistory) {
       past.push(previous.project)
       if (past.length > 50) past.shift()
@@ -305,6 +339,8 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
       store.setState({ canUndo: true, canRedo: false })
     }
     try {
+      if (previous.project.cityId !== state.project.cityId) saveCityProject(previous.project, cityStorage)
+      saveCityProject(state.project, cityStorage)
       persist(state.project)
     } catch (error) {
       console.error('项目自动保存失败', error)

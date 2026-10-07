@@ -148,6 +148,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right')
 
     const onLoad = () => {
+      map.addSource('metro-station-labels', { type: 'geojson', data: stationFeatureCollection(useMetroStore.getState().project, useMetroStore.getState().selectedStationId) })
       map.addSource('metro-lines', { type: 'geojson', data: lineFeatureCollection(useMetroStore.getState().project, useMetroStore.getState().selectedLineId) })
       map.addLayer({
         id: 'metro-line-shadow',
@@ -162,6 +163,10 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
         source: 'metro-lines',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: { 'line-color': ['get', 'color'], 'line-width': ['case', ['get', 'selected'], 6, 4], 'line-opacity': ['case', ['get', 'selected'], 1, 0.75] },
+      })
+      map.addLayer({ id: 'metro-station-labels', type: 'symbol', source: 'metro-station-labels', minzoom: 11.5,
+        layout: { 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Regular'], 'text-size': 12, 'text-anchor': 'left', 'text-offset': [1, 0] },
+        paint: { 'text-color': '#193b4c', 'text-halo-color': '#ffffff', 'text-halo-width': 2 },
       })
     }
     const onMapClick = (event: maplibregl.MapMouseEvent) => {
@@ -189,6 +194,10 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
         }
         state.createWaypoint(event.lngLat.lng, event.lngLat.lat, state.selectedLineId, insertIndex)
       } else {
+        if (map.getLayer('metro-lines')) {
+          const feature = map.queryRenderedFeatures(event.point, { layers: ['metro-lines'] })[0]
+          if (typeof feature?.properties?.id === 'string') { state.selectLine(feature.properties.id); return }
+        }
         state.selectStation(null)
         state.selectWaypoint(null)
       }
@@ -221,7 +230,8 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
   }, [])
 
   useEffect(() => {
-    if (target) mapRef.current?.flyTo({ center: target.center, zoom: target.zoom, essential: true })
+    if (target?.bounds) mapRef.current?.fitBounds(target.bounds, { padding: 55, maxZoom: 12, duration: 1000 })
+    else if (target) mapRef.current?.flyTo({ center: target.center, zoom: target.zoom, essential: true })
   }, [target])
 
   useEffect(() => {
@@ -229,6 +239,8 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
     if (!map) return
     const source = map.getSource('metro-lines') as GeoJSONSource | undefined
     source?.setData(lineFeatureCollection(project, selectedLineId))
+    const labels = map.getSource('metro-station-labels') as GeoJSONSource | undefined
+    labels?.setData(stationFeatureCollection(project, null))
   }, [project, selectedLineId])
 
   useEffect(() => {

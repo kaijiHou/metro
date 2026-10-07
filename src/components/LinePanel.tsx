@@ -43,6 +43,7 @@ export function LinePanel() {
       <input id="line-name" value={lineName} onChange={(event) => setLineName(event.target.value)} onBlur={() => { updateLine(line.id, { name: lineName }); setLineName(useMetroStore.getState().project.lines[line.id]?.name ?? '') }} onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur() }} />
       <label className="field-label" htmlFor="line-color">线路颜色</label>
       <div className="color-row"><input id="line-color" type="color" value={line.color} onChange={(event) => updateLine(line.id, { color: event.target.value })} /><span>{line.color.toUpperCase()}</span></div>
+      <label className="loop-toggle"><input type="checkbox" checked={line.closed ?? false} onChange={(event) => updateLine(line.id, { closed: event.target.checked })} /> 首尾相连（环线）</label>
       <div className="subheading station-order-heading">节点顺序 <span>{line.nodes.length}</span></div>
       <p className="quiet">点站名可改名；点 ↑ ↓ 调整顺序。</p>
       {line.nodes.length ? <ol className="node-order">{line.nodes.map((node, index) => {
@@ -64,7 +65,7 @@ export function LinePanel() {
               setStationName(useMetroStore.getState().project.stations[node.id]?.name ?? '')
             }} onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur() }} />
           </div>}
-          {index < line.nodes.length - 1 && <button type="button" className={`insert-waypoint${editorMode === 'add-waypoint' && pendingInsertIndex === index + 1 ? ' insert-waypoint--active' : ''}`} onClick={() => startWaypointInsert(index + 1)}>＋ 插入控制点</button>}
+          {(index < line.nodes.length - 1 || line.closed) && <button type="button" className={`insert-waypoint${editorMode === 'add-waypoint' && pendingInsertIndex === index + 1 ? ' insert-waypoint--active' : ''}`} onClick={() => startWaypointInsert(index + 1)}>＋ 插入控制点{index === line.nodes.length - 1 ? '（连接首站）' : ''}</button>}
         </li>
       })}</ol> : <p className="quiet">地图上添加站点或控制点，按节点顺序连接。</p>}
       <label className="field-label" htmlFor="existing-station">加入已有站点</label>

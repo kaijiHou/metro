@@ -29,10 +29,12 @@
 | 字段 | 规则 |
 | --- | --- |
 | `version` | 必须为整数 `2` |
+| `cityId` | 可选；内置城市的稳定标识，用于将各城市项目分别保存在浏览器中；旧项目可无此字段 |
 | `name` | 非空项目名 |
 | `stations` | Station 字典；键与记录 `id` 一致，`name` 非空，经纬度合法 |
 | `waypoints` | Waypoint 字典；键与记录 `id` 一致，经纬度合法，没有 `name` |
 | `lines` | MetroLine 字典；键与记录 `id` 一致，`name` 非空，`color` 为六位十六进制颜色 |
+| `closed` | 每条线路可选布尔值；为 `true` 时最后一个节点与第一个节点相连，供环线使用 |
 | `nodes` | 有序的 LineNode 数组；同一线路内不可重复相同 `type + id` |
 | Station node | `{ "type": "station", "id": "s1" }`，ID 必须存在于 `stations` |
 | Waypoint node | `{ "type": "waypoint", "id": "w1" }`，ID 必须存在于 `waypoints` |
@@ -45,6 +47,6 @@
 
 导入 v1 JSON 或读取旧浏览器键 `metro-planner.project.v1` 时，先由 `migrateProjectToCurrent()` 调用纯函数 `migrateV1ToV2()`。每条旧线路的 `stationIds` 按原顺序转换为 station nodes，`waypoints` 初始化为 `{}`；项目名称、站点和线路 ID、名称、颜色保留。迁移不修改输入对象。随后 `validateProject()` 严格校验 v2，失败时不替换当前项目。
 
-浏览器长期使用稳定键 `metro-planner.project`，schema 版本由 JSON 内部 `version` 决定。启动时优先读取稳定键；若不存在才读取旧键。旧项目成功迁移、校验并写入稳定键后，才删除旧键。旧数据损坏或新键写入失败时保留旧数据并显示错误提示。导出始终为 v2。
+浏览器长期使用稳定键 `metro-planner.project` 保存当前项目，schema 版本由 JSON 内部 `version` 决定；`metro-planner.city.<cityId>` 分别保存已编辑的内置城市，`metro-planner.city.custom` 保存自主规划。城市切换先保留当前项目，再加载对应城市的已保存副本或内置快照；切换时清空撤销历史，防止跨城市撤销。启动时优先读取稳定键；若不存在才读取旧 v1 键。旧项目成功迁移、校验并写入稳定键后，才删除旧键。旧数据损坏或新键写入失败时保留旧数据并显示错误提示。导出始终为 v2。
 
 未知附加字段会在校验后丢弃；v2 线路若仍含旧 `stationIds` 字段会被拒绝。小型示例位于 `validation/fixtures/`。
