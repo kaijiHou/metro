@@ -54,6 +54,7 @@ with sync_playwright() as playwright:
     page.get_by_role('button', name='展示模式', exact=True).click()
     expect(page.locator('.map-station').first).to_be_hidden()
     expect(page.locator('.map-hint')).to_be_hidden()
+    expect(page.get_by_role('region', name='线路名称与颜色')).to_contain_text('1号线')
     canvas.click(position={'x': 500, 'y': 400})
     assert page.evaluate("localStorage.getItem('metro-planner.project')") == before_presentation
     page.get_by_role('button', name='返回编辑', exact=True).click()

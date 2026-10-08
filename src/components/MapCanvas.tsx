@@ -170,6 +170,15 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: { 'line-color': ['get', 'color'], 'line-width': ['case', ['get', 'selected'], 6, 4], 'line-opacity': ['case', ['get', 'selected'], 1, 0.75] },
       })
+      map.addLayer({
+        id: 'metro-line-labels', type: 'symbol', source: 'metro-lines',
+        layout: {
+          'symbol-placement': 'line', 'symbol-spacing': 220,
+          'text-field': ['get', 'name'], 'text-font': ['Noto Sans Regular'],
+          'text-size': 13, 'text-offset': [0, -0.9], 'text-max-angle': 60,
+        },
+        paint: { 'text-color': '#193b4c', 'text-halo-color': '#ffffff', 'text-halo-width': 2 },
+      })
       map.addLayer({ id: 'metro-station-labels', type: 'symbol', source: 'metro-station-labels', minzoom: 11.5,
         layout: { visibility: presentationRef.current ? 'none' : 'visible', 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Regular'], 'text-size': 12, 'text-anchor': 'left', 'text-offset': [1, 0] },
         paint: { 'text-color': '#193b4c', 'text-halo-color': '#ffffff', 'text-halo-width': 2 },
@@ -267,6 +276,12 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
         if (next) useMetroStore.getState().setEditorMode('browse')
         setPresentationMode(next)
       }}>{presentationMode ? '返回编辑' : '展示模式'}</button>
+      {presentationMode && <section className="map-line-legend" aria-label="线路名称与颜色">
+        {Object.values(project.lines).map((line) => <div key={line.id}>
+          <span className="map-line-swatch" style={{ backgroundColor: line.color }} aria-hidden="true" />
+          <span>{line.name}</span>
+        </div>)}
+      </section>}
       <div className="map-hint" role="status">
         <span className={`mode-dot${editorMode !== 'browse' ? ' mode-dot--active' : ''}`} />
         {editorMode === 'select-stations' ? `多选站点 · 已选 ${selectedStationIds.length} 个 · 再点取消选择` : editorMode === 'add-station' ? '点击地图添加站点 · 拖动站点调整位置' : editorMode === 'add-waypoint' ? pendingInsertIndex === null ? '点击线路插入控制点 · 拖动控制点调整走向' : '点击地图放置两节点间的控制点' : '浏览模式 · 点击节点编辑，拖动节点调整位置'}
