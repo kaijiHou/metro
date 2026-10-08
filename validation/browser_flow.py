@@ -50,6 +50,16 @@ with sync_playwright() as playwright:
     page.wait_for_timeout(5000)
     page.screenshot(path=str(ROOT / 'three-stations.png'), full_page=True)
 
+    before_presentation = page.evaluate("localStorage.getItem('metro-planner.project')")
+    page.get_by_role('button', name='展示模式', exact=True).click()
+    expect(page.locator('.map-station').first).to_be_hidden()
+    expect(page.locator('.map-hint')).to_be_hidden()
+    canvas.click(position={'x': 500, 'y': 400})
+    assert page.evaluate("localStorage.getItem('metro-planner.project')") == before_presentation
+    page.get_by_role('button', name='返回编辑', exact=True).click()
+    expect(page.locator('.map-station').first).to_be_visible()
+    assert page.locator('.map-station').count() == 3
+
     page.get_by_role('button', name='多选删除', exact=True).click()
     page.get_by_role('button', name='全选全部站点', exact=True).click()
     expect(page.locator('.map-station--selected')).to_have_count(3)
@@ -89,6 +99,11 @@ with sync_playwright() as playwright:
     page.wait_for_timeout(400)
     canvas.click(position={'x': 460, 'y': 373})
     assert page.locator('.map-waypoint').count() == 2
+    page.get_by_role('button', name='展示模式', exact=True).click()
+    expect(page.locator('.map-waypoint').first).to_be_hidden()
+    expect(page.locator('.map-station').first).to_be_hidden()
+    page.get_by_role('button', name='返回编辑', exact=True).click()
+    expect(page.locator('.map-waypoint').first).to_be_visible()
     assert [page.locator('.node-order li').nth(i).locator('.node-symbol--waypoint').count() for i in range(5)] == [0, 1, 1, 0, 0]
     page.keyboard.press('Control+z')
     assert page.locator('.map-waypoint').count() == 1

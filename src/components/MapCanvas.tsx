@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import type { GeoJSONSource, Map as MapLibreMap, Marker } from 'maplibre-gl'
 import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
@@ -124,6 +124,8 @@ function syncWaypointMarkers(map: MapLibreMap, markers: Map<string, MarkerRecord
 }
 
 export function MapCanvas({ target }: { target: MapTarget | null }) {
+  const [presentationMode, setPresentationMode] = useState(false)
+  const presentationRef = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
   const markersRef = useRef<Map<string, MarkerRecord>>(new Map())
@@ -153,7 +155,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
 
     const onLoad = () => {
       map.addSource('metro-station-labels', { type: 'geojson', data: stationFeatureCollection(useMetroStore.getState().project, useMetroStore.getState().selectedStationId) })
-      map.addSource('metro-lines', { type: 'geojson', data: lineFeatureCollection(useMetroStore.getState().project, useMetroStore.getState().selectedLineId) })
+      map.addSource('metro-lines', { type: 'geojson', data: lineFeatureCollection(useMetroStore.getState().project, presentationRef.current ? null : useMetroStore.getState().selectedLineId) })
       map.addLayer({
         id: 'metro-line-shadow',
         type: 'line',
@@ -169,11 +171,12 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
         paint: { 'line-color': ['get', 'color'], 'line-width': ['case', ['get', 'selected'], 6, 4], 'line-opacity': ['case', ['get', 'selected'], 1, 0.75] },
       })
       map.addLayer({ id: 'metro-station-labels', type: 'symbol', source: 'metro-station-labels', minzoom: 11.5,
-        layout: { 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Regular'], 'text-size': 12, 'text-anchor': 'left', 'text-offset': [1, 0] },
+        layout: { visibility: presentationRef.current ? 'none' : 'visible', 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Regular'], 'text-size': 12, 'text-anchor': 'left', 'text-offset': [1, 0] },
         paint: { 'text-color': '#193b4c', 'text-halo-color': '#ffffff', 'text-halo-width': 2 },
       })
     }
     const onMapClick = (event: maplibregl.MapMouseEvent) => {
+      if (presentationRef.current) return
       const state = useMetroStore.getState()
       if (state.editorMode === 'add-station') state.createStation(event.lngLat.lng, event.lngLat.lat)
       else if (state.editorMode === 'add-waypoint' && state.selectedLineId) {
@@ -242,10 +245,11 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
     const map = mapRef.current
     if (!map) return
     const source = map.getSource('metro-lines') as GeoJSONSource | undefined
-    source?.setData(lineFeatureCollection(project, selectedLineId))
+    source?.setData(lineFeatureCollection(project, presentationMode ? null : selectedLineId))
     const labels = map.getSource('metro-station-labels') as GeoJSONSource | undefined
     labels?.setData(stationFeatureCollection(project, null))
-  }, [project, selectedLineId])
+    if (map.getLayer('metro-station-labels')) map.setLayoutProperty('metro-station-labels', 'visibility', presentationMode ? 'none' : 'visible')
+  }, [project, selectedLineId, presentationMode])
 
   useEffect(() => {
     const map = mapRef.current
@@ -255,8 +259,14 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
   }, [project, selectedStationId, selectedStationIds, selectedWaypointId, editorMode])
 
   return (
-    <main className={`map-area${editorMode !== 'browse' ? ' map-area--adding' : ''}`}>
+    <main className={`map-area${presentationMode ? ' map-area--presentation' : editorMode !== 'browse' ? ' map-area--adding' : ''}`}>
       <div ref={containerRef} className="map-canvas" aria-label="地铁线路规划地图" />
+      <button type="button" className="map-presentation-toggle" aria-pressed={presentationMode} onClick={() => {
+        const next = !presentationMode
+        presentationRef.current = next
+        if (next) useMetroStore.getState().setEditorMode('browse')
+        setPresentationMode(next)
+      }}>{presentationMode ? '返回编辑' : '展示模式'}</button>
       <div className="map-hint" role="status">
         <span className={`mode-dot${editorMode !== 'browse' ? ' mode-dot--active' : ''}`} />
         {editorMode === 'select-stations' ? `多选站点 · 已选 ${selectedStationIds.length} 个 · 再点取消选择` : editorMode === 'add-station' ? '点击地图添加站点 · 拖动站点调整位置' : editorMode === 'add-waypoint' ? pendingInsertIndex === null ? '点击线路插入控制点 · 拖动控制点调整走向' : '点击地图放置两节点间的控制点' : '浏览模式 · 点击节点编辑，拖动节点调整位置'}

@@ -826,3 +826,20 @@ select:focus {
 }
 .city-data-info a { color: #087b91; }
 .city-data-info button { justify-self: start; }
+
+.map-presentation-toggle {
+  position: absolute;
+  top: 64px;
+  right: 18px;
+  border: 1px solid #d5e1e7;
+  border-radius: 7px;
+  padding: 9px 13px;
+  color: #385565;
+  font-size: 12px;
+  font-weight: 650;
+  background: #ffffffed;
+  box-shadow: 0 4px 16px #1d485a1a;
+}
+.map-area--presentation .map-station,
+.map-area--presentation .map-waypoint,
+.map-area--presentation .map-hint { display: none; }
