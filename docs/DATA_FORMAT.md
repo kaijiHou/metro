@@ -47,6 +47,6 @@
 
 导入 v1 JSON 或读取旧浏览器键 `metro-planner.project.v1` 时，先由 `migrateProjectToCurrent()` 调用纯函数 `migrateV1ToV2()`。每条旧线路的 `stationIds` 按原顺序转换为 station nodes，`waypoints` 初始化为 `{}`；项目名称、站点和线路 ID、名称、颜色保留。迁移不修改输入对象。随后 `validateProject()` 严格校验 v2，失败时不替换当前项目。
 
-浏览器使用稳定键 `metro-planner.project` 保存当前项目，schema 版本由 JSON 内部 `version` 决定。先前版本写入的 `metro-planner.city.*` 副本不会被自动清除，但当前页面没有城市切换入口；需要保存此前编辑的城市项目时，应从当前项目导出 JSON。启动时优先读取稳定键；若不存在才读取旧 v1 键。旧项目成功迁移、校验并写入稳定键后，才删除旧键。旧数据损坏或新键写入失败时保留旧数据并显示错误提示。导出始终为 v2。
+浏览器使用稳定键 `metro-planner.project` 保存当前项目，schema 版本由 JSON 内部 `version` 决定。各城市副本使用 `metro-planner.city.<cityId>`，自主规划使用 `metro-planner.city.custom`，选择城市时恢复相应副本。启动时优先读取稳定键；若不存在才读取旧 v1 键。旧项目成功迁移、校验并写入稳定键后，才删除旧键。旧数据损坏或新键写入失败时保留旧数据并显示错误提示。导出始终为 v2。
 
 未知附加字段会在校验后丢弃；v2 线路若仍含旧 `stationIds` 字段会被拒绝。小型示例位于 `validation/fixtures/`。

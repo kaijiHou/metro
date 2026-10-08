@@ -25,7 +25,7 @@ export type MetroProject = {
   lines: Record<string, MetroLine>
 }
 
-export type EditorMode = 'browse' | 'add-station' | 'add-waypoint'
+export type EditorMode = 'browse' | 'add-station' | 'add-waypoint' | 'select-stations'
 
 export const emptyProject = (name = '我的地铁规划'): MetroProject => ({
   version: 2,

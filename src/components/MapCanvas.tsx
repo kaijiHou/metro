@@ -42,7 +42,7 @@ function markerClass(transfer: boolean, selected: boolean): string {
 }
 
 function syncStationMarkers(map: MapLibreMap, markers: Map<string, MarkerRecord>) {
-  const { project, selectedStationId } = useMetroStore.getState()
+  const { project, selectedStationId, selectedStationIds, editorMode } = useMetroStore.getState()
   const currentIds = new Set<string>()
   for (const feature of stationFeatureCollection(project, selectedStationId).features) {
     const stationId = feature.properties.id
@@ -73,7 +73,10 @@ function syncStationMarkers(map: MapLibreMap, markers: Map<string, MarkerRecord>
     if (position.lng !== station.lng || position.lat !== station.lat) {
       record.marker.setLngLat([station.lng, station.lat])
     }
-    record.element.className = markerClass(feature.properties.transfer, feature.properties.selected)
+    const selected = feature.properties.selected || (editorMode === 'select-stations' && selectedStationIds.includes(stationId))
+    record.element.className = markerClass(feature.properties.transfer, selected)
+    record.element.setAttribute('aria-pressed', String(selected))
+    record.marker.setDraggable(editorMode !== 'select-stations')
     record.element.title = `${station.name}${feature.properties.transfer ? ' · 换乘站' : ''}`
     record.element.setAttribute('aria-label', `选择站点 ${station.name}`)
   }
@@ -128,6 +131,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
   const project = useMetroStore((state) => state.project)
   const selectedLineId = useMetroStore((state) => state.selectedLineId)
   const selectedStationId = useMetroStore((state) => state.selectedStationId)
+  const selectedStationIds = useMetroStore((state) => state.selectedStationIds)
   const selectedWaypointId = useMetroStore((state) => state.selectedWaypointId)
   const editorMode = useMetroStore((state) => state.editorMode)
   const pendingInsertIndex = useMetroStore((state) => state.pendingInsertIndex)
@@ -193,7 +197,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
           ) ?? undefined
         }
         state.createWaypoint(event.lngLat.lng, event.lngLat.lat, state.selectedLineId, insertIndex)
-      } else {
+      } else if (state.editorMode !== 'select-stations') {
         if (map.getLayer('metro-lines')) {
           const feature = map.queryRenderedFeatures(event.point, { layers: ['metro-lines'] })[0]
           if (typeof feature?.properties?.id === 'string') { state.selectLine(feature.properties.id); return }
@@ -248,14 +252,14 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
     if (!map) return
     syncStationMarkers(map, markersRef.current)
     syncWaypointMarkers(map, waypointMarkersRef.current)
-  }, [project, selectedStationId, selectedWaypointId])
+  }, [project, selectedStationId, selectedStationIds, selectedWaypointId, editorMode])
 
   return (
     <main className={`map-area${editorMode !== 'browse' ? ' map-area--adding' : ''}`}>
       <div ref={containerRef} className="map-canvas" aria-label="地铁线路规划地图" />
       <div className="map-hint" role="status">
         <span className={`mode-dot${editorMode !== 'browse' ? ' mode-dot--active' : ''}`} />
-        {editorMode === 'add-station' ? '点击地图添加站点 · 拖动站点调整位置' : editorMode === 'add-waypoint' ? pendingInsertIndex === null ? '点击线路插入控制点 · 拖动控制点调整走向' : '点击地图放置两节点间的控制点' : '浏览模式 · 点击节点编辑，拖动节点调整位置'}
+        {editorMode === 'select-stations' ? `多选站点 · 已选 ${selectedStationIds.length} 个 · 再点取消选择` : editorMode === 'add-station' ? '点击地图添加站点 · 拖动站点调整位置' : editorMode === 'add-waypoint' ? pendingInsertIndex === null ? '点击线路插入控制点 · 拖动控制点调整走向' : '点击地图放置两节点间的控制点' : '浏览模式 · 点击节点编辑，拖动节点调整位置'}
       </div>
     </main>
   )

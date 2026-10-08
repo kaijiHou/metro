@@ -22,6 +22,49 @@ const sharedProject = (): MetroProject => ({
 })
 
 describe('metro store core actions', () => {
+  it('toggles station multi-selection without changing the project or undo history', () => {
+    const store = testStore(sharedProject())
+    const project = store.getState().project
+    store.getState().startWaypointInsert(1)
+    store.getState().setEditorMode('select-stations')
+    store.getState().selectStation('s1')
+    store.getState().selectStation('s2')
+    store.getState().selectStation('s1')
+    store.getState().selectStation('missing')
+    assert.deepEqual(store.getState().selectedStationIds, ['s2'])
+    assert.equal(store.getState().pendingInsertIndex, null)
+    assert.equal(store.getState().project, project)
+    assert.equal(store.getState().canUndo, false)
+    store.getState().selectStations(['s1', 's2', 's1', 'missing'])
+    assert.deepEqual(store.getState().selectedStationIds, ['s1', 's2'])
+    store.getState().setEditorMode('browse')
+    assert.deepEqual(store.getState().selectedStationIds, [])
+  })
+
+  it('deletes multiple stations and all references as one undoable saved edit', () => {
+    const project = sharedProject()
+    project.waypoints.orphan = { id: 'orphan', lng: 114.2, lat: 30.4 }
+    let saved = 0
+    const store = createMetroStore({ initialProject: project, persist: () => { saved++ } })
+    store.getState().selectStations(['s1', 's2'])
+    store.getState().deleteStations(['s1', 's2', 's1', 'missing'])
+    assert.deepEqual(store.getState().project.stations, {})
+    assert.deepEqual(store.getState().project.lines.l1.nodes, [{ type: 'waypoint', id: 'w1' }])
+    assert.deepEqual(store.getState().project.lines.l2.nodes, [])
+    assert.deepEqual(store.getState().project.waypoints, project.waypoints)
+    assert.equal(saved, 1)
+    store.getState().undo()
+    assert.deepEqual(store.getState().project, project)
+    assert.equal(store.getState().canUndo, false)
+    assert.equal(store.getState().editorMode, 'browse')
+    assert.deepEqual(store.getState().selectedStationIds, [])
+    store.getState().redo()
+    assert.deepEqual(store.getState().project.stations, {})
+    const deleted = store.getState().project
+    store.getState().deleteStations(['missing'])
+    assert.equal(store.getState().project, deleted)
+  })
+
   it('creates and selects an empty line', () => {
     const store = testStore()
     store.getState().createLine()

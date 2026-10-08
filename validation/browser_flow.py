@@ -29,8 +29,9 @@ with sync_playwright() as playwright:
     page.get_by_role('button', name='武汉', exact=True).click()
     page.wait_for_function("() => { const raw = localStorage.getItem('metro-planner.map-view'); if (!raw) return false; const view = JSON.parse(raw); return Math.abs(view.center[0] - 114.3) < 0.1 }")
 
-    assert page.get_by_text('真实线路数据源暂未内置，可继续进行自主规划。').is_visible()
-    assert page.locator('#transit-city').count() == 0
+    expect(page.locator('#transit-city')).to_be_visible()
+    page.locator('#transit-city').select_option('')
+    page.wait_for_function("() => !JSON.parse(localStorage.getItem('metro-planner.project') || '{}').cityId")
 
     page.get_by_role('button', name='添加站点', exact=True).click()
     assert '请先选择或创建线路' in page.get_by_role('alert').inner_text()
@@ -48,6 +49,22 @@ with sync_playwright() as playwright:
     assert page.locator('.node-order li').count() == 3
     page.wait_for_timeout(5000)
     page.screenshot(path=str(ROOT / 'three-stations.png'), full_page=True)
+
+    page.get_by_role('button', name='多选删除', exact=True).click()
+    page.get_by_role('button', name='全选全部站点', exact=True).click()
+    expect(page.locator('.map-station--selected')).to_have_count(3)
+    page.get_by_role('button', name='清空选择', exact=True).click()
+    expect(page.get_by_role('button', name='删除选中（0）', exact=True)).to_be_disabled()
+    page.locator('.map-station').nth(0).click()
+    page.locator('.map-station').nth(1).click()
+    expect(page.locator('.map-station--selected')).to_have_count(2)
+    page.locator('.station-checklist input').first.uncheck()
+    expect(page.locator('.map-station--selected')).to_have_count(1)
+    page.locator('.station-checklist input').first.check()
+    page.get_by_role('button', name='删除选中（2）', exact=True).click()
+    expect(page.locator('.map-station')).to_have_count(1)
+    page.get_by_role('button', name='撤销', exact=True).click()
+    expect(page.locator('.map-station')).to_have_count(3)
 
     page.keyboard.press('Control+z')
     assert page.locator('.node-order li').count() == 2
