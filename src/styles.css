@@ -862,5 +862,14 @@ select:focus {
   font-size: 12px;
   box-shadow: 0 4px 16px #1d485a1a;
 }
-.map-line-legend > div { display: flex; align-items: center; gap: 7px; }
 .map-line-swatch { width: 20px; height: 4px; border-radius: 2px; flex: none; }
+
+.planning-stats { display: grid; grid-template-columns: 1fr auto; gap: 8px; font-size: 12px; color: #476575; }
+.planning-stats strong { color: #193b4c; }
+.planning-controls { margin: 12px 0; }
+.planning-controls button { font-size: 12px; padding: 6px 8px; }
+
+.map-line-legend { display: block; }
+.map-line-legend summary { cursor: pointer; font-weight: 650; }
+.map-line-legend-items { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 10px; }
+.map-line-legend-items > div { display: flex; align-items: center; gap: 7px; }

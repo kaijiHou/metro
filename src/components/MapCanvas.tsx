@@ -5,7 +5,8 @@ import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { INITIAL_CENTER, INITIAL_ZOOM, MAP_STYLE_URL, type MapTarget } from '../config/map'
 import { useMetroStore } from '../store/metroStore'
-import { lineFeatureCollection, nearestLineInsertIndex, stationFeatureCollection } from '../utils/geojson'
+import { lineFeatureCollection, nearestLineInsertIndex, stationFeatureCollection, stationLabelCollection } from '../utils/geojson'
+import { lockedNodeIds, lineStatus, statusNames } from '../utils/planning'
 import { validCoordinates } from '../utils/validation'
 
 maplibregl.setWorkerUrl(mapWorkerUrl)
@@ -43,6 +44,7 @@ function markerClass(transfer: boolean, selected: boolean): string {
 
 function syncStationMarkers(map: MapLibreMap, markers: Map<string, MarkerRecord>) {
   const { project, selectedStationId, selectedStationIds, editorMode } = useMetroStore.getState()
+  const protectedIds = lockedNodeIds(project, 'station')
   const currentIds = new Set<string>()
   for (const feature of stationFeatureCollection(project, selectedStationId).features) {
     const stationId = feature.properties.id
@@ -76,7 +78,7 @@ function syncStationMarkers(map: MapLibreMap, markers: Map<string, MarkerRecord>
     const selected = feature.properties.selected || (editorMode === 'select-stations' && selectedStationIds.includes(stationId))
     record.element.className = markerClass(feature.properties.transfer, selected)
     record.element.setAttribute('aria-pressed', String(selected))
-    record.marker.setDraggable(editorMode !== 'select-stations')
+    record.marker.setDraggable(editorMode !== 'select-stations' && !protectedIds.has(stationId))
     record.element.title = `${station.name}${feature.properties.transfer ? ' · 换乘站' : ''}`
     record.element.setAttribute('aria-label', `选择站点 ${station.name}`)
   }
@@ -90,6 +92,7 @@ function syncStationMarkers(map: MapLibreMap, markers: Map<string, MarkerRecord>
 
 function syncWaypointMarkers(map: MapLibreMap, markers: Map<string, MarkerRecord>) {
   const { project, selectedWaypointId } = useMetroStore.getState()
+  const protectedIds = lockedNodeIds(project, 'waypoint')
   for (const waypoint of Object.values(project.waypoints)) {
     let record = markers.get(waypoint.id)
     if (!record) {
@@ -113,7 +116,8 @@ function syncWaypointMarkers(map: MapLibreMap, markers: Map<string, MarkerRecord
     const position = record.marker.getLngLat()
     if (position.lng !== waypoint.lng || position.lat !== waypoint.lat) record.marker.setLngLat([waypoint.lng, waypoint.lat])
     record.element.className = `map-waypoint${selectedWaypointId === waypoint.id ? ' map-waypoint--selected' : ''}`
-    record.element.title = '控制点 · 拖动调整线路'
+    record.marker.setDraggable(!protectedIds.has(waypoint.id))
+    record.element.title = protectedIds.has(waypoint.id) ? '控制点 · 已锁定' : '控制点 · 拖动调整线路'
     record.element.setAttribute('aria-label', '选择控制点')
   }
   for (const [id, record] of markers) {
@@ -136,6 +140,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
   const selectedStationIds = useMetroStore((state) => state.selectedStationIds)
   const selectedWaypointId = useMetroStore((state) => state.selectedWaypointId)
   const editorMode = useMetroStore((state) => state.editorMode)
+  const stationLabelMode = useMetroStore((state) => state.stationLabelMode)
   const pendingInsertIndex = useMetroStore((state) => state.pendingInsertIndex)
 
   useEffect(() => {
@@ -154,12 +159,13 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right')
 
     const onLoad = () => {
-      map.addSource('metro-station-labels', { type: 'geojson', data: stationFeatureCollection(useMetroStore.getState().project, useMetroStore.getState().selectedStationId) })
+      map.addSource('metro-station-labels', { type: 'geojson', data: stationLabelCollection(useMetroStore.getState().project, useMetroStore.getState().stationLabelMode, useMetroStore.getState().selectedLineId) })
       map.addSource('metro-lines', { type: 'geojson', data: lineFeatureCollection(useMetroStore.getState().project, presentationRef.current ? null : useMetroStore.getState().selectedLineId) })
       map.addLayer({
         id: 'metro-line-shadow',
         type: 'line',
         source: 'metro-lines',
+        filter: ['!=', ['get', 'status'], 'construction'],
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: { 'line-color': '#ffffff', 'line-width': ['case', ['get', 'selected'], 10, 8], 'line-opacity': 0.9 },
       })
@@ -167,8 +173,14 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
         id: 'metro-lines',
         type: 'line',
         source: 'metro-lines',
+        filter: ['!=', ['get', 'status'], 'construction'],
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': ['get', 'color'], 'line-width': ['case', ['get', 'selected'], 6, 4], 'line-opacity': ['case', ['get', 'selected'], 1, 0.75] },
+        paint: { 'line-color': ['get', 'color'], 'line-width': ['case', ['get', 'selected'], 7, ['==', ['get', 'status'], 'planned'], 6, 4], 'line-opacity': ['case', ['get', 'selected'], 1, 0.75] },
+      })
+      map.addLayer({
+        id: 'metro-construction-lines', type: 'line', source: 'metro-lines',
+        filter: ['==', ['get', 'status'], 'construction'],
+        paint: { 'line-color': ['get', 'color'], 'line-width': ['case', ['get', 'selected'], 7, 4], 'line-dasharray': [2, 2], 'line-opacity': 0.9 },
       })
       map.addLayer({
         id: 'metro-line-labels', type: 'symbol', source: 'metro-lines',
@@ -195,7 +207,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
           const pad = 10
           const features = map.queryRenderedFeatures(
             [[event.point.x - pad, event.point.y - pad], [event.point.x + pad, event.point.y + pad]],
-            { layers: ['metro-lines'] },
+            { layers: ['metro-lines', 'metro-construction-lines'] },
           )
           if (!features.some((feature) => feature.properties?.id === state.selectedLineId)) {
             state.setNotice('请点击当前线路上的一段，再拖动新控制点调整走向。', 'info')
@@ -211,7 +223,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
         state.createWaypoint(event.lngLat.lng, event.lngLat.lat, state.selectedLineId, insertIndex)
       } else if (state.editorMode !== 'select-stations') {
         if (map.getLayer('metro-lines')) {
-          const feature = map.queryRenderedFeatures(event.point, { layers: ['metro-lines'] })[0]
+          const feature = map.queryRenderedFeatures(event.point, { layers: ['metro-lines', 'metro-construction-lines'] })[0]
           if (typeof feature?.properties?.id === 'string') { state.selectLine(feature.properties.id); return }
         }
         state.selectStation(null)
@@ -256,9 +268,9 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
     const source = map.getSource('metro-lines') as GeoJSONSource | undefined
     source?.setData(lineFeatureCollection(project, presentationMode ? null : selectedLineId))
     const labels = map.getSource('metro-station-labels') as GeoJSONSource | undefined
-    labels?.setData(stationFeatureCollection(project, null))
+    labels?.setData(stationLabelCollection(project, stationLabelMode, selectedLineId))
     if (map.getLayer('metro-station-labels')) map.setLayoutProperty('metro-station-labels', 'visibility', presentationMode ? 'none' : 'visible')
-  }, [project, selectedLineId, presentationMode])
+  }, [project, selectedLineId, presentationMode, stationLabelMode])
 
   useEffect(() => {
     const map = mapRef.current
@@ -276,12 +288,12 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
         if (next) useMetroStore.getState().setEditorMode('browse')
         setPresentationMode(next)
       }}>{presentationMode ? '返回编辑' : '展示模式'}</button>
-      {presentationMode && <section className="map-line-legend" aria-label="线路名称与颜色">
-        {Object.values(project.lines).map((line) => <div key={line.id}>
-          <span className="map-line-swatch" style={{ backgroundColor: line.color }} aria-hidden="true" />
-          <span>{line.name}</span>
+      <details open className="map-line-legend" aria-label="线路名称与颜色"><summary>线路图例</summary><div className="map-line-legend-items">
+        {Object.values(project.lines).filter((line) => line.visible !== false).map((line) => <div key={line.id}>
+          <span className="map-line-swatch" style={{ backgroundColor: lineStatus(line) === 'construction' ? 'transparent' : line.color, borderTop: lineStatus(line) === 'construction' ? `3px dashed ${line.color}` : undefined, height: lineStatus(line) === 'planned' ? 6 : 4 }} aria-hidden="true" />
+          <span>{line.name} · {statusNames[lineStatus(line)]}</span>
         </div>)}
-      </section>}
+      </div></details>
       <div className="map-hint" role="status">
         <span className={`mode-dot${editorMode !== 'browse' ? ' mode-dot--active' : ''}`} />
         {editorMode === 'select-stations' ? `多选站点 · 已选 ${selectedStationIds.length} 个 · 再点取消选择` : editorMode === 'add-station' ? '点击地图添加站点 · 拖动站点调整位置' : editorMode === 'add-waypoint' ? pendingInsertIndex === null ? '点击线路插入控制点 · 拖动控制点调整走向' : '点击地图放置两节点间的控制点' : '浏览模式 · 点击节点编辑，拖动节点调整位置'}

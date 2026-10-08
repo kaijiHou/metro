@@ -6,7 +6,7 @@ import type { MapTarget } from '../config/map'
 export function ProjectPanel({ onProjectLoaded }: { onProjectLoaded: (target: MapTarget) => void }) {
   const project = useMetroStore((state) => state.project)
   const loadProject = useMetroStore((state) => state.loadProject)
-  const resetProject = useMetroStore((state) => state.resetProject)
+  const startNewProject = useMetroStore((state) => state.startNewProject)
   const setNotice = useMetroStore((state) => state.setNotice)
   const canUndo = useMetroStore((state) => state.canUndo)
   const canRedo = useMetroStore((state) => state.canRedo)
@@ -21,8 +21,7 @@ export function ProjectPanel({ onProjectLoaded }: { onProjectLoaded: (target: Ma
     const nextName = newProjectName.trim()
     if (!nextName) { setNameError('请输入新项目名称。'); return }
     if (saveCurrent) downloadProject(useMetroStore.getState().project)
-    resetProject(nextName)
-    newProjectDialog.current?.close()
+    if (startNewProject(nextName)) newProjectDialog.current?.close()
   }
 
   const importProject = async (file: File | undefined) => {
@@ -86,6 +85,6 @@ export function ProjectName() {
     <label htmlFor="project-name" className="eyebrow">当前项目</label>
     <input id="project-name" className="project-name" value={name} onChange={(event) => setName(event.target.value)} onBlur={() => { renameProject(name); setName(useMetroStore.getState().project.name) }} onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur() }} />
     <p>更改会自动保存在此浏览器中</p>
-    <button type="button" className="reset-link" onClick={() => { if (window.confirm('清空当前项目的全部线路和站点？建议先导出 JSON。')) resetProject(projectName, true) }}>重置项目</button>
+    <button type="button" className="reset-link" onClick={() => { if (window.confirm('清空当前规划线路？城市现状线网会保留。建议先导出 JSON。')) resetProject(projectName, true) }}>重置项目</button>
   </div>
 }

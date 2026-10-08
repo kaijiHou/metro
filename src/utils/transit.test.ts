@@ -79,6 +79,9 @@ describe('editable real city networks', () => {
     const store = createMetroStore({ initialProject: custom, cityStorage: storage, persist: (project) => saveProject(project, storage) })
     assert.equal(store.getState().switchCity(cityProject('wuhan')), true)
     const id = Object.keys(store.getState().project.stations)[0]
+    for (const line of Object.values(store.getState().project.lines)) {
+      if (line.nodes.some((node) => node.type === 'station' && node.id === id)) store.getState().updateLine(line.id, { locked: false })
+    }
     store.getState().updateStation(id, { name: '我修改的武汉站', lng: 114.25 })
     assert.equal(store.getState().switchCity(cityProject('shanghai')), true)
     assert.equal(store.getState().canUndo, false)
@@ -114,12 +117,12 @@ describe('editable real city networks', () => {
     const store = createMetroStore({ initialProject: original, cityStorage: storage, persist: (project) => saveProject(project, storage) })
     store.getState().resetProject('空白武汉规划', true)
     assert.equal(store.getState().project.cityId, 'wuhan')
-    assert.equal(Object.keys(store.getState().project.lines).length, 0)
+    assert.equal(Object.keys(store.getState().project.lines).length, 13)
     store.getState().loadProject(original)
     assert.equal(Object.keys(store.getState().project.lines).length, 13)
     store.getState().undo()
     assert.equal(store.getState().project.cityId, 'wuhan')
-    assert.equal(Object.keys(store.getState().project.lines).length, 0)
+    assert.equal(Object.keys(store.getState().project.lines).length, 13)
   })
 
   it('refuses damaged or mismatched city saves instead of replacing them with defaults', () => {

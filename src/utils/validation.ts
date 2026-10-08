@@ -42,6 +42,10 @@ export function validateProject(value: unknown): MetroProject {
         !isColor(raw.color) || !Array.isArray(raw.nodes) || Object.hasOwn(raw, 'stationIds')) {
       throw new Error(`线路 ${id} 的字段无效。`)
     }
+    if (raw.status !== undefined && (typeof raw.status !== 'string' || !['existing', 'construction', 'planned'].includes(raw.status))) throw new Error(`线路 ${id} 的状态无效。`)
+    if (raw.visible !== undefined && typeof raw.visible !== 'boolean') throw new Error(`线路 ${id} 的显示状态无效。`)
+    if (raw.locked !== undefined && typeof raw.locked !== 'boolean') throw new Error(`线路 ${id} 的锁定状态无效。`)
+    if (raw.sourceLineId !== undefined && (typeof raw.sourceLineId !== 'string' || !raw.sourceLineId)) throw new Error(`线路 ${id} 的来源标识无效。`)
     const nodes: LineNode[] = []
     if (raw.closed !== undefined && typeof raw.closed !== 'boolean') throw new Error(`线路 ${id} 的环线标记无效。`)
     const seen = new Set<string>()
@@ -56,7 +60,11 @@ export function validateProject(value: unknown): MetroProject {
       if (node.type === 'waypoint' && !Object.hasOwn(waypoints, node.id)) throw new Error(`线路 ${id} 引用了不存在的控制点 ${node.id}。`)
       nodes.push({ type: node.type, id: node.id })
     }
-    lines[id] = { id, name: raw.name.trim(), color: raw.color, nodes, ...(raw.closed !== undefined ? { closed: raw.closed } : {}) }
+    const legacyExisting = typeof value.cityId === 'string' && id.startsWith('amap-')
+    lines[id] = { id, name: raw.name.trim(), color: raw.color, nodes, ...(raw.closed !== undefined ? { closed: raw.closed } : {}),
+      status: (raw.status ?? (legacyExisting ? 'existing' : 'planned')) as MetroLine['status'],
+      visible: raw.visible ?? true, locked: raw.locked ?? (raw.status === 'existing' || legacyExisting),
+      ...(raw.sourceLineId !== undefined ? { sourceLineId: raw.sourceLineId as string } : {}) }
   }
   return { version: 2, name: value.name.trim(), stations, waypoints, lines, ...(typeof value.cityId === 'string' ? { cityId: value.cityId } : {}) }
 }

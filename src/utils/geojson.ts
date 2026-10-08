@@ -2,7 +2,7 @@ import type { Feature, FeatureCollection, LineString, Point } from 'geojson'
 import type { LineNode, MetroProject } from '../models/metro'
 import { validCoordinates } from './validation'
 
-type LineProperties = { id: string; name: string; color: string; selected: boolean }
+type LineProperties = { id: string; name: string; color: string; status: string; selected: boolean }
 type StationProperties = { id: string; name: string; transfer: boolean; selected: boolean }
 
 export function resolveLineNodeCoordinate(project: MetroProject, node: LineNode): [number, number] | null {
@@ -46,6 +46,7 @@ export function nearestLineInsertIndex(
 export function lineFeatureCollection(project: MetroProject, selectedLineId: string | null): FeatureCollection<LineString, LineProperties> {
   const features: Feature<LineString, LineProperties>[] = []
   for (const line of Object.values(project.lines)) {
+    if (line.visible === false) continue
     const coordinates: [number, number][] = []
     for (const node of line.nodes) {
       const coordinate = resolveLineNodeCoordinate(project, node)
@@ -56,7 +57,7 @@ export function lineFeatureCollection(project: MetroProject, selectedLineId: str
     features.push({
       type: 'Feature',
       geometry: { type: 'LineString', coordinates },
-      properties: { id: line.id, name: line.name, color: line.color, selected: line.id === selectedLineId },
+      properties: { id: line.id, name: line.name, color: line.color, status: line.status ?? 'planned', selected: line.id === selectedLineId },
     })
   }
   return { type: 'FeatureCollection', features }
@@ -87,4 +88,12 @@ export function stationFeatureCollection(project: MetroProject, selectedStationI
     })
   }
   return { type: 'FeatureCollection', features }
+}
+
+export function stationLabelCollection(project: MetroProject, mode: 'all' | 'interchanges' | 'current' | 'none', selectedLineId: string | null) {
+  const collection = stationFeatureCollection(project, null)
+  const currentIds = new Set(selectedLineId ? project.lines[selectedLineId]?.nodes.filter((node) => node.type === 'station').map((node) => node.id) : [])
+  collection.features = collection.features.filter((feature) => mode === 'all' ||
+    (mode === 'interchanges' && feature.properties.transfer) || (mode === 'current' && currentIds.has(feature.properties.id)))
+  return collection
 }

@@ -30,6 +30,11 @@ with sync_playwright() as playwright:
     page.wait_for_function("() => { const raw = localStorage.getItem('metro-planner.map-view'); if (!raw) return false; const view = JSON.parse(raw); return Math.abs(view.center[0] - 114.3) < 0.1 }")
 
     expect(page.locator('#transit-city')).to_be_visible()
+    before_labels = page.evaluate("localStorage.getItem('metro-planner.project')")
+    page.locator('#station-label-mode').select_option('none')
+    assert page.evaluate("localStorage.getItem('metro-planner.project')") == before_labels
+    page.locator('#station-label-mode').select_option('interchanges')
+
     page.locator('#transit-city').select_option('')
     page.wait_for_function("() => !JSON.parse(localStorage.getItem('metro-planner.project') || '{}').cityId")
 
@@ -54,7 +59,7 @@ with sync_playwright() as playwright:
     page.get_by_role('button', name='展示模式', exact=True).click()
     expect(page.locator('.map-station').first).to_be_hidden()
     expect(page.locator('.map-hint')).to_be_hidden()
-    expect(page.get_by_role('region', name='线路名称与颜色')).to_contain_text('1号线')
+    expect(page.locator('.map-line-legend')).to_contain_text('1号线')
     canvas.click(position={'x': 500, 'y': 400})
     assert page.evaluate("localStorage.getItem('metro-planner.project')") == before_presentation
     page.get_by_role('button', name='返回编辑', exact=True).click()

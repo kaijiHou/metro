@@ -6,6 +6,10 @@
 
 `CitySearch` 结合 `CityNetworkPanel` 载入 `public/transit/` 内置城市线网或恢复城市副本；首次无保存项目时载入武汉，已有项目保持。未知城市使用 OpenStreetMap Nominatim 搜索定位地图。切换前保存当前项目，失败则保留；切换成功清空撤销历史，避免跨城市撤销。MapLibre 的 `moveend` 保存独立视角，地图视角不写入项目 JSON。
 
+Phase 3 的 `status`、`visible`、`locked`、`sourceLineId` 是 schema v2 可选线路字段。内置现状线默认锁定；用户规划线叠加在同一个项目中。Store 在所有修改拓扑、移动或删除节点的入口检查锁定状态，地图 Marker 的拖动能力同步关闭。复制线路为规划线时复制控制点本体，站点继续共用现状站点；规划站位必须通过新建站点实现。`lineFeatureCollection()` 跳过隐藏线路，MapLibre 按状态用实线、虚线和不同线宽渲染；站名标签由 Symbol Layer 显示。
+
+`statistics.ts` 计算沿节点路径的长度与站距。`scenarios.ts` 校验每城市最多五个完整项目快照；默认方案继续沿用旧城市存储键，额外方案保存在 `metro-planner.scenarios.<cityId>`。方案和城市切换都在保存当前项目后载入目标项目，清空 Undo/Redo 和临时选择，不重置地图视角。数据源更新时现有方案不会被自动替换。详见 [规划模型](PLANNING_MODEL.md)。
+
 schema v2 把 `stations`、`waypoints`、`lines` 分别按 ID 存放。`MetroLine.nodes` 是 `{ type: 'station' | 'waypoint', id }[]` 有序引用。Waypoint 没有名称，只控制几何；同一 Station 在多条线路中出现才是换乘。多选模式使用临时 `selectedStationIds`，批量删除为一次项目更新、一次撤销。面板保持互斥的 `selectedStationId` / `selectedWaypointId`。`pendingInsertIndex` 只用于下一次地图点击，不持久化。
 
 为兼容已有项目，格式仍接受可选 `cityId`；环线使用可选 `closed: true`，绘制时追加首站坐标，插入控制点时也检查闭合线段。各城市修改分别保存到 `metro-planner.city.*`；恢复原始线路采用普通项目更新，可以撤销。

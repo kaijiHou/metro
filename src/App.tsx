@@ -4,6 +4,9 @@ import type { MapTarget } from './config/map'
 import { ProjectName, ProjectPanel } from './components/ProjectPanel'
 import { CitySearch } from './components/CitySearch'
 import { ModePanel } from './components/ModePanel'
+import { LineStatsPanel } from './components/LineStatsPanel'
+import { MapDisplayPanel } from './components/MapDisplayPanel'
+import { ScenarioPanel } from './components/ScenarioPanel'
 import { LinePanel } from './components/LinePanel'
 import { StationPanel } from './components/StationPanel'
 import { WaypointPanel } from './components/WaypointPanel'
@@ -29,7 +32,7 @@ export default function App() {
   return <div className="app-shell">
     <ProjectPanel onProjectLoaded={setMapTarget} />
     <div className="workspace">
-      <aside className="sidebar"><div className="sidebar-scroll"><ProjectName /><CitySearch onSelectCity={setMapTarget} /><ModePanel /><LinePanel /><StationPanel /><WaypointPanel /></div></aside>
+      <aside className="sidebar"><div className="sidebar-scroll"><ProjectName /><CitySearch onSelectCity={setMapTarget} /><ScenarioPanel /><ModePanel /><MapDisplayPanel /><LineStatsPanel /><LinePanel /><StationPanel /><WaypointPanel /></div></aside>
       <MapCanvas target={mapTarget} />
     </div>
     {notice && <div className={`notice notice--${notice.kind}`} role={notice.kind === 'error' ? 'alert' : 'status'}><span>{notice.text}</span><button type="button" onClick={clearNotice} aria-label="关闭提示">×</button></div>}

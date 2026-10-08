@@ -36,13 +36,26 @@ export function CityNetworkPanel({ requestedTarget, onSelectCity, onCatalogLoade
         return
       }
       const saved = original ? null : readCityProject(city.id, localStorage)
+      let base = null
+      if (saved) {
+        try { base = await fetchCityProject(city, controller.signal) }
+        catch (failure) { if (controller.signal.aborted) throw failure }
+      }
       const project = saved ?? await fetchCityProject(city, controller.signal)
       if (controller.signal.aborted || controllerRef.current !== controller) return
       const state = useMetroStore.getState()
       if (original && state.project.cityId === city.id) state.loadProject(project)
       else if (!state.switchCity(project)) return
+      if (base) {
+        const actual = useMetroStore.getState().project
+        const existingIds = Object.values(actual.lines).filter((line) => line.status === 'existing').map((line) => line.id).sort()
+        const currentIds = Object.keys(base.lines).sort()
+        if (JSON.stringify(existingIds) !== JSON.stringify(currentIds)) {
+          useMetroStore.getState().setNotice('现状线路与当前内置快照不同，原方案已保留；请核对数据来源或已做的修改。', 'info')
+        }
+      }
       onSelectCity(cityMapTarget(city))
-      setMessage(saved ? `已恢复${city.name}的修改。` : `${city.name}真实线路已载入，所有站点均可直接修改。`)
+      setMessage(saved ? `已恢复${city.name}的修改。` : `${city.name}真实线路已载入，现状线路默认锁定，可复制为规划线路。`)
     } catch (failure) {
       if (!controller.signal.aborted) {
         const text = failure instanceof Error ? failure.message : '城市线路加载失败，请重试。'
@@ -120,7 +133,7 @@ export function CityNetworkPanel({ requestedTarget, onSelectCity, onCatalogLoade
     {activeCity && <div className="city-data-info">
       <strong>原始线网：{activeCity.name} · {activeCity.lineCount} 条线路 / 支线 · {activeCity.stationCount} 个站</strong>
       <span>内置数据获取：{activeCity.retrievedAt.slice(0, 10)} · <a href="https://map.amap.com/subway/index.html" target="_blank" rel="noreferrer">高德地铁图</a></span>
-      <span>直接改名、拖动或删除站点。各城市分别保存修改。</span>
+      <span>先复制为规划线路，或明确解锁后修改现状副本。各城市分别保存修改。</span>
       <span>按真实站点连线，非实际轨道走向；新开线路以运营方公告为准。</span>
       <button type="button" className="text-action" disabled={!!opening} onClick={() => {
         if (window.confirm(`恢复${activeCity.name}的内置原始线路？当前城市的修改将被替换，可用撤销恢复。`)) void openCity(activeCity, true)

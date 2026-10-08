@@ -1,3 +1,4 @@
+import { nodeLocked } from '../utils/planning'
 import { useMetroStore } from '../store/metroStore'
 
 export function WaypointPanel() {
@@ -17,7 +18,7 @@ export function WaypointPanel() {
     <p className="quiet">拖动地图上的控制点可调整线路形状。</p>
     <div className="field-label">引用线路</div>
     <ul className="waypoint-references">{references.map(({ line }) => <li key={line.id}>{line.name}</li>)}</ul>
-    <button type="button" className="danger-link" onClick={() => {
+    <button type="button" disabled={nodeLocked(project, 'waypoint', waypoint.id)} className="danger-link" onClick={() => {
       if (window.confirm('删除这个控制点？它会从所有引用线路中移除。')) deleteWaypoint(waypoint.id)
     }}>删除控制点</button>
   </section>

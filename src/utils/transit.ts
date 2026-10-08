@@ -55,5 +55,6 @@ export async function fetchCityProject(city: TransitCity, signal: AbortSignal): 
   if (!data || typeof data !== 'object' || !('project' in data)) throw new Error('城市线路数据无效。')
   const project = validateProject(data.project)
   if (project.cityId !== city.id || Object.keys(project.lines).length === 0) throw new Error('城市线路数据不匹配。')
-  return project
+  return { ...project, lines: Object.fromEntries(Object.entries(project.lines).map(([id, line]) =>
+    [id, { ...line, status: 'existing' as const, visible: true, locked: true }])) }
 }
