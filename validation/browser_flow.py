@@ -204,6 +204,24 @@ with sync_playwright() as playwright:
     assert len(final_project['lines']) == 1 and len(final_project['stations']) == 3
 
     page.get_by_role('button', name='新建项目').click()
+    page.get_by_role('button', name='取消', exact=True).click()
+    assert page.locator('.line-item').count() == 1
+    page.get_by_role('button', name='新建项目').click()
+    page.get_by_role('textbox', name='新项目名称', exact=True).fill('  ')
+    page.get_by_role('button', name='不保存，直接新建', exact=True).click()
+    expect(page.get_by_text('请输入新项目名称。', exact=True)).to_be_visible()
+    page.get_by_role('textbox', name='新项目名称', exact=True).fill('不保存的新项目')
+    page.get_by_role('button', name='不保存，直接新建', exact=True).click()
+    assert page.locator('.line-item').count() == 0
+    assert json.loads(page.evaluate("localStorage.getItem('metro-planner.project')"))['name'] == '不保存的新项目'
+    page.locator('input[type=file]').set_input_files(str(export_path))
+    expect(page.locator('.line-item')).to_have_count(1)
+    expect(page.locator('.map-station')).to_have_count(3)
+    page.get_by_role('button', name='新建项目').click()
+    with page.expect_download() as saved_before_new:
+        page.get_by_role('button', name='保存并新建', exact=True).click()
+    saved_before_new.value.save_as(export_path)
+    assert len(json.loads(export_path.read_text(encoding='utf-8'))['lines']) == 1
     assert page.locator('.line-item').count() == 0
     page.locator('input[type=file]').set_input_files(str(export_path))
     expect(page.locator('.line-item')).to_have_count(1)

@@ -13,14 +13,16 @@ export function ProjectPanel({ onProjectLoaded }: { onProjectLoaded: (target: Ma
   const undo = useMetroStore((state) => state.undo)
   const redo = useMetroStore((state) => state.redo)
   const fileRef = useRef<HTMLInputElement>(null)
+  const newProjectDialog = useRef<HTMLDialogElement>(null)
+  const [newProjectName, setNewProjectName] = useState('我的地铁规划')
+  const [nameError, setNameError] = useState('')
 
-  const newProject = () => {
-    if ((Object.keys(project.lines).length || Object.keys(project.stations).length) &&
-        !window.confirm('创建新项目？当前项目已自动保存在此浏览器中，但会被新项目替换。建议先导出 JSON。')) return
-    const nextName = window.prompt('新项目名称', '我的地铁规划')
-    if (nextName === null) return
-    if (!nextName.trim()) { setNotice('项目名称不能为空。', 'error'); return }
-    resetProject(nextName.trim())
+  const createProject = (saveCurrent: boolean) => {
+    const nextName = newProjectName.trim()
+    if (!nextName) { setNameError('请输入新项目名称。'); return }
+    if (saveCurrent) downloadProject(useMetroStore.getState().project)
+    resetProject(nextName)
+    newProjectDialog.current?.close()
   }
 
   const importProject = async (file: File | undefined) => {
@@ -44,11 +46,32 @@ export function ProjectPanel({ onProjectLoaded }: { onProjectLoaded: (target: Ma
         <div className="topbar-actions">
           <button type="button" onClick={undo} disabled={!canUndo} title="撤销上一步（Ctrl+Z）">撤销</button>
           <button type="button" onClick={redo} disabled={!canRedo} title="重做上一步（Ctrl+Y）">重做</button>
-          <button type="button" onClick={newProject}>新建项目</button>
+          <button type="button" onClick={() => {
+            setNewProjectName('我的地铁规划')
+            setNameError('')
+            newProjectDialog.current?.showModal()
+          }}>新建项目</button>
           <button type="button" onClick={() => fileRef.current?.click()}>导入 JSON</button>
           <button type="button" className="button-primary" onClick={() => downloadProject(project)}>导出 JSON</button>
           <input ref={fileRef} type="file" accept=".json,application/json" hidden onChange={(event) => void importProject(event.target.files?.[0])} aria-label="选择项目 JSON 文件" />
         </div>
+        <dialog ref={newProjectDialog} className="project-dialog" aria-labelledby="new-project-title">
+          <form onSubmit={(event) => { event.preventDefault(); createProject(false) }}>
+            <h2 id="new-project-title">新建项目</h2>
+            <p>新建会替换当前规划。你可以保存一份 JSON 文件，也可以直接开始新项目。</p>
+            <label htmlFor="new-project-name">新项目名称</label>
+            <input id="new-project-name" value={newProjectName} onChange={(event) => {
+              setNewProjectName(event.target.value)
+              setNameError('')
+            }} autoFocus aria-invalid={!!nameError} aria-describedby={nameError ? 'new-project-name-error' : undefined} />
+            {nameError && <p id="new-project-name-error" role="alert">{nameError}</p>}
+            <div className="project-dialog-actions">
+              <button type="button" onClick={() => newProjectDialog.current?.close()}>取消</button>
+              <button type="submit">不保存，直接新建</button>
+              <button type="button" className="button-primary" onClick={() => createProject(true)}>保存并新建</button>
+            </div>
+          </form>
+        </dialog>
       </header>
   )
 }

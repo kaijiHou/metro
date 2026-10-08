@@ -76,6 +76,23 @@ button:disabled {
 .brand-mark i:nth-child(2) {
   height: 18px;
 }
+.project-dialog {
+  width: min(460px, calc(100vw - 32px));
+  box-sizing: border-box;
+  padding: 24px;
+  border: 1px solid #d5e3e8;
+  border-radius: 12px;
+  color: #193b4c;
+  background: #fff;
+}
+.project-dialog::backdrop { background: rgb(15 35 45 / 45%); }
+.project-dialog h2 { margin: 0 0 12px; font-size: 20px; }
+.project-dialog p { font-size: 13px; line-height: 1.6; }
+.project-dialog label { display: block; margin: 16px 0 8px; font-size: 13px; }
+.project-dialog input { box-sizing: border-box; width: 100%; padding: 10px; border: 1px solid #b9ced8; border-radius: 6px; }
+.project-dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.project-dialog-actions button { padding: 9px 12px; border: 1px solid #b9ced8; border-radius: 6px; background: #fff; color: #193b4c; cursor: pointer; }
+.project-dialog-actions .button-primary { background: #0a7184; border-color: #0a7184; color: #fff; }
 .topbar-actions {
   display: flex;
   gap: 8px;
