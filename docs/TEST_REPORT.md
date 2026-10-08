@@ -8,6 +8,7 @@
 - `npm run lint`：PASS。`npm test`：73/73 PASS，比基线增加 11 项。`npm run build`：PASS。`npm audit --audit-level=moderate`：PASS，0 个已知漏洞。
 - 本机 Chrome 对生产预览运行 `validation/browser_flow.py`：PASS；新建项目、站点与控制点、撤销/重做、导入导出、展示模式、移动端和页面异常检查通过，JavaScript 异常为 0。
 - `validation/city_network_flow.py`：PASS；58 城逐一核对、武汉 13 条现状线、六个重点城市的锁定/显隐/规划操作、方案切换及保存，JavaScript 异常为 0。
+- GitHub Actions CI：PASS；[运行 #37734744790](https://github.com/kaijiHou/metro/actions/runs/37734744790) 对实现提交 `f204791` 完成安装、Lint、73 项测试与生产构建。
 - 已知限制：第三方线网快照获取于 2026-10-07，不保证此后新增或调整的线路；现有方案与新版内置快照线路 ID 不同时会提示核对，目前不自动合并；按站点坐标连线而非实际轨道走向；浏览器方案容量受 localStorage 限制；MapLibre 构建包仍超过 500 kB 提示。
 
 ## 展示模式线路名称
