@@ -4,13 +4,13 @@
 
 `App` 组合顶部项目操作、左侧模式、线路、站点与控制点面板和右侧 `MapCanvas`。Zustand 的 `metroStore` 保存唯一 `MetroProject` 与临时编辑状态。`createMetroStore()` 可创建隔离测试实例；生产 Store 订阅项目变化后自动保存。
 
-`scripts/update-transit.py` 从高德地铁图当前接口生成 `public/transit/catalog.json` 与每城快照。`CityNetworkPanel` 按需加载并严格校验项目；首次使用时自动打开武汉，旧项目（含损坏数据）不自动替换。城市切换先将旧项目归档到 `metro-planner.city.<cityId>` 或 `.custom`，再加载目标城市的修改副本或原始快照，并清空撤销历史；保存失败时留在原项目。原有 `CitySearch` 仍可调用 OpenStreetMap Nominatim 搜索世界其他城市。`App` 把目标范围传给 `MapCanvas`，后者用 `fitBounds()` 定位内置线网；MapLibre 的 `moveend` 保存独立视角，刷新后恢复。地图视角不写入项目 JSON。
+`CitySearch` 的常用城市入口与 OpenStreetMap Nominatim 搜索只负责定位地图，不读取真实线网文件。`App` 把目标坐标传给 `MapCanvas`，后者用 `flyTo()` 定位；MapLibre 的 `moveend` 保存独立视角，刷新后恢复。地图视角不写入项目 JSON。此前验证过的真实线网加载架构已暂时关闭，公开仓库不含第三方城市快照；恢复条件见 `docs/TRANSIT_DATA.md`。
 
 schema v2 把 `stations`、`waypoints`、`lines` 分别按 ID 存放。`MetroLine.nodes` 是 `{ type: 'station' | 'waypoint', id }[]` 有序引用。Waypoint 没有名称，只控制几何；同一 Station 在多条线路中出现才是换乘。面板保持互斥的 `selectedStationId` / `selectedWaypointId`。`pendingInsertIndex` 只用于下一次地图点击，不持久化。
 
-内置城市使用可选 `cityId`；环线使用可选 `closed: true`，绘制时追加首站坐标，插入控制点时也检查闭合线段。第三方站点由 GCJ-02 转为 WGS84（台湾源坐标保持原值），站序与换乘 ID 留在可编辑项目里；UI 注明快照来源、获取日期和直线连接的几何限制。
+为兼容已有项目，格式仍接受可选 `cityId`；环线使用可选 `closed: true`，绘制时追加首站坐标，插入控制点时也检查闭合线段。当前不提供城市线网选择器，也不自动获取或转换第三方站点。
 
-`removeNodeFromLine()` 只移除指定线路中的节点。Station 本体保留；Waypoint 若已无任何线路引用便清理。`deleteStation()` 和 `deleteWaypoint()` 则删除本体并清除所有线路引用。`moveLineNode()` 只改变数组顺序，非法索引不更新项目。
+`removeNodeFromLine()` 只移除指定线路中的节点。Station 本体保留；若本次移除的是 Waypoint，且它不再被任何线路引用，才清理该 Waypoint。删除线路时也只检查被删线路刚移除的 Waypoint 引用，不触碰无关的孤立 Waypoint。`deleteStation()` 和 `deleteWaypoint()` 则删除本体并清除所有线路引用。`moveLineNode()` 只改变数组顺序，非法索引不更新项目。改变 `nodes` 结构或顺序的操作会取消待插入位置，改名、改色和拖动坐标不会取消。
 
 Store 在项目对象变化时记录前一个不可变快照，最多保留 50 步；新的编辑会清除重做历史。名称、颜色或坐标未改变时不更新项目，避免输入框失焦消耗撤销步骤或清除重做。`undo()` / `redo()` 恢复快照并触发原有自动保存，编辑模式和待插入位置同时清空。顶部按钮和页面级 `Ctrl+Z` / `Ctrl+Y` 快捷键调用这两个 action；输入框获得焦点时保留浏览器原生文字撤销。历史只在当前页面会话中保留，不进入项目 JSON。
 

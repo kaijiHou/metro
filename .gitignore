@@ -17,3 +17,4 @@ test-results/
 /validation/*.png
 /validation/exported-project.json
 /validation/transit-source/*.json
+/public/transit/*.json

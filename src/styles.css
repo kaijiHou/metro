@@ -183,19 +183,6 @@ button:disabled {
   line-height: 1.5;
 }
 .city-search-credit a { color: #087b91; }
-.city-data-info {
-  display: grid;
-  gap: 6px;
-  margin-top: 12px;
-  padding: 10px;
-  background: #edf7f9;
-  border-radius: 6px;
-  color: #476575;
-  font-size: 11px;
-  line-height: 1.5;
-}
-.city-data-info a { color: #087b91; }
-.city-data-info button { justify-self: start; }
 .loop-toggle { display: flex; align-items: center; gap: 6px; margin-top: 12px; color: #476575; font-size: 12px; }
 .loop-toggle input { width: auto; }
 .city-shortcuts {

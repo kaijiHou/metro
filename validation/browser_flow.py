@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import expect, sync_playwright
 
 ROOT = Path(__file__).parent
 URL = os.environ.get('METRO_URL', 'http://127.0.0.1:5173/')
@@ -29,9 +29,8 @@ with sync_playwright() as playwright:
     page.get_by_role('button', name='武汉', exact=True).click()
     page.wait_for_function("() => { const raw = localStorage.getItem('metro-planner.map-view'); if (!raw) return false; const view = JSON.parse(raw); return Math.abs(view.center[0] - 114.3) < 0.1 }")
 
-    # Continue the original blank-project editor regression in the separate custom workspace.
-    page.locator('#transit-city').select_option('')
-    page.wait_for_function("() => !JSON.parse(localStorage.getItem('metro-planner.project') || '{}').cityId")
+    assert page.get_by_text('真实线路数据源暂未内置，可继续进行自主规划。').is_visible()
+    assert page.locator('#transit-city').count() == 0
 
     page.get_by_role('button', name='添加站点', exact=True).click()
     assert '请先选择或创建线路' in page.get_by_role('alert').inner_text()
@@ -207,8 +206,8 @@ with sync_playwright() as playwright:
     page.get_by_role('button', name='新建项目').click()
     assert page.locator('.line-item').count() == 0
     page.locator('input[type=file]').set_input_files(str(export_path))
-    assert page.locator('.line-item').count() == 1
-    assert page.locator('.map-station').count() == 3
+    expect(page.locator('.line-item')).to_have_count(1)
+    expect(page.locator('.map-station')).to_have_count(3)
     page.reload(wait_until='domcontentloaded')
     assert page.locator('.line-item').count() == 1
     assert page.locator('.map-station').count() == 3
@@ -228,8 +227,8 @@ with sync_playwright() as playwright:
     assert station_id not in deleted_project['stations']
     assert all(not any(node == {'type': 'station', 'id': station_id} for node in line['nodes']) for line in deleted_project['lines'].values())
     page.locator('input[type=file]').set_input_files(str(ROOT / 'fixtures' / 'project-v1.json'))
-    assert page.locator('.line-item').count() == 2
-    assert page.locator('.map-station--transfer').count() == 1
+    expect(page.locator('.line-item')).to_have_count(2)
+    expect(page.locator('.map-station--transfer')).to_have_count(1)
     with page.expect_download() as download_info:
         page.get_by_role('button', name='导出 JSON').click()
     download_info.value.save_as(export_path)

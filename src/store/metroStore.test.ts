@@ -244,4 +244,73 @@ describe('metro store core actions', () => {
     store.getState().redo()
     assert.equal(store.getState().project.waypoints.w1.lng, 115)
   })
+
+  it('cancels a pending insert after every node topology change', () => {
+    const actions: [string, (store: ReturnType<typeof testStore>) => void][] = [
+      ['move node', (store) => store.getState().moveLineNode('l1', 0, 1)],
+      ['remove node', (store) => store.getState().removeNodeFromLine('l1', 0)],
+      ['add existing station', (store) => store.getState().addStationToLine('s2', 'l2')],
+      ['delete station', (store) => store.getState().deleteStation('s1')],
+      ['delete waypoint', (store) => store.getState().deleteWaypoint('w1')],
+      ['delete line', (store) => store.getState().deleteLine('l2')],
+      ['create station', (store) => store.getState().createStation(114.5, 30.7)],
+    ]
+    for (const [name, action] of actions) {
+      const store = testStore(sharedProject())
+      store.getState().startWaypointInsert(1)
+      action(store)
+      assert.equal(store.getState().pendingInsertIndex, null, name)
+      assert.equal(store.getState().editorMode, 'browse', name)
+      store.getState().undo()
+      assert.equal(store.getState().pendingInsertIndex, null, `${name} undo`)
+      assert.equal(store.getState().editorMode, 'browse', `${name} undo`)
+    }
+  })
+
+  it('keeps a pending insert when edits do not change node topology', () => {
+    const store = testStore(sharedProject())
+    store.getState().startWaypointInsert(1)
+    store.getState().updateLine('l1', { name: '新名称' })
+    store.getState().updateLine('l1', { color: '#123456' })
+    store.getState().updateStation('s1', { name: '新站名', lng: 114.31 })
+    store.getState().updateWaypoint('w1', { lng: 114.36 })
+    assert.equal(store.getState().pendingInsertIndex, 1)
+    assert.equal(store.getState().editorMode, 'add-waypoint')
+  })
+
+  it('keeps an unrelated orphan waypoint when deleting a line', () => {
+    const project = sharedProject()
+    project.waypoints['w-orphan'] = { id: 'w-orphan', lng: 114.2, lat: 30.4 }
+    const store = testStore(project)
+    store.getState().deleteLine('l1')
+    assert.ok(store.getState().project.waypoints['w-orphan'])
+    assert.equal(store.getState().project.waypoints.w1, undefined)
+    store.getState().undo()
+    assert.ok(store.getState().project.lines.l1)
+    assert.ok(store.getState().project.waypoints.w1)
+    store.getState().redo()
+    assert.equal(store.getState().project.waypoints.w1, undefined)
+    assert.ok(store.getState().project.waypoints['w-orphan'])
+  })
+
+  it('keeps a waypoint still referenced by another line when deleting a line', () => {
+    const project = sharedProject()
+    project.lines.l2.nodes.push({ type: 'waypoint', id: 'w1' })
+    const store = testStore(project)
+    store.getState().deleteLine('l1')
+    assert.ok(store.getState().project.waypoints.w1)
+    assert.deepEqual(store.getState().project.lines.l2.nodes.at(-1), { type: 'waypoint', id: 'w1' })
+  })
+
+  it('keeps unrelated orphans when removing a waypoint node', () => {
+    const project = sharedProject()
+    project.waypoints['w-orphan'] = { id: 'w-orphan', lng: 114.2, lat: 30.4 }
+    const store = testStore(project)
+    store.getState().removeNodeFromLine('l1', 1)
+    assert.ok(store.getState().project.waypoints['w-orphan'])
+    assert.equal(store.getState().project.waypoints.w1, undefined)
+    store.getState().undo()
+    assert.ok(store.getState().project.waypoints.w1)
+    assert.ok(store.getState().project.waypoints['w-orphan'])
+  })
 })

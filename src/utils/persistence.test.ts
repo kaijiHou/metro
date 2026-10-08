@@ -133,6 +133,16 @@ describe('local project persistence', () => {
     assert.equal(storage.getItem(LEGACY_STORAGE_KEY), null)
   })
 
+  it('still reads a previously saved city project from the stable key', () => {
+    const storage = new MemoryStorage()
+    const project = { ...emptyProject('旧城市编辑'), cityId: 'wuhan' }
+    storage.values.set(STORAGE_KEY, JSON.stringify(project))
+    const restored = readStoredProject(storage)
+    assert.equal(restored.warning, null)
+    assert.equal(restored.project.cityId, 'wuhan')
+    assert.equal(restored.project.name, '旧城市编辑')
+  })
+
   it('imports v1 JSON and returns v2 for export', () => {
     const project = parseProjectJson(JSON.stringify(oldProject()))
     assert.equal(project.version, 2)
