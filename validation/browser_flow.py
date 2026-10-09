@@ -208,11 +208,10 @@ with sync_playwright() as playwright:
     assert after_drag['stations'][station_id]['lng'] != before_drag['stations'][station_id]['lng']
 
     page.get_by_role('button', name='＋ 新建线路').click()
-    page.locator('#existing-station').select_option(station_id)
-    page.get_by_role('button', name='加入', exact=True).click()
+    page.get_by_role('button', name='使用已有站点', exact=True).click()
+    page.locator(f'.station-result[data-station-id="{station_id}"]').click()
     assert page.locator('.map-station--transfer').count() == 1
-    page.locator('#existing-station').select_option(ids[2])
-    page.get_by_role('button', name='加入', exact=True).click()
+    page.locator(f'.station-result[data-station-id="{ids[2]}"]').click()
     assert page.locator('.map-station--transfer').count() == 2
     assert page.locator('.line-item').count() == 2
     marker = page.locator('.map-station').nth(0)

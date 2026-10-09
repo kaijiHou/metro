@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { LinePlanningPanel } from './LinePlanningPanel'
+import { StationAddPanel } from './StationAddPanel'
 import { lineLocked, nodeLocked, lineStatus, statusNames } from '../utils/planning'
 import { useMetroStore } from '../store/metroStore'
 
@@ -10,8 +11,6 @@ export function LinePanel() {
   const selectedWaypointId = useMetroStore((state) => state.selectedWaypointId)
   const pendingInsertIndex = useMetroStore((state) => state.pendingInsertIndex)
   const editorMode = useMetroStore((state) => state.editorMode)
-  const extensionEnd = useMetroStore((state) => state.extensionEnd)
-  const extendLine = useMetroStore((state) => state.extendLine)
   const createLine = useMetroStore((state) => state.createLine)
   const selectLine = useMetroStore((state) => state.selectLine)
   const selectStation = useMetroStore((state) => state.selectStation)
@@ -19,24 +18,17 @@ export function LinePanel() {
   const updateStation = useMetroStore((state) => state.updateStation)
   const updateLine = useMetroStore((state) => state.updateLine)
   const deleteLine = useMetroStore((state) => state.deleteLine)
-  const addStationToLine = useMetroStore((state) => state.addStationToLine)
   const removeNodeFromLine = useMetroStore((state) => state.removeNodeFromLine)
   const moveLineNode = useMetroStore((state) => state.moveLineNode)
   const startWaypointInsert = useMetroStore((state) => state.startWaypointInsert)
-  const setEditorMode = useMetroStore((state) => state.setEditorMode)
   const lines = Object.values(project.lines)
   const line = selectedLineId ? project.lines[selectedLineId] : undefined
   const locked = line ? lineLocked(line) : false
   const [lineName, setLineName] = useState(line?.name ?? '')
   const selectedStation = selectedStationId ? project.stations[selectedStationId] : undefined
   const [stationName, setStationName] = useState(selectedStation?.name ?? '')
-  const [existingId, setExistingId] = useState('')
-  const [stationSearch, setStationSearch] = useState('')
-  const [joinPosition, setJoinPosition] = useState<'start' | 'end'>('end')
   useEffect(() => setLineName(line?.name ?? ''), [line?.name, selectedLineId])
-  useEffect(() => { setExistingId(''); setStationSearch(''); setJoinPosition('end') }, [selectedLineId, project.cityId])
   useLayoutEffect(() => setStationName(selectedStation?.name ?? ''), [selectedStation?.name, selectedStationId])
-  const memberIds = new Set(line?.nodes.filter((node) => node.type === 'station').map((node) => node.id))
   const stationLines = useMemo(() => {
     const memberships = new Map<string, Set<string>>()
     for (const item of Object.values(project.lines)) {
@@ -48,9 +40,6 @@ export function LinePanel() {
     }
     return new Map([...memberships].map(([id, names]) => [id, [...names].sort((a, b) => a.localeCompare(b, 'zh-CN', { numeric: true })).join(' · ')]))
   }, [project.lines])
-  const query = stationSearch.trim().toLocaleLowerCase()
-  const available = Object.values(project.stations).filter((station) => !memberIds.has(station.id) &&
-    `${station.name} ${stationLines.get(station.id) ?? ''}`.toLocaleLowerCase().includes(query))
   let waypointOrdinal = 0
 
   return <section className="panel-section" aria-labelledby="lines-title">
@@ -92,18 +81,7 @@ export function LinePanel() {
           {(index < line.nodes.length - 1 || line.closed) && <button type="button" disabled={locked} className={`insert-waypoint${editorMode === 'add-waypoint' && pendingInsertIndex === index + 1 ? ' insert-waypoint--active' : ''}`} onClick={() => startWaypointInsert(index + 1)}>＋ 插入控制点{index === line.nodes.length - 1 ? '（连接首站）' : ''}</button>}
         </li>
       })}</ol> : <p className="quiet">地图上添加站点或控制点，按节点顺序连接。</p>}
-      <div className="station-bulk-actions">
-        <button type="button" disabled={locked} aria-pressed={editorMode === 'add-station' && extensionEnd === 'start'} onClick={() => extendLine(line.id, 'start')}>＋ 在最前面新增站点</button>
-        <button type="button" disabled={locked} aria-pressed={editorMode === 'add-station' && extensionEnd !== 'start'} onClick={() => setEditorMode('add-station')}>＋ 继续新增站点</button>
-        {editorMode === 'add-station' && <button type="button" onClick={() => setEditorMode('browse')}>完成添加</button>}
-      </div>
-      <p className="quiet">{locked ? '请先解锁线路，再新增站点。' : editorMode === 'add-station' ? extensionEnd === 'start' ? '点击地图新增首站；连续点击时，每个新站都插到最前面。' : '点击地图连续新增站点，自动接在当前线路末尾。' : '选择从最前面或末尾新增，再点击地图放置。'}</p>
-      <label className="field-label" htmlFor="existing-station">加入已有站点</label>
-      <input type="search" aria-label="搜索已有站点" placeholder="搜索站名或线路编号，例如 光谷 / 2" value={stationSearch} onChange={(event) => { setStationSearch(event.target.value); setExistingId('') }} />
-      <p className="quiet">找到 {available.length} 个可加入站点，站名后显示所属线路；当前线路已有站点不重复列出。</p>
-      <div className="add-existing"><select id="existing-station" value={existingId} onChange={(event) => setExistingId(event.target.value)} disabled={locked || !available.length}><option value="">{available.length ? '选择站点' : query ? '没有匹配的可加入站点' : '没有可加入的站点'}</option>{available.map((station) => <option value={station.id} key={station.id}>{station.name} — {stationLines.get(station.id) || '未加入线路'}</option>)}</select><button type="button" disabled={locked || !available.some((station) => station.id === existingId)} onClick={() => { addStationToLine(existingId, line.id, joinPosition === 'start' ? 0 : undefined); setExistingId('') }}>加入</button></div>
-      <label className="field-label" htmlFor="existing-station-position">加入位置</label>
-      <select id="existing-station-position" value={joinPosition} disabled={locked} onChange={(event) => setJoinPosition(event.target.value as 'start' | 'end')}><option value="end">线路末尾</option><option value="start">线路最前面（首站）</option></select>
+      <StationAddPanel key={line.id} line={line} stationLines={stationLines} />
       <button type="button" disabled={locked} className="danger-link" onClick={() => { if (window.confirm(`删除 ${line.name}？站点本身会保留。`)) deleteLine(line.id) }}>删除这条线路</button>
     </div>}
   </section>

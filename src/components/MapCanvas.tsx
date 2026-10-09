@@ -56,7 +56,15 @@ function syncStationMarkers(map: MapLibreMap, markers: Map<string, MarkerRecord>
       element.type = 'button'
       element.addEventListener('click', (event) => {
         event.stopPropagation()
-        useMetroStore.getState().selectStation(stationId)
+        const state = useMetroStore.getState()
+        if (state.editorMode === 'add-station' && state.selectedLineId) {
+          const line = state.project.lines[state.selectedLineId]
+          if (line?.nodes.some((node) => node.type === 'station' && node.id === stationId)) {
+            state.setNotice(`${state.project.stations[stationId]?.name ?? '这个站'} 已在当前线路中。`, 'info')
+          } else {
+            state.addStationToLine(stationId, state.selectedLineId, state.extensionEnd === 'start' ? 0 : undefined)
+          }
+        } else state.selectStation(stationId)
       })
       const marker = new maplibregl.Marker({ element, draggable: true, anchor: 'center' })
         .setLngLat([station.lng, station.lat])
@@ -78,9 +86,9 @@ function syncStationMarkers(map: MapLibreMap, markers: Map<string, MarkerRecord>
     const selected = feature.properties.selected || (editorMode === 'select-stations' && selectedStationIds.includes(stationId))
     record.element.className = markerClass(feature.properties.transfer, selected)
     record.element.setAttribute('aria-pressed', String(selected))
-    record.marker.setDraggable(editorMode !== 'select-stations' && !protectedIds.has(stationId))
-    record.element.title = `${station.name}${feature.properties.transfer ? ' · 换乘站' : ''}`
-    record.element.setAttribute('aria-label', `选择站点 ${station.name}`)
+    record.marker.setDraggable(editorMode !== 'select-stations' && editorMode !== 'add-station' && !protectedIds.has(stationId))
+    record.element.title = `${station.name}${feature.properties.transfer ? ' · 换乘站' : ''}${editorMode === 'add-station' ? ' · 点击接入当前线路' : ''}`
+    record.element.setAttribute('aria-label', `${editorMode === 'add-station' ? '加入站点' : '选择站点'} ${station.name}`)
   }
 
   for (const [stationId, record] of markers) {

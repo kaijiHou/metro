@@ -21,6 +21,6 @@ export function ModePanel() {
       <button type="button" className={editorMode === 'add-station' ? 'active' : ''} aria-pressed={editorMode === 'add-station'} onClick={startAdding}>添加站点</button>
       <button type="button" className={editorMode === 'add-waypoint' ? 'active' : ''} aria-pressed={editorMode === 'add-waypoint'} onClick={startWaypoint}>添加控制点</button>
     </div>
-    <p>{editorMode === 'select-stations' ? '点击地图站点或勾选站点列表，再批量删除' : editorMode === 'add-station' ? '点击地图连续添加站点' : editorMode === 'add-waypoint' ? pendingInsertIndex === null ? '点击线路插入控制点，可连续添加；拖动菱形点调整走向' : '点击地图放置控制点；取消请点“浏览 / 选择”' : '点击节点选择并编辑'}</p>
+    <p>{editorMode === 'select-stations' ? '点击地图站点或勾选站点列表，再批量删除' : editorMode === 'add-station' ? '点空白处新建站点，点已有站直接接入当前线路' : editorMode === 'add-waypoint' ? pendingInsertIndex === null ? '点击线路插入控制点，可连续添加；拖动菱形点调整走向' : '点击地图放置控制点；取消请点“浏览 / 选择”' : '点击节点选择并编辑'}</p>
   </section>
 }

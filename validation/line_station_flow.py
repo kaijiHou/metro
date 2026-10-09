@@ -1,6 +1,7 @@
 """Verify station search, line memberships and inserting at the line head."""
 import json
 import os
+from pathlib import Path
 from playwright.sync_api import expect, sync_playwright
 
 project = {
@@ -24,19 +25,22 @@ with sync_playwright() as p:
     page.on('pageerror', lambda error: errors.append(str(error)))
     page.add_init_script(f"localStorage.setItem('metro-planner.project', {json.dumps(json.dumps(project, ensure_ascii=False))})")
     page.goto(os.environ.get('METRO_URL', 'http://127.0.0.1:4173/'), wait_until='domcontentloaded')
-    expect(page.get_by_role('button', name='＋ 在最前面新增站点', exact=True)).to_be_disabled()
+    expect(page.get_by_role('button', name='去地图放新站', exact=True)).to_be_disabled()
     page.locator('.line-item').filter(has_text='9号线').click()
-    search = page.get_by_role('searchbox', name='搜索已有站点')
+    page.get_by_role('button', name='使用已有站点', exact=True).click()
+    search = page.get_by_role('searchbox', name='搜索站名或线路编号')
     search.fill('光谷')
-    expect(page.locator('#existing-station option')).to_have_count(2)
-    expect(page.locator('#existing-station option').last).to_have_text('光谷广场 — 2 · 11')
+    expect(page.locator('.station-result')).to_have_count(1)
+    expect(page.locator('.station-result-lines')).to_have_text('2 · 11')
     search.fill('不存在的站')
-    expect(page.locator('#existing-station')).to_be_disabled()
-    expect(page.get_by_role('button', name='加入', exact=True)).to_be_disabled()
+    expect(page.locator('.station-result')).to_have_count(0)
+    expect(page.get_by_text('没找到这个站，试试名称中的几个字。', exact=True)).to_be_visible()
     search.fill('11')
-    expect(page.locator('#existing-station option')).to_have_count(2)
+    expect(page.locator('.station-result')).to_have_count(1)
 
-    page.get_by_role('button', name='＋ 在最前面新增站点', exact=True).click()
+    page.get_by_role('button', name='新建站点', exact=True).click()
+    page.get_by_role('button', name='线路开头', exact=True).click()
+    page.get_by_role('button', name='去地图放新站', exact=True).click()
     for count in (2, 3):
         point = page.evaluate("""() => {
             const c = document.querySelector('.maplibregl-canvas'), r = c.getBoundingClientRect();
@@ -53,10 +57,22 @@ with sync_playwright() as p:
     assert saved['stations'][ids[1]]['name'] == '站点 3'
     assert ids[2] == 'b'
 
+    page.get_by_role('button', name='去地图放新站', exact=True).click()
+    page.get_by_role('button', name='加入站点 光谷广场', exact=True).click()
+    expect(page.locator('.node-order li')).to_have_count(4)
+    saved = json.loads(page.evaluate("localStorage.getItem('metro-planner.project')"))
+    assert saved['lines']['nine']['nodes'][0]['id'] == 'a'
+    assert len(saved['stations']) == 4
+    expect(page.locator('.line-item--active')).to_contain_text('9号线')
+    page.get_by_role('button', name='加入站点 光谷广场', exact=True).click()
+    expect(page.locator('.node-order li')).to_have_count(4)
+    page.get_by_role('button', name='撤销', exact=True).click()
+    expect(page.locator('.node-order li')).to_have_count(3)
+
+    page.get_by_role('button', name='使用已有站点', exact=True).click()
     search.fill('光谷')
-    page.locator('#existing-station').select_option('a')
-    page.locator('#existing-station-position').select_option('start')
-    page.get_by_role('button', name='加入', exact=True).click()
+    expect(page.get_by_role('button', name='线路开头', exact=True)).to_have_attribute('aria-pressed', 'true')
+    page.locator('.station-result[data-station-id="a"]').click()
     expect(page.locator('.node-order li')).to_have_count(4)
     expect(page.locator('.node-order li').first.locator('.station-line-names')).to_have_text('2 · 9 · 11')
     saved = json.loads(page.evaluate("localStorage.getItem('metro-planner.project')"))
@@ -65,9 +81,27 @@ with sync_playwright() as p:
         assert all(saved['lines'][line_id][key] == value for key, value in project['lines'][line_id].items())
     page.get_by_role('button', name='撤销', exact=True).click()
     expect(page.locator('.node-order li')).to_have_count(3)
-    expect(page.locator('#existing-station option').last).to_have_text('光谷广场 — 2 · 11')
+    expect(page.locator('.station-result-lines')).to_have_text('2 · 11')
+    expect(page.locator('.station-result[data-station-id="a"]')).to_be_enabled()
+    page.locator('.station-result[data-station-id="a"]').click()
+    expect(page.locator('.station-result[data-station-id="a"]')).to_be_disabled()
+    expect(page.locator('.station-result-lines')).to_have_text('2 · 9 · 11')
     page.set_viewport_size({'width': 390, 'height': 780})
     assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
+    page.get_by_role('button', name='撤销', exact=True).click()
+    page.locator('.station-add-panel').screenshot(path=str(Path(__file__).parent / 'station-add-simple.png'))
+    page.set_viewport_size({'width': 1440, 'height': 900})
+    page.get_by_role('button', name='新建站点', exact=True).click()
+    page.get_by_role('button', name='线路末尾', exact=True).click()
+    page.get_by_role('button', name='去地图放新站', exact=True).click()
+    page.get_by_role('button', name='加入站点 光谷广场', exact=True).click()
+    expect(page.locator('.node-order li')).to_have_count(4)
+    saved = json.loads(page.evaluate("localStorage.getItem('metro-planner.project')"))
+    assert saved['lines']['nine']['nodes'][-1]['id'] == 'a'
+    assert len(saved['stations']) == 4
+    expect(page.locator('.line-item--active')).to_contain_text('9号线')
+    page.get_by_role('button', name='使用已有站点', exact=True).click()
+    expect(page.get_by_role('button', name='添加站点', exact=True)).to_have_attribute('aria-pressed', 'false')
     assert not errors, errors
     browser.close()
-    print('PASS: search by name/line, membership labels, continuous head insertion, existing station at head, undo, locks, mobile, zero page errors')
+    print('PASS: simple station panel, search, memberships, head/tail map connections, no duplicates or line switches, undo, locks, mobile, zero page errors')
