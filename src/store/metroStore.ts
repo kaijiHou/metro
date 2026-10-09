@@ -3,7 +3,7 @@ import { emptyProject, type EditorMode, type MetroLine, type MetroProject, type 
 import { readStoredProject, saveProject, type ProjectStorage } from '../utils/persistence'
 import { readCityProject, saveCityProject } from '../utils/cityProjects'
 import { activeScenario, defaultScenarioSet, readScenarioSet, saveScenarioSet, withActiveProject, type ScenarioSet } from '../utils/scenarios'
-import { lineLocked, lineStatus, nodeLocked, lockedNodeIds, rootLine } from '../utils/planning'
+import { lineLocked, lineStatus, nodeLocked, lockedNodeIds, rootLine, extensionNodes } from '../utils/planning'
 import { validCoordinates } from '../utils/validation'
 
 export type Notice = { text: string; kind: 'info' | 'error' } | null
@@ -34,6 +34,7 @@ export type MetroState = {
   clearNotice: () => void
   saveCurrentProject: () => void
   attachBranch: (lineId: string, parentId: string) => void
+  mergeLineExtension: (lineId: string, parentId: string) => void
   renameProject: (name: string) => void
   createLine: () => void
   updateLine: (id: string, patch: Pick<MetroLine, 'name'> | Pick<MetroLine, 'color'> | Pick<MetroLine, 'closed'> | Pick<MetroLine, 'status'> | Pick<MetroLine, 'visible'> | Pick<MetroLine, 'locked'>) => void
@@ -161,7 +162,18 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
       const parent = state.project.lines[parentId]
       if (!line || !parent || lineLocked(line) || parent.parentLineId || lineId === parentId || Object.values(state.project.lines).some((item) => item.parentLineId === lineId)) return state
       if (!line.nodes.some((node) => node.type === 'station' && parent.nodes.some((other) => other.type === 'station' && other.id === node.id))) return { notice: { text: '支线需要与所属线路共用至少一个站点。', kind: 'error' } }
-      return { project: { ...state.project, lines: { ...state.project.lines, [lineId]: { ...line, parentLineId: parentId, color: parent.color } } }, notice: { text: `${line.name} 已归入 ${parent.name}。`, kind: 'info' } }
+      const name = line.name.startsWith(parent.name) ? line.name : `${parent.name}支线（${line.name.replace(/支线$/, '')}）`
+      return { project: { ...state.project, lines: { ...state.project.lines, [lineId]: { ...line, name, parentLineId: parentId, color: parent.color } } }, notice: { text: `${line.name} 已归入 ${parent.name}。`, kind: 'info' } }
+    }),
+    mergeLineExtension: (lineId, parentId) => set((state) => {
+      const part = state.project.lines[lineId], parent = state.project.lines[parentId]
+      if (!part || !parent || part.id === parent.id || parent.parentLineId || lineLocked(part) || lineLocked(parent) || Object.values(state.project.lines).some((line) => line.parentLineId === part.id)) return state
+      const nodes = extensionNodes(parent, part)
+      if (!nodes) return { notice: { text: '需要在主线首站或末站衔接，且不能重复经过已有节点；中途分叉请保留为支线。', kind: 'error' } }
+      const lines = { ...state.project.lines, [parentId]: { ...parent, nodes } }
+      delete lines[lineId]
+      return { project: { ...state.project, lines }, selectedLineId: parentId, selectedStationId: null, selectedWaypointId: null, selectedStationIds: [], editorMode: 'browse', extensionEnd: null, pendingInsertIndex: null,
+        notice: { text: `已并入 ${parent.name}，现在是同一条线路的连续延伸。`, kind: 'info' } }
     }),
     renameProject: (name) => {
       const trimmed = name.trim()
@@ -385,7 +397,7 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
       const parent = current && current.nodes.some((node) => node.type === 'station' && node.id === stationId) ? rootLine(get().project, current) : undefined
       if (!parent) { set({ notice: { text: '请先选择所属线路上的站点，再新建支线。', kind: 'error' } }); return }
       const id = idFactory()
-      const baseName = `${station.name}支线`
+      const baseName = `${parent.name}支线（${station.name}起）`
       const used = new Set(Object.values(get().project.lines).map((line) => line.name))
       let name = baseName
       let suffix = 2

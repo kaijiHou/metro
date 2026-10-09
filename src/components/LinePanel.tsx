@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { LinePlanningPanel } from './LinePlanningPanel'
 import { StationAddPanel } from './StationAddPanel'
-import { lineLocked, nodeLocked, lineStatus, statusNames, rootLine } from '../utils/planning'
+import { lineLocked, nodeLocked, lineStatus, statusNames, rootLine, extensionNodes } from '../utils/planning'
 import { useMetroStore } from '../store/metroStore'
 
 export function LinePanel() {
@@ -22,6 +22,7 @@ export function LinePanel() {
   const moveLineNode = useMetroStore((state) => state.moveLineNode)
   const startWaypointInsert = useMetroStore((state) => state.startWaypointInsert)
   const attachBranch = useMetroStore((state) => state.attachBranch)
+  const mergeLineExtension = useMetroStore((state) => state.mergeLineExtension)
   const lines = Object.values(project.lines)
   const line = selectedLineId ? project.lines[selectedLineId] : undefined
   const locked = line ? lineLocked(line) : false
@@ -30,16 +31,21 @@ export function LinePanel() {
   const [stationName, setStationName] = useState(selectedStation?.name ?? '')
   useEffect(() => setLineName(line?.name ?? ''), [line?.name, selectedLineId])
   useLayoutEffect(() => setStationName(selectedStation?.name ?? ''), [selectedStation?.name, selectedStationId])
-  const stationLines = useMemo(() => {
+  const { stationLines, groupCounts } = useMemo(() => {
     const memberships = new Map<string, Set<string>>()
+    const groupCounts = new Map<string, { stations: Set<string>; nodes: Set<string> }>()
     for (const item of Object.values(project.lines)) {
+      const root = rootLine(project, item)
+      if (!groupCounts.has(root.id)) groupCounts.set(root.id, { stations: new Set(), nodes: new Set() })
       for (const node of item.nodes) {
+        groupCounts.get(root.id)!.nodes.add(`${node.type}:${node.id}`)
         if (node.type !== 'station') continue
+        groupCounts.get(root.id)!.stations.add(node.id)
         if (!memberships.has(node.id)) memberships.set(node.id, new Set())
         memberships.get(node.id)!.add(rootLine(project, item).name.replace(/^(\d+)号线$/, '$1'))
       }
     }
-    return new Map([...memberships].map(([id, names]) => [id, [...names].sort((a, b) => a.localeCompare(b, 'zh-CN', { numeric: true })).join(' · ')]))
+    return { groupCounts, stationLines: new Map([...memberships].map(([id, names]) => [id, [...names].sort((a, b) => a.localeCompare(b, 'zh-CN', { numeric: true })).join(' · ')])) }
   }, [project])
   let waypointOrdinal = 0
 
@@ -47,11 +53,12 @@ export function LinePanel() {
     <div className="section-header"><h2 id="lines-title">线路管理</h2><button type="button" className="text-action" onClick={createLine}>＋ 新建线路</button></div>
     {lines.length === 0 ? <div className="empty-state">还没有线路。先新建一条线路，再点击地图添加站点。</div> :
       <div className="line-list">{lines.filter((item) => !item.parentLineId).map((item) => <div key={item.id}><button type="button" className={`line-item${item.id === selectedLineId ? ' line-item--active' : ''}`} onClick={() => selectLine(item.id)} aria-pressed={item.id === selectedLineId}>
-        <span className="line-swatch" style={{ backgroundColor: item.color }} /><span className="line-item-name">{item.name}</span><span className="line-count">{statusNames[lineStatus(item)]} · {item.visible === false ? '隐藏 · ' : ''}{item.nodes.filter((node) => node.type === 'station').length} 站 · {item.nodes.length} 节点</span>
-      </button>{lines.filter((branch) => branch.parentLineId === item.id).map((branch) => <button type="button" key={branch.id} className={`line-branch-item${branch.id === selectedLineId ? ' line-branch-item--active' : ''}`} onClick={() => selectLine(branch.id)} aria-pressed={branch.id === selectedLineId}>↳ {branch.name} <span>属于{item.name} · {branch.nodes.filter((node) => node.type === 'station').length}站</span></button>)}</div>)}</div>}
+        <span className="line-swatch" style={{ backgroundColor: item.color }} /><span className="line-item-name">{item.name}</span><span className="line-count">{statusNames[lineStatus(item)]} · {item.visible === false ? '隐藏 · ' : ''}{groupCounts.get(item.id)?.stations.size ?? 0} 站 · {groupCounts.get(item.id)?.nodes.size ?? 0} 节点</span>
+      </button>{lines.filter((branch) => branch.parentLineId === item.id).map((branch) => <button type="button" key={branch.id} className={`line-branch-item${branch.id === selectedLineId ? ' line-branch-item--active' : ''}`} onClick={() => selectLine(branch.id)} aria-pressed={branch.id === selectedLineId}>↳ {branch.name.startsWith(item.name) ? branch.name : `${item.name}支线（${branch.name.replace(/支线$/, '')}）`} <span>属于{item.name} · 本段{branch.nodes.filter((node) => node.type === 'station').length}站</span></button>)}</div>)}</div>}
     <LinePlanningPanel />
     {line && <div className="line-editor">
       <div className="subheading">编辑当前线路</div>
+      {!lines.some((item) => item.parentLineId === line.id) && lines.filter((item) => item.id !== line.id && !item.parentLineId && extensionNodes(item, line)).map((item) => <button key={item.id} type="button" className="station-add-primary" disabled={locked || lineLocked(item)} onClick={() => mergeLineExtension(line.id, item.id)}>并入{item.name}，作为连续延伸</button>)}
       {line.parentLineId && <p className="quiet">{rootLine(project, line).name}的支线 · {line.name}</p>}
       {!lines.some((item) => item.parentLineId === line.id) && <><label className="field-label" htmlFor="branch-parent">支线归属</label><select id="branch-parent" disabled={locked} value={line.parentLineId ?? ''} onChange={(event) => { if (event.target.value) attachBranch(line.id, event.target.value) }}><option value="">独立线路（可选择归入已有线路）</option>{lines.filter((item) => !item.parentLineId && item.id !== line.id && item.nodes.some((node) => node.type === 'station' && line.nodes.some((other) => other.type === 'station' && other.id === node.id))).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></>}
       <label className="field-label" htmlFor="line-name">线路名称</label>

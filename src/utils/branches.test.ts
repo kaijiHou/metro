@@ -5,6 +5,7 @@ import { createMetroStore } from '../store/metroStore'
 import { validateProject } from './validation'
 import { lineFeatureCollection, stationLineCounts } from './geojson'
 import { cityStatistics, lineStatistics } from './statistics'
+import { extensionNodes } from './planning'
 
 it('keeps a branch inside its parent across save, rendering, statistics, deletion and undo', () => {
   let counter = 0
@@ -63,4 +64,37 @@ it('attaches an earlier independent branch and reports explicit save failure', (
   store.getState().saveCurrentProject()
   assert.equal(store.getState().notice?.kind, 'error')
   assert.equal(store.getState().project, before)
+})
+
+it('merges nineteen main stations and five extension stations into twenty-three stations with undo', () => {
+  const project = emptyProject()
+  for (let i = 1; i <= 23; i++) project.stations[`s${i}`] = { id: `s${i}`, name: `站${i}`, lng: 114 + i / 100, lat: 30.5 }
+  const nodes = (start: number, end: number) => Array.from({ length: end - start + 1 }, (_, i) => ({ type: 'station' as const, id: `s${start + i}` }))
+  project.lines.nine = { id: 'nine', name: '9号线', color: '#123456', nodes: nodes(1, 19) }
+  project.lines.part = { id: 'part', name: '欢乐谷支线', color: '#654321', nodes: nodes(19, 23) }
+  const store = createMetroStore({ initialProject: project, persist: () => {} })
+  store.getState().mergeLineExtension('part', 'nine')
+  assert.deepEqual(store.getState().project.lines.nine.nodes, nodes(1, 23))
+  assert.equal(Object.keys(store.getState().project.lines).length, 1)
+  assert.equal(store.getState().project.lines.nine.name, '9号线')
+  assert.deepEqual(store.getState().project.stations, project.stations)
+  store.getState().undo()
+  assert.equal(store.getState().project.lines.nine.nodes.length, 19)
+  assert.equal(store.getState().project.lines.part.nodes.length, 5)
+  store.getState().updateLine('nine', { locked: true })
+  const locked = store.getState().project
+  store.getState().mergeLineExtension('part', 'nine')
+  assert.equal(store.getState().project, locked)
+})
+
+it('joins either end in either order, rejecting loops, mid-line forks and duplicate nodes', () => {
+  const part = (ids: string[]) => ({ id: 'line', name: '线', color: '#123456', nodes: ids.map((id) => ({ type: 'station' as const, id })) })
+  const p = part(['a', 'b'])
+  assert.deepEqual(extensionNodes(p, part(['b', 'c']))?.map((node) => node.id), ['a', 'b', 'c'])
+  assert.deepEqual(extensionNodes(p, part(['c', 'b']))?.map((node) => node.id), ['a', 'b', 'c'])
+  assert.deepEqual(extensionNodes(p, part(['c', 'a']))?.map((node) => node.id), ['c', 'a', 'b'])
+  assert.deepEqual(extensionNodes(p, part(['a', 'c']))?.map((node) => node.id), ['c', 'a', 'b'])
+  assert.equal(extensionNodes(part(['a', 'b', 'c']), part(['b', 'd'])), null)
+  assert.equal(extensionNodes(p, part(['b', 'a'])), null)
+  assert.equal(extensionNodes({ ...p, closed: true }, part(['b', 'c'])), null)
 })
