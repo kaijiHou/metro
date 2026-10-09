@@ -174,6 +174,13 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right')
 
     const onLoad = () => {
+      const transit = map.getStyle().layers.find((layer) => layer.id === 'poi_transit')
+      if (transit?.type === 'symbol') {
+        map.setFilter('poi_transit', ['match', ['get', 'class'], ['airport', 'bus'], true, false])
+        map.addLayer({ ...transit, id: 'metro-basemap-station-labels', filter: ['==', ['get', 'class'], 'rail'],
+          layout: { ...transit.layout, 'text-font': ['Noto Sans Bold'], 'text-size': ['interpolate', ['linear'], ['zoom'], 11, 15, 15, 18, 18, 20] },
+          paint: { ...transit.paint, 'text-color': '#193b4c', 'text-halo-color': '#ffffff', 'text-halo-width': 2.5 } })
+      }
       map.addSource('metro-station-labels', { type: 'geojson', data: stationLabelCollection(useMetroStore.getState().project, useMetroStore.getState().stationLabelMode, useMetroStore.getState().selectedLineId) })
       map.addSource('metro-lines', { type: 'geojson', data: lineFeatureCollection(useMetroStore.getState().project, presentationRef.current ? null : useMetroStore.getState().selectedLineId) })
       map.addLayer({
@@ -207,8 +214,8 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
         paint: { 'text-color': '#193b4c', 'text-halo-color': '#ffffff', 'text-halo-width': 2 },
       })
       map.addLayer({ id: 'metro-station-labels', type: 'symbol', source: 'metro-station-labels', minzoom: 11.5,
-        layout: { visibility: presentationRef.current ? 'none' : 'visible', 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Regular'], 'text-size': 12, 'text-anchor': 'left', 'text-offset': [1, 0] },
-        paint: { 'text-color': '#193b4c', 'text-halo-color': '#ffffff', 'text-halo-width': 2 },
+        layout: { visibility: presentationRef.current ? 'none' : 'visible', 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Bold'], 'text-size': ['interpolate', ['linear'], ['zoom'], 11, 15, 15, 18, 18, 20], 'text-anchor': 'left', 'text-offset': [1, 0] },
+        paint: { 'text-color': '#193b4c', 'text-halo-color': '#ffffff', 'text-halo-width': 2.5 },
       })
     }
     const onMapClick = (event: maplibregl.MapMouseEvent) => {
