@@ -102,6 +102,32 @@ with sync_playwright() as p:
     expect(page.locator('.line-item--active')).to_contain_text('9号线')
     page.get_by_role('button', name='使用已有站点', exact=True).click()
     expect(page.get_by_role('button', name='添加站点', exact=True)).to_have_attribute('aria-pressed', 'false')
+    page.get_by_role('button', name='展示模式', exact=True).click()
+    expect(page.locator('.map-area')).to_have_class('map-area map-area--presentation')
+    page.get_by_role('button', name='从这里新建支线', exact=True).click()
+    expect(page.locator('.map-area')).to_have_class('map-area map-area--adding')
+    expect(page.get_by_role('button', name='完成添加', exact=True)).to_be_visible()
+    assert page.locator('.maplibregl-canvas').evaluate('element => getComputedStyle(element).cursor') == 'crosshair'
+    point = page.evaluate("""() => {
+        const c = document.querySelector('.maplibregl-canvas'), r = c.getBoundingClientRect();
+        for (let y = r.top + 120; y < r.bottom - 100; y += 80)
+            for (let x = r.left + 100; x < r.right - 100; x += 80)
+                if (document.elementFromPoint(x, y) === c) return {x, y};
+    }""")
+    page.mouse.click(point['x'], point['y'])
+    expect(page.locator('.node-order li')).to_have_count(2)
+    page.get_by_role('button', name='加入站点 财经政法大学', exact=True).click()
+    expect(page.locator('.node-order li')).to_have_count(3)
+    expect(page.locator('.line-item')).to_have_count(3)
+    expect(page.locator('.line-branch-item')).to_have_count(1)
+    expect(page.locator('.line-branch-item')).to_contain_text('属于9号线')
+    page.locator('#line-name').fill('欢乐谷支线')
+    page.keyboard.press('Control+s')
+    expect(page.get_by_text('当前方案已保存到本机浏览器。', exact=True)).to_be_visible()
+    saved = json.loads(page.evaluate("localStorage.getItem('metro-planner.project')"))
+    branch = next(line for line in saved['lines'].values() if line.get('parentLineId') == 'nine')
+    assert branch['name'] == '欢乐谷支线'
+    assert len(branch['nodes']) == 3
     assert not errors, errors
     browser.close()
     print('PASS: simple station panel, search, memberships, head/tail map connections, no duplicates or line switches, undo, locks, mobile, zero page errors')

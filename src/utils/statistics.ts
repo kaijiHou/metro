@@ -16,7 +16,7 @@ function linePoints(project: MetroProject, line: MetroLine) {
   })
 }
 
-export function lineStatistics(project: MetroProject, line: MetroLine) {
+function partStatistics(project: MetroProject, line: MetroLine) {
   const points = linePoints(project, line)
   const cumulative = [0]
   for (let i = 1; i < points.length; i++) {
@@ -36,6 +36,26 @@ export function lineStatistics(project: MetroProject, line: MetroLine) {
     averageSpacingKm: spacing.length ? spacing.reduce((sum, value) => sum + value, 0) / spacing.length : 0,
     minSpacingKm: spacing.length ? Math.min(...spacing) : 0,
     maxSpacingKm: spacing.length ? Math.max(...spacing) : 0,
+  }
+}
+
+export function lineStatistics(project: MetroProject, line: MetroLine) {
+  const members = [line, ...Object.values(project.lines).filter((item) => item.parentLineId === line.id)]
+  const parts = members.map((item) => partStatistics(project, item))
+  if (parts.length === 1) return parts[0]
+  const gaps = parts.map((part, i) => Math.max(0, part.stationCount - 1) + (members[i].closed && part.stationCount > 1 ? 1 : 0))
+  const spacingParts = parts.filter((_, i) => gaps[i] > 0)
+  const totalGaps = gaps.reduce((sum, count) => sum + count, 0)
+  const nodes = new Set(members.flatMap((item) => item.nodes.map((node) => `${node.type}:${node.id}`)))
+  const segments = new Map(members.flatMap((item) => lineSegments(project, item).map((segment) => [segment.key, segment.length] as const)))
+  return {
+    stationCount: new Set(members.flatMap((item) => item.nodes.filter((node) => node.type === 'station').map((node) => node.id))).size,
+    nodeCount: nodes.size,
+    waypointCount: new Set(members.flatMap((item) => item.nodes.filter((node) => node.type === 'waypoint').map((node) => node.id))).size,
+    totalLengthKm: [...segments.values()].reduce((sum, value) => sum + value, 0),
+    averageSpacingKm: totalGaps ? parts.reduce((sum, part, i) => sum + part.averageSpacingKm * gaps[i], 0) / totalGaps : 0,
+    minSpacingKm: spacingParts.length ? Math.min(...spacingParts.map((part) => part.minSpacingKm)) : 0,
+    maxSpacingKm: spacingParts.length ? Math.max(...spacingParts.map((part) => part.maxSpacingKm)) : 0,
   }
 }
 
@@ -61,8 +81,8 @@ export function cityStatistics(project: MetroProject) {
     if (!existingSegments.has(segment.key)) addedSegments.set(segment.key, segment.length)
   }
   return {
-    existingLines: existing.length, constructionLines: lines.filter((line) => lineStatus(line) === 'construction').length,
-    plannedLines: planned.length, existingStations: existingStations.size,
+    existingLines: existing.filter((line) => !line.parentLineId).length, constructionLines: lines.filter((line) => !line.parentLineId && lineStatus(line) === 'construction').length,
+    plannedLines: planned.filter((line) => !line.parentLineId).length, existingStations: existingStations.size,
     plannedNewStations: [...stations(planned)].filter((id) => !existingStations.has(id)).length,
     plannedNewLengthKm: [...addedSegments.values()].reduce((sum, length) => sum + length, 0),
   }

@@ -1,6 +1,7 @@
 import type { Feature, FeatureCollection, LineString, Point } from 'geojson'
 import type { LineNode, MetroProject } from '../models/metro'
 import { validCoordinates } from './validation'
+import { rootLine } from './planning'
 
 type LineProperties = { id: string; name: string; color: string; status: string; selected: boolean }
 type StationProperties = { id: string; name: string; transfer: boolean; selected: boolean }
@@ -46,7 +47,8 @@ export function nearestLineInsertIndex(
 export function lineFeatureCollection(project: MetroProject, selectedLineId: string | null): FeatureCollection<LineString, LineProperties> {
   const features: Feature<LineString, LineProperties>[] = []
   for (const line of Object.values(project.lines)) {
-    if (line.visible === false) continue
+    const parent = rootLine(project, line)
+    if (line.visible === false || parent.visible === false) continue
     const coordinates: [number, number][] = []
     for (const node of line.nodes) {
       const coordinate = resolveLineNodeCoordinate(project, node)
@@ -57,7 +59,7 @@ export function lineFeatureCollection(project: MetroProject, selectedLineId: str
     features.push({
       type: 'Feature',
       geometry: { type: 'LineString', coordinates },
-      properties: { id: line.id, name: line.name, color: line.color, status: line.status ?? 'planned', selected: line.id === selectedLineId },
+      properties: { id: line.id, name: parent.name, color: parent.color, status: line.status ?? 'planned', selected: !!(selectedLineId && project.lines[selectedLineId] && rootLine(project, project.lines[selectedLineId]).id === parent.id) },
     })
   }
   return { type: 'FeatureCollection', features }
@@ -65,9 +67,11 @@ export function lineFeatureCollection(project: MetroProject, selectedLineId: str
 
 export function stationLineCounts(project: MetroProject): Record<string, number> {
   const counts: Record<string, number> = Object.create(null)
+  const seen = new Set<string>()
   for (const line of Object.values(project.lines)) {
     for (const id of new Set(line.nodes.filter((node) => node.type === 'station').map((node) => node.id))) {
-      counts[id] = (counts[id] ?? 0) + 1
+      const key = `${rootLine(project, line).id}:${id}`
+      if (!seen.has(key)) { seen.add(key); counts[id] = (counts[id] ?? 0) + 1 }
     }
   }
   return counts
@@ -92,7 +96,8 @@ export function stationFeatureCollection(project: MetroProject, selectedStationI
 
 export function stationLabelCollection(project: MetroProject, mode: 'all' | 'interchanges' | 'current' | 'none', selectedLineId: string | null) {
   const collection = stationFeatureCollection(project, null)
-  const currentIds = new Set(selectedLineId ? project.lines[selectedLineId]?.nodes.filter((node) => node.type === 'station').map((node) => node.id) : [])
+  const selected = selectedLineId ? project.lines[selectedLineId] : undefined
+  const currentIds = new Set(selected ? Object.values(project.lines).filter((line) => rootLine(project, line).id === rootLine(project, selected).id).flatMap((line) => line.nodes.filter((node) => node.type === 'station').map((node) => node.id)) : [])
   collection.features = collection.features.filter((feature) => mode === 'all' ||
     (mode === 'interchanges' && feature.properties.transfer) || (mode === 'current' && currentIds.has(feature.properties.id)))
   return collection

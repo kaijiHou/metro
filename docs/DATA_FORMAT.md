@@ -39,6 +39,7 @@
 | `visible` | 可选布尔值；省略时显示，隐藏不删除数据 |
 | `locked` | 可选布尔值；内置及旧城市现状线默认锁定 |
 | `sourceLineId` | 可选非空字符串；规划副本指向原线路 ID |
+| `parentLineId` | 可选；支线所属主线路 ID，必须引用现有主线路，不允许循环或多层嵌套。几何节点单独存储，产品上属于同一线路 |
 | `closed` | 每条线路可选布尔值；为 `true` 时最后一个节点与第一个节点相连，供环线使用 |
 | `nodes` | 有序的 LineNode 数组；同一线路内不可重复相同 `type + id` |
 | Station node | `{ "type": "station", "id": "s1" }`，ID 必须存在于 `stations` |

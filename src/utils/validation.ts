@@ -46,6 +46,7 @@ export function validateProject(value: unknown): MetroProject {
     if (raw.visible !== undefined && typeof raw.visible !== 'boolean') throw new Error(`线路 ${id} 的显示状态无效。`)
     if (raw.locked !== undefined && typeof raw.locked !== 'boolean') throw new Error(`线路 ${id} 的锁定状态无效。`)
     if (raw.sourceLineId !== undefined && (typeof raw.sourceLineId !== 'string' || !raw.sourceLineId)) throw new Error(`线路 ${id} 的来源标识无效。`)
+    if (raw.parentLineId !== undefined && (typeof raw.parentLineId !== 'string' || !raw.parentLineId)) throw new Error(`线路 ${id} 的支线归属无效。`)
     const nodes: LineNode[] = []
     if (raw.closed !== undefined && typeof raw.closed !== 'boolean') throw new Error(`线路 ${id} 的环线标记无效。`)
     const seen = new Set<string>()
@@ -64,7 +65,11 @@ export function validateProject(value: unknown): MetroProject {
     lines[id] = { id, name: raw.name.trim(), color: raw.color, nodes, ...(raw.closed !== undefined ? { closed: raw.closed } : {}),
       status: (raw.status ?? (legacyExisting ? 'existing' : 'planned')) as MetroLine['status'],
       visible: raw.visible ?? true, locked: raw.locked ?? (raw.status === 'existing' || legacyExisting),
-      ...(raw.sourceLineId !== undefined ? { sourceLineId: raw.sourceLineId as string } : {}) }
+      ...(raw.sourceLineId !== undefined ? { sourceLineId: raw.sourceLineId as string } : {}),
+      ...(raw.parentLineId !== undefined ? { parentLineId: raw.parentLineId as string } : {}) }
+  }
+  for (const line of Object.values(lines)) {
+    if (line.parentLineId && (!lines[line.parentLineId] || lines[line.parentLineId].parentLineId || line.parentLineId === line.id)) throw new Error(`支线 ${line.name} 的所属线路不存在或无效。`)
   }
   return { version: 2, name: value.name.trim(), stations, waypoints, lines, ...(typeof value.cityId === 'string' ? { cityId: value.cityId } : {}) }
 }

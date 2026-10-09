@@ -20,7 +20,7 @@ export function LineStatsPanel() {
     </div>
     <p className="quiet">新增里程按规划几何计算，排除与现状完全重合的线段；隐藏线路仍计入统计。</p>
     {line && stats && <>
-      <div className="subheading">{line.name}</div>
+      <div className="subheading">{line.name}{Object.values(project.lines).some((item) => item.parentLineId === line.id) ? '（含所属支线）' : ''}</div>
       <div className="planning-stats" aria-label="当前线路统计">
         <span>站点 / 节点 / 控制点</span><strong>{stats.stationCount} / {stats.nodeCount} / {stats.waypointCount}</strong>
         <span>线路总长度</span><strong>{stats.totalLengthKm.toFixed(2)} km</strong>

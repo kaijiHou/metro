@@ -3,7 +3,7 @@ import { emptyProject, type EditorMode, type MetroLine, type MetroProject, type 
 import { readStoredProject, saveProject, type ProjectStorage } from '../utils/persistence'
 import { readCityProject, saveCityProject } from '../utils/cityProjects'
 import { activeScenario, defaultScenarioSet, readScenarioSet, saveScenarioSet, withActiveProject, type ScenarioSet } from '../utils/scenarios'
-import { lineLocked, lineStatus, nodeLocked, lockedNodeIds } from '../utils/planning'
+import { lineLocked, lineStatus, nodeLocked, lockedNodeIds, rootLine } from '../utils/planning'
 import { validCoordinates } from '../utils/validation'
 
 export type Notice = { text: string; kind: 'info' | 'error' } | null
@@ -32,6 +32,8 @@ export type MetroState = {
   notice: Notice
   setNotice: (text: string, kind?: 'info' | 'error') => void
   clearNotice: () => void
+  saveCurrentProject: () => void
+  attachBranch: (lineId: string, parentId: string) => void
   renameProject: (name: string) => void
   createLine: () => void
   updateLine: (id: string, patch: Pick<MetroLine, 'name'> | Pick<MetroLine, 'color'> | Pick<MetroLine, 'closed'> | Pick<MetroLine, 'status'> | Pick<MetroLine, 'visible'> | Pick<MetroLine, 'locked'>) => void
@@ -142,6 +144,25 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
 
     setNotice: (text, kind = 'info') => set({ notice: { text, kind } }),
     clearNotice: () => set({ notice: null }),
+    saveCurrentProject: () => {
+      try {
+        if (scenarioStorageBroken) throw new Error('方案数据损坏')
+        const project = get().project
+        const next = withActiveProject(scenarios, project)
+        saveScenarioSet(next, project.cityId ?? null, cityStorage)
+        saveCityProject(project, cityStorage)
+        persist(project)
+        scenarios = next
+        set({ notice: { text: '当前方案已保存到本机浏览器。', kind: 'info' } })
+      } catch { set({ notice: { text: '保存失败，请导出 JSON 备份。', kind: 'error' } }) }
+    },
+    attachBranch: (lineId, parentId) => set((state) => {
+      const line = state.project.lines[lineId]
+      const parent = state.project.lines[parentId]
+      if (!line || !parent || lineLocked(line) || parent.parentLineId || lineId === parentId || Object.values(state.project.lines).some((item) => item.parentLineId === lineId)) return state
+      if (!line.nodes.some((node) => node.type === 'station' && parent.nodes.some((other) => other.type === 'station' && other.id === node.id))) return { notice: { text: '支线需要与所属线路共用至少一个站点。', kind: 'error' } }
+      return { project: { ...state.project, lines: { ...state.project.lines, [lineId]: { ...line, parentLineId: parentId, color: parent.color } } }, notice: { text: `${line.name} 已归入 ${parent.name}。`, kind: 'info' } }
+    }),
     renameProject: (name) => {
       const trimmed = name.trim()
       if (trimmed) set((state) => trimmed === state.project.name ? state : { project: { ...state.project, name: trimmed } })
@@ -174,12 +195,14 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
       const removedLine = state.project.lines[id]
       if (!removedLine || lineLocked(removedLine)) return state
       const lines = { ...state.project.lines }
-      delete lines[id]
-      const removedWaypointIds = removedLine.nodes.filter((node) => node.type === 'waypoint').map((node) => node.id)
+      const removedLines = Object.values(lines).filter((line) => line.id === id || line.parentLineId === id)
+      if (removedLines.some(lineLocked)) return { notice: { text: '所属支线已锁定，请先解锁。', kind: 'info' } }
+      for (const line of removedLines) delete lines[line.id]
+      const removedWaypointIds = removedLines.flatMap((line) => line.nodes.filter((node) => node.type === 'waypoint').map((node) => node.id))
       const project = removeNewlyOrphanedWaypoints({ ...state.project, lines }, removedWaypointIds)
       return {
         project,
-        selectedLineId: state.selectedLineId === id ? (Object.keys(lines)[0] ?? null) : state.selectedLineId,
+        selectedLineId: state.selectedLineId && lines[state.selectedLineId] ? state.selectedLineId : (removedLine.parentLineId ?? Object.keys(lines)[0] ?? null),
         selectedStationIds: [],
         selectedWaypointId: state.selectedWaypointId && !project.waypoints[state.selectedWaypointId] ? null : state.selectedWaypointId,
         editorMode: 'browse', extensionEnd: null, pendingInsertIndex: null,
@@ -312,7 +335,7 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
     }),
     setAllLinesVisible: (visible, onlyId) => set((state) => {
       const lines = Object.fromEntries(Object.entries(state.project.lines).map(([id, line]) =>
-        [id, { ...line, visible: onlyId ? id === onlyId : visible }]))
+        [id, { ...line, visible: onlyId ? rootLine(state.project, line).id === rootLine(state.project, state.project.lines[onlyId] ?? line).id : visible }]))
       if (Object.keys(lines).every((id) => lines[id].visible === (state.project.lines[id].visible ?? true))) return state
       return { project: { ...state.project, lines } }
     }),
@@ -328,14 +351,19 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
       // Shared stations keep their original position. Copy waypoints so shape edits stay independent.
       const waypoints = { ...get().project.waypoints }
       const copiedWaypointIds = new Map<string, string>()
-      const nodes = source.nodes.map((node) => {
+      const copyNodes = (part: MetroLine) => part.nodes.map((node) => {
         if (node.type === 'station') return { ...node }
         let copied = copiedWaypointIds.get(node.id)
         if (!copied) { copied = idFactory(); copiedWaypointIds.set(node.id, copied); waypoints[copied] = { ...waypoints[node.id], id: copied } }
         return { type: 'waypoint' as const, id: copied }
       })
+      const nodes = copyNodes(source)
+      const branches = Object.fromEntries(Object.values(get().project.lines).filter((part) => part.parentLineId === sourceId).map((part) => {
+        const branchId = idFactory()
+        return [branchId, { ...part, id: branchId, parentLineId: id, nodes: copyNodes(part), status: 'planned' as const, locked: false, visible: true, sourceLineId: part.id }]
+      }))
       set((state) => ({ project: { ...state.project, waypoints, lines: { ...state.project.lines,
-        [id]: { ...source, id, name, nodes, status: 'planned', locked: false, visible: true, sourceLineId: sourceId } } },
+        ...branches, [id]: { ...source, parentLineId: undefined, id, name, nodes, status: 'planned', locked: false, visible: true, sourceLineId: sourceId } } },
         selectedLineId: id, selectedStationId: null, selectedStationIds: [], selectedWaypointId: null,
         editorMode: 'browse', extensionEnd: null, pendingInsertIndex: null,
         notice: { text: '已复制为规划线路。共享现状站点保持原位置，改变站位请移除引用并新建站点。', kind: 'info' } }))
@@ -353,6 +381,9 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
     createBranch: (stationId) => {
       const station = get().project.stations[stationId]
       if (!station) return
+      const current = get().selectedLineId ? get().project.lines[get().selectedLineId!] : undefined
+      const parent = current && current.nodes.some((node) => node.type === 'station' && node.id === stationId) ? rootLine(get().project, current) : undefined
+      if (!parent) { set({ notice: { text: '请先选择所属线路上的站点，再新建支线。', kind: 'error' } }); return }
       const id = idFactory()
       const baseName = `${station.name}支线`
       const used = new Set(Object.values(get().project.lines).map((line) => line.name))
@@ -360,11 +391,11 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
       let suffix = 2
       while (used.has(name)) name = `${baseName}${suffix++}`
       set((state) => ({ project: { ...state.project, lines: { ...state.project.lines,
-        [id]: { id, name, color: colors[Object.keys(state.project.lines).length % colors.length],
+        [id]: { id, name, color: parent.color, parentLineId: parent.id,
           nodes: [{ type: 'station', id: stationId }], status: 'planned', locked: false, visible: true } } },
         selectedLineId: id, selectedStationId: stationId, selectedWaypointId: null, selectedStationIds: [],
         editorMode: 'add-station', extensionEnd: 'end', pendingInsertIndex: null,
-        notice: { text: '已新建规划支线，点击地图继续添加站点。', kind: 'info' } }))
+        notice: { text: `已在 ${parent.name} 下新建支线，点击地图继续添加站点。`, kind: 'info' } }))
     },
     selectLine: (id) => set((state) => ({
       selectedLineId: id && state.project.lines[id] ? id : null,
@@ -509,6 +540,9 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
     },
     resetProject: (name, keepCity = false) => set((state) => {
       const baseLines = Object.fromEntries(Object.entries(state.project.lines).filter(([, line]) => lineStatus(line) === 'existing'))
+      for (const line of Object.values(baseLines)) {
+        if (line.parentLineId) baseLines[line.parentLineId] = state.project.lines[line.parentLineId]
+      }
       const stationIds = new Set(Object.values(baseLines).flatMap((line) => line.nodes.filter((node) => node.type === 'station').map((node) => node.id)))
       const waypointIds = new Set(Object.values(baseLines).flatMap((line) => line.nodes.filter((node) => node.type === 'waypoint').map((node) => node.id)))
       const project = keepCity && state.project.cityId ? {

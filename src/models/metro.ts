@@ -20,6 +20,7 @@ export type MetroLine = {
   visible?: boolean
   locked?: boolean
   sourceLineId?: string
+  parentLineId?: string
 }
 
 export type MetroProject = {

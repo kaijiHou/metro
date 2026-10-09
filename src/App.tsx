@@ -20,6 +20,12 @@ export default function App() {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((!event.ctrlKey && !event.metaKey) || event.altKey) return
       const target = event.target
+      if (event.key.toLowerCase() === 's' && !event.shiftKey) {
+        event.preventDefault()
+        if (target instanceof HTMLElement) target.blur()
+        useMetroStore.getState().saveCurrentProject()
+        return
+      }
       if (target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return
       const state = useMetroStore.getState()
       const key = event.key.toLowerCase()

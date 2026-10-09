@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { LinePlanningPanel } from './LinePlanningPanel'
 import { StationAddPanel } from './StationAddPanel'
-import { lineLocked, nodeLocked, lineStatus, statusNames } from '../utils/planning'
+import { lineLocked, nodeLocked, lineStatus, statusNames, rootLine } from '../utils/planning'
 import { useMetroStore } from '../store/metroStore'
 
 export function LinePanel() {
@@ -21,6 +21,7 @@ export function LinePanel() {
   const removeNodeFromLine = useMetroStore((state) => state.removeNodeFromLine)
   const moveLineNode = useMetroStore((state) => state.moveLineNode)
   const startWaypointInsert = useMetroStore((state) => state.startWaypointInsert)
+  const attachBranch = useMetroStore((state) => state.attachBranch)
   const lines = Object.values(project.lines)
   const line = selectedLineId ? project.lines[selectedLineId] : undefined
   const locked = line ? lineLocked(line) : false
@@ -35,26 +36,28 @@ export function LinePanel() {
       for (const node of item.nodes) {
         if (node.type !== 'station') continue
         if (!memberships.has(node.id)) memberships.set(node.id, new Set())
-        memberships.get(node.id)!.add(item.name.replace(/^(\d+)号线$/, '$1'))
+        memberships.get(node.id)!.add(rootLine(project, item).name.replace(/^(\d+)号线$/, '$1'))
       }
     }
     return new Map([...memberships].map(([id, names]) => [id, [...names].sort((a, b) => a.localeCompare(b, 'zh-CN', { numeric: true })).join(' · ')]))
-  }, [project.lines])
+  }, [project])
   let waypointOrdinal = 0
 
   return <section className="panel-section" aria-labelledby="lines-title">
     <div className="section-header"><h2 id="lines-title">线路管理</h2><button type="button" className="text-action" onClick={createLine}>＋ 新建线路</button></div>
     {lines.length === 0 ? <div className="empty-state">还没有线路。先新建一条线路，再点击地图添加站点。</div> :
-      <div className="line-list">{lines.map((item) => <button type="button" key={item.id} className={`line-item${item.id === selectedLineId ? ' line-item--active' : ''}`} onClick={() => selectLine(item.id)} aria-pressed={item.id === selectedLineId}>
+      <div className="line-list">{lines.filter((item) => !item.parentLineId).map((item) => <div key={item.id}><button type="button" className={`line-item${item.id === selectedLineId ? ' line-item--active' : ''}`} onClick={() => selectLine(item.id)} aria-pressed={item.id === selectedLineId}>
         <span className="line-swatch" style={{ backgroundColor: item.color }} /><span className="line-item-name">{item.name}</span><span className="line-count">{statusNames[lineStatus(item)]} · {item.visible === false ? '隐藏 · ' : ''}{item.nodes.filter((node) => node.type === 'station').length} 站 · {item.nodes.length} 节点</span>
-      </button>)}</div>}
+      </button>{lines.filter((branch) => branch.parentLineId === item.id).map((branch) => <button type="button" key={branch.id} className={`line-branch-item${branch.id === selectedLineId ? ' line-branch-item--active' : ''}`} onClick={() => selectLine(branch.id)} aria-pressed={branch.id === selectedLineId}>↳ {branch.name} <span>属于{item.name} · {branch.nodes.filter((node) => node.type === 'station').length}站</span></button>)}</div>)}</div>}
     <LinePlanningPanel />
     {line && <div className="line-editor">
       <div className="subheading">编辑当前线路</div>
+      {line.parentLineId && <p className="quiet">{rootLine(project, line).name}的支线 · {line.name}</p>}
+      {!lines.some((item) => item.parentLineId === line.id) && <><label className="field-label" htmlFor="branch-parent">支线归属</label><select id="branch-parent" disabled={locked} value={line.parentLineId ?? ''} onChange={(event) => { if (event.target.value) attachBranch(line.id, event.target.value) }}><option value="">独立线路（可选择归入已有线路）</option>{lines.filter((item) => !item.parentLineId && item.id !== line.id && item.nodes.some((node) => node.type === 'station' && line.nodes.some((other) => other.type === 'station' && other.id === node.id))).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></>}
       <label className="field-label" htmlFor="line-name">线路名称</label>
       <input disabled={locked} id="line-name" value={lineName} onChange={(event) => setLineName(event.target.value)} onBlur={() => { updateLine(line.id, { name: lineName }); setLineName(useMetroStore.getState().project.lines[line.id]?.name ?? '') }} onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur() }} />
       <label className="field-label" htmlFor="line-color">线路颜色</label>
-      <div className="color-row"><input disabled={locked} id="line-color" type="color" value={line.color} onChange={(event) => updateLine(line.id, { color: event.target.value })} /><span>{line.color.toUpperCase()}</span></div>
+      <div className="color-row"><input disabled={locked || !!line.parentLineId} id="line-color" type="color" value={rootLine(project, line).color} onChange={(event) => updateLine(line.id, { color: event.target.value })} /><span>{rootLine(project, line).color.toUpperCase()}{line.parentLineId ? ' · 跟随所属线路' : ''}</span></div>
       <label className="loop-toggle"><input disabled={locked} type="checkbox" checked={line.closed ?? false} onChange={(event) => updateLine(line.id, { closed: event.target.checked })} /> 首尾相连（环线）</label>
       <div className="subheading station-order-heading">节点顺序 <span>{line.nodes.length}</span></div>
       <p className="quiet">点站名可改名；点 ↑ ↓ 调整顺序。</p>
@@ -82,7 +85,7 @@ export function LinePanel() {
         </li>
       })}</ol> : <p className="quiet">地图上添加站点或控制点，按节点顺序连接。</p>}
       <StationAddPanel key={line.id} line={line} stationLines={stationLines} />
-      <button type="button" disabled={locked} className="danger-link" onClick={() => { if (window.confirm(`删除 ${line.name}？站点本身会保留。`)) deleteLine(line.id) }}>删除这条线路</button>
+      <button type="button" disabled={locked} className="danger-link" onClick={() => { if (window.confirm(`删除 ${line.name}${line.parentLineId ? '这段支线' : '及其所属支线'}？站点本身会保留。`)) deleteLine(line.id) }}>{line.parentLineId ? '删除这段支线' : '删除这条线路'}</button>
     </div>}
   </section>
 }

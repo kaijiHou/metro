@@ -465,6 +465,9 @@ select:focus {
 }
 .node-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .station-line-names { margin-left: auto; flex-shrink: 0; max-width: 45%; overflow: hidden; text-overflow: ellipsis; color: #557280; font-size: 11px; }
+.line-branch-item { display: flex; flex-wrap: wrap; gap: 4px 8px; width: calc(100% - 16px); margin: 3px 0 8px 16px; padding: 8px; border: 1px solid #d8e6eb; border-radius: 6px; background: #f7fbfc; text-align: left; color: #385565; font-size: 12px; }
+.line-branch-item span { color: #748b97; font-size: 11px; }
+.line-branch-item--active { border-color: #58a1af; background: #e3f2f5; }
 .station-add-panel { margin-top: 16px; padding: 14px; border: 1px solid #d8e6eb; border-radius: 10px; background: #f7fbfc; }
 .station-add-panel h3 { margin: 0 0 12px; font-size: 14px; color: #193b4c; }
 .station-add-tabs { display: flex; gap: 4px; padding: 3px; background: #e9f0f3; border-radius: 7px; }
@@ -613,8 +616,9 @@ select:focus {
   height: 100%;
 }
 .map-area--adding .maplibregl-canvas {
-  cursor: crosshair;
+  cursor: crosshair !important;
 }
+.map-area--adding .map-station { cursor: crosshair; }
 .map-hint {
   position: absolute;
   top: 18px;

@@ -148,6 +148,13 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
   const selectedStationIds = useMetroStore((state) => state.selectedStationIds)
   const selectedWaypointId = useMetroStore((state) => state.selectedWaypointId)
   const editorMode = useMetroStore((state) => state.editorMode)
+
+  useEffect(() => useMetroStore.subscribe((state, previous) => {
+    if (state.editorMode !== 'browse' && state.editorMode !== previous.editorMode) {
+      presentationRef.current = false
+      setPresentationMode(false)
+    }
+  }), [])
   const stationLabelMode = useMetroStore((state) => state.stationLabelMode)
   const pendingInsertIndex = useMetroStore((state) => state.pendingInsertIndex)
 
@@ -297,14 +304,14 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
         setPresentationMode(next)
       }}>{presentationMode ? '返回编辑' : '展示模式'}</button>
       <details open className="map-line-legend" aria-label="线路名称与颜色"><summary>线路图例</summary><div className="map-line-legend-items">
-        {Object.values(project.lines).filter((line) => line.visible !== false).map((line) => <div key={line.id}>
+        {Object.values(project.lines).filter((line) => !line.parentLineId && line.visible !== false).map((line) => <div key={line.id}>
           <span className="map-line-swatch" style={{ backgroundColor: lineStatus(line) === 'construction' ? 'transparent' : line.color, borderTop: lineStatus(line) === 'construction' ? `3px dashed ${line.color}` : undefined, height: lineStatus(line) === 'planned' ? 6 : 4 }} aria-hidden="true" />
           <span>{line.name} · {statusNames[lineStatus(line)]}</span>
         </div>)}
       </div></details>
       <div className="map-hint" role="status">
         <span className={`mode-dot${editorMode !== 'browse' ? ' mode-dot--active' : ''}`} />
-        {editorMode === 'select-stations' ? `多选站点 · 已选 ${selectedStationIds.length} 个 · 再点取消选择` : editorMode === 'add-station' ? '点击地图添加站点 · 拖动站点调整位置' : editorMode === 'add-waypoint' ? pendingInsertIndex === null ? '点击线路插入控制点 · 拖动控制点调整走向' : '点击地图放置两节点间的控制点' : '浏览模式 · 点击节点编辑，拖动节点调整位置'}
+        {editorMode === 'select-stations' ? `多选站点 · 已选 ${selectedStationIds.length} 个 · 再点取消选择` : editorMode === 'add-station' ? '添加站点 · 点空白处新建，点已有站直接接入' : editorMode === 'add-waypoint' ? pendingInsertIndex === null ? '点击线路插入控制点 · 拖动控制点调整走向' : '点击地图放置两节点间的控制点' : '浏览模式 · 点击节点编辑，拖动节点调整位置'}
       </div>
     </main>
   )
