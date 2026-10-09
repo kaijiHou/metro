@@ -21,6 +21,7 @@ export function LinePanel() {
   const removeNodeFromLine = useMetroStore((state) => state.removeNodeFromLine)
   const moveLineNode = useMetroStore((state) => state.moveLineNode)
   const startWaypointInsert = useMetroStore((state) => state.startWaypointInsert)
+  const setEditorMode = useMetroStore((state) => state.setEditorMode)
   const lines = Object.values(project.lines)
   const line = selectedLineId ? project.lines[selectedLineId] : undefined
   const locked = line ? lineLocked(line) : false
@@ -73,6 +74,11 @@ export function LinePanel() {
           {(index < line.nodes.length - 1 || line.closed) && <button type="button" disabled={locked} className={`insert-waypoint${editorMode === 'add-waypoint' && pendingInsertIndex === index + 1 ? ' insert-waypoint--active' : ''}`} onClick={() => startWaypointInsert(index + 1)}>＋ 插入控制点{index === line.nodes.length - 1 ? '（连接首站）' : ''}</button>}
         </li>
       })}</ol> : <p className="quiet">地图上添加站点或控制点，按节点顺序连接。</p>}
+      <div className="station-bulk-actions">
+        <button type="button" disabled={locked} aria-pressed={editorMode === 'add-station'} onClick={() => setEditorMode('add-station')}>＋ 继续新增站点</button>
+        {editorMode === 'add-station' && <button type="button" onClick={() => setEditorMode('browse')}>完成添加</button>}
+      </div>
+      <p className="quiet">{locked ? '请先解锁线路，再新增站点。' : editorMode === 'add-station' ? '点击地图连续新增站点，自动接在当前线路末尾。' : '新增站点：点击上方按钮，再点击地图放置。'}</p>
       <label className="field-label" htmlFor="existing-station">加入已有站点</label>
       <div className="add-existing"><select id="existing-station" value={existingId} onChange={(event) => setExistingId(event.target.value)} disabled={locked || !available.length}><option value="">{available.length ? '选择站点' : '没有可加入的站点'}</option>{available.map((station) => <option value={station.id} key={station.id}>{station.name}</option>)}</select><button type="button" disabled={locked || !existingId} onClick={() => { addStationToLine(existingId, line.id); setExistingId('') }}>加入</button></div>
       <button type="button" disabled={locked} className="danger-link" onClick={() => { if (window.confirm(`删除 ${line.name}？站点本身会保留。`)) deleteLine(line.id) }}>删除这条线路</button>
