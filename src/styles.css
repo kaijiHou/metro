@@ -451,6 +451,9 @@ select:focus {
   font-size: 11px;
 }
 .node-select {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -460,6 +463,8 @@ select:focus {
   color: #334f5f;
   font-size: 12px;
 }
+.node-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.station-line-names { margin-left: auto; flex-shrink: 0; max-width: 45%; overflow: hidden; text-overflow: ellipsis; color: #557280; font-size: 11px; }
 .node-row button {
   border: 0;
   background: none;
