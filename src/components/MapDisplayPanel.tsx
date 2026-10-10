@@ -11,6 +11,6 @@ export function MapDisplayPanel() {
       <option value="current">只显示当前线路</option>
       <option value="none">全部隐藏</option>
     </select>
-    <p className="quiet">放大地图可查看站名。展示模式会隐藏全部站点与站名。</p>
+    <p className="quiet">默认显示全部站名。密集区域继续放大可看清更多站名；展示模式会隐藏站点与站名。</p>
   </section>
 }

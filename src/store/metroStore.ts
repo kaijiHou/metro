@@ -129,7 +129,7 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
 
   const store = create<MetroState>((set, get) => ({
     project: restored.project,
-    stationLabelMode: 'interchanges',
+    stationLabelMode: 'all',
     setStationLabelMode: (stationLabelMode) => set({ stationLabelMode }),
     scenarios: scenarioSummary(scenarios),
     activeScenarioId: scenarios.activeId,
