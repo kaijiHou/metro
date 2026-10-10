@@ -46,6 +46,7 @@ export type MetroState = {
   createBranch: (stationId: string) => void
   updateStation: (id: string, patch: Partial<Pick<Station, 'name' | 'lng' | 'lat'>>) => void
   mergeStations: (sourceId: string, targetId: string) => void
+  unlockStation: (id: string) => void
   deleteStation: (id: string) => void
   deleteStations: (ids: string[]) => void
   selectStations: (ids: string[]) => void
@@ -257,6 +258,14 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
       if (!updated.name.trim() || !validCoordinates(updated.lng, updated.lat)) return state
       if (updated.name === station.name && updated.lng === station.lng && updated.lat === station.lat) return state
       return { project: { ...state.project, stations: { ...state.project.stations, [id]: updated } } }
+    }),
+    unlockStation: (id) => set((state) => {
+      const station = state.project.stations[id]
+      if (!station) return state
+      const lines = Object.fromEntries(Object.entries(state.project.lines).map(([lineId, line]) =>
+        [lineId, lineLocked(line) && line.nodes.some((node) => node.type === 'station' && node.id === id) ? { ...line, locked: false } : line]))
+      return { project: { ...state.project, lines }, selectedStationId: id, editorMode: 'browse', extensionEnd: null, pendingInsertIndex: null,
+        notice: { text: `${station.name} 已解锁，可以拖动圆圈或站名；拖到另一站上松开即可合并。`, kind: 'info' } }
     }),
     mergeStations: (sourceId, targetId) => set((state) => {
       const source = state.project.stations[sourceId], target = state.project.stations[targetId]

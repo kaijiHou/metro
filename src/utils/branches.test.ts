@@ -47,6 +47,20 @@ it('collapses adjacent merged nodes and rejects a repeated visit without alterin
   assert.deepEqual(store.getState().project, project)
 })
 
+it('unlocks every line protecting the source station in one undoable edit', () => {
+  const project = emptyProject()
+  project.stations.a = { id: 'a', name: '武汉火车站东广场', lng: 114.4, lat: 30.6 }
+  project.stations.b = { id: 'b', name: '武汉火车站', lng: 114.41, lat: 30.6 }
+  for (const id of ['19', '20', '4']) project.lines[id] = { id, name: `${id}号线`, color: '#123456', status: 'existing', locked: true, nodes: [{ type: 'station', id: id === '4' ? 'b' : 'a' }] }
+  const store = createMetroStore({ initialProject: project, persist: () => {} })
+  store.getState().unlockStation('a')
+  assert.equal(store.getState().project.lines['19'].locked, false)
+  assert.equal(store.getState().project.lines['20'].locked, false)
+  assert.equal(store.getState().project.lines['4'].locked, true)
+  store.getState().undo()
+  assert.deepEqual(store.getState().project, project)
+})
+
 it('keeps a branch inside its parent across save, rendering, statistics, deletion and undo', () => {
   let counter = 0
   const project = emptyProject()

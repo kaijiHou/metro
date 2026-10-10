@@ -905,4 +905,7 @@ select:focus {
 .map-line-legend-items > div { display: flex; align-items: center; gap: 7px; }
 /* The highlighted station is the destination kept after a drag merge. */
 .map-station--merge-target { outline: 4px solid #16805e !important; box-shadow: 0 0 0 8px #ffffffcc !important; }
+.map-station--locked, .map-station--locked:active { cursor: not-allowed; }
+.map-unlock-station { position: absolute; bottom: 65px; left: 50%; transform: translateX(-50%); z-index: 5; display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; background: white; box-shadow: 0 2px 12px #0a263b33; max-width: calc(100% - 32px); }
+.map-unlock-station button { white-space: nowrap; background: #0d697c; color: white; border: 0; border-radius: 6px; padding: 8px 12px; cursor: pointer; }
 .map-station--merge-target::after { content: attr(data-merge-name); position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); padding: 6px 10px; border-radius: 6px; background: #16805e; color: white; font-size: 14px; white-space: nowrap; pointer-events: none; }

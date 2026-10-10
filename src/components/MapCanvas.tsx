@@ -88,6 +88,12 @@ function syncStationMarkers(map: MapLibreMap, markers: Map<string, MarkerRecord>
     if (!record) {
       const element = document.createElement('button')
       element.type = 'button'
+      element.addEventListener('mousedown', () => {
+        const state = useMetroStore.getState()
+        if (state.editorMode !== 'browse' || !lockedNodeIds(state.project, 'station').has(stationId)) return
+        state.selectStation(stationId)
+        state.setNotice('这个站点已锁定，点击地图上的“解锁并拖动”后即可移动或合并。')
+      })
       element.addEventListener('click', (event) => {
         event.stopPropagation()
         const state = useMetroStore.getState()
@@ -119,10 +125,10 @@ function syncStationMarkers(map: MapLibreMap, markers: Map<string, MarkerRecord>
       record.marker.setLngLat([station.lng, station.lat])
     }
     const selected = feature.properties.selected || (editorMode === 'select-stations' && selectedStationIds.includes(stationId))
-    record.element.className = markerClass(feature.properties.transfer, selected)
+    record.element.className = `${markerClass(feature.properties.transfer, selected)}${protectedIds.has(stationId) ? ' map-station--locked' : ''}`
     record.element.setAttribute('aria-pressed', String(selected))
     record.marker.setDraggable(editorMode !== 'select-stations' && editorMode !== 'add-station' && !protectedIds.has(stationId))
-    record.element.title = `${station.name}${feature.properties.transfer ? ' · 换乘站' : ''}${editorMode === 'add-station' ? ' · 点击接入当前线路' : ''}`
+    record.element.title = `${station.name}${feature.properties.transfer ? ' · 换乘站' : ''}${protectedIds.has(stationId) ? ' · 已锁定，点击后可解锁拖动' : ' · 可拖动到另一站合并'}${editorMode === 'add-station' ? ' · 点击接入当前线路' : ''}`
     record.element.setAttribute('aria-label', `${editorMode === 'add-station' ? '加入站点' : '选择站点'} ${station.name}`)
   }
 
@@ -295,7 +301,10 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
       const id = map.queryRenderedFeatures(event.point, { layers: ['metro-station-labels'] })[0]?.properties?.id
       if (typeof id !== 'string') return
       if (lockedNodeIds(useMetroStore.getState().project, 'station').has(id)) {
-        useMetroStore.getState().setNotice('这个站点已锁定，请先解锁相关线路再拖动。')
+        event.preventDefault()
+        ignoreLabelClick = true
+        useMetroStore.getState().selectStation(id)
+        useMetroStore.getState().setNotice('这个站点已锁定，点击地图上的“解锁并拖动”后即可移动或合并。')
         return
       }
       event.preventDefault()
@@ -388,6 +397,10 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
   return (
     <main className={`map-area${presentationMode ? ' map-area--presentation' : editorMode !== 'browse' ? ' map-area--adding' : ''}`}>
       <div ref={containerRef} className="map-canvas" aria-label="地铁线路规划地图" />
+      {!presentationMode && editorMode === 'browse' && selectedStationId && lockedNodeIds(project, 'station').has(selectedStationId) && <div className="map-unlock-station" role="status">
+        <span>{project.stations[selectedStationId]?.name} · 已锁定</span>
+        <button type="button" onClick={() => useMetroStore.getState().unlockStation(selectedStationId)}>解锁并拖动</button>
+      </div>}
       <button type="button" className="map-presentation-toggle" aria-pressed={presentationMode} onClick={() => {
         const next = !presentationMode
         presentationRef.current = next

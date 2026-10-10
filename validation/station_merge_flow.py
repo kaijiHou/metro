@@ -10,7 +10,7 @@ project = {
         'next': {'id': 'next', 'name': '下一站', 'lng': 114.44, 'lat': 30.61},
     },
     'lines': {
-        'nineteen': {'id': 'nineteen', 'name': '19号线', 'color': '#123456', 'nodes': [{'type': 'station', 'id': 'east'}, {'type': 'station', 'id': 'next'}]},
+        'nineteen': {'id': 'nineteen', 'name': '19号线', 'color': '#123456', 'status': 'existing', 'locked': True, 'nodes': [{'type': 'station', 'id': 'east'}, {'type': 'station', 'id': 'next'}]},
         'existing': {'id': 'existing', 'name': '4号线', 'color': '#654321', 'status': 'existing', 'locked': True, 'nodes': [{'type': 'station', 'id': 'main'}]},
     },
 }
@@ -23,6 +23,14 @@ with sync_playwright() as p:
     page.goto('http://127.0.0.1:5173/', wait_until='networkidle')
     source = page.locator('.map-station[aria-label="选择站点 武汉火车站东广场"]')
     target = page.locator('.map-station[aria-label="选择站点 武汉火车站"]')
+    expect(source).to_have_css('cursor', 'not-allowed')
+    source.click()
+    expect(page.locator('.map-unlock-station')).to_contain_text('武汉火车站东广场')
+    page.get_by_role('button', name='解锁并拖动', exact=True).click()
+    expect(source).to_have_css('cursor', 'grab')
+    saved = json.loads(page.evaluate("localStorage.getItem('metro-planner.project')"))
+    assert saved['lines']['nineteen']['locked'] is False
+    assert saved['lines']['existing']['locked'] is True
     def position(locator):
         b = locator.bounding_box()
         return b['x'] + b['width']/2, b['y'] + b['height']/2
