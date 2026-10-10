@@ -51,8 +51,10 @@ export function StationPanel() {
         <input disabled={locked} id="station-name" value={name} onChange={(event) => setName(event.target.value)} onBlur={() => { updateStation(station.id, { name }); setName(useMetroStore.getState().project.stations[station.id]?.name ?? '') }} onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur() }} />
         <div className="coordinates"><div><span>经度</span><strong>{station.lng.toFixed(6)}</strong></div><div><span>纬度</span><strong>{station.lat.toFixed(6)}</strong></div></div>
         <p className="quiet">{locked ? '站点属于已锁定线路；修改站位请移除规划线引用，再添加新站点。' : '拖动地图上的站点可调整位置。'}</p>
-        <button type="button" onClick={() => createBranch(station.id)}>从这里新建支线</button>
+        <div className="station-editor-actions">
+        <button type="button" className="button-primary" onClick={() => createBranch(station.id)}>从这里新建支线</button>
         <button type="button" disabled={locked} className="danger-link" onClick={() => { if (window.confirm(`删除 ${station.name}？该站会从所有线路移除。`)) deleteStation(station.id) }}>删除这个站点</button>
+        </div>
       </div> : <div className="empty-state empty-state--compact">点击地图上的站点，或从上方列表选择。</div>}
       </>}
     </section>

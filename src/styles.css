@@ -19,6 +19,21 @@ select {
 button {
   cursor: pointer;
 }
+:where(.sidebar button, .topbar-actions button, .project-dialog button, .map-unlock-station button, .map-presentation-toggle) {
+  appearance: none;
+  border: 1px solid #cbdde3;
+  border-radius: 8px;
+  padding: 9px 12px;
+  background: #f5fafb;
+  color: #245564;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+:where(.sidebar button, .topbar-actions button, .project-dialog button, .map-unlock-station button, .map-presentation-toggle):hover:not(:disabled) {
+  background: #e8f3f5;
+  border-color: #88b6c1;
+}
 button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
@@ -552,15 +567,17 @@ select:focus {
   background: #d2ebef;
 }
 .danger-link {
-  border: 0;
-  background: none;
-  color: #ad4545;
-  padding: 0;
-  margin-top: 20px;
+  border: 1px solid #efd2d2;
+  background: #fff5f4;
+  color: #a43c3c;
+  padding: 9px 12px;
+  border-radius: 8px;
+  margin-top: 16px;
   font-size: 12px;
 }
-.danger-link:hover {
-  text-decoration: underline;
+.danger-link:hover:not(:disabled), .station-bulk-delete:hover:not(:disabled) {
+  background: #fbe6e4;
+  border-color: #d79a96;
 }
 .station-panel select {
   margin-bottom: 4px;
@@ -570,7 +587,7 @@ select:focus {
 .station-checklist label { display: flex; align-items: center; gap: 10px; padding: 9px; font-size: 12px; cursor: pointer; }
 .station-checklist label:hover { background: #edf7f9; }
 .station-checklist input { width: auto; margin: 0; }
-.station-bulk-delete { margin-top: 12px; padding: 9px 12px; border: 1px solid #ad4545; border-radius: 6px; background: #fff; color: #ad4545; cursor: pointer; }
+.station-bulk-delete { margin-top: 12px; padding: 9px 12px; border: 1px solid #efd2d2; border-radius: 8px; background: #fff5f4; color: #a43c3c; cursor: pointer; }
 .station-bulk-delete:disabled { opacity: .4; cursor: default; }
 .transfer-badge {
   display: inline-block;
@@ -898,6 +915,14 @@ select:focus {
 .planning-stats strong { color: #193b4c; }
 .planning-controls { margin: 12px 0; }
 .planning-controls button { font-size: 12px; padding: 6px 8px; }
+.sidebar .button-primary { background: #0a7184; border-color: #0a7184; color: #fff; }
+.sidebar .button-primary:hover:not(:disabled), .station-add-primary:hover:not(:disabled) { background: #075e70; border-color: #075e70; }
+.station-editor-actions { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 16px; }
+.station-editor-actions button { width: 100%; min-height: 38px; border-radius: 8px; }
+.station-editor-actions .danger-link { margin-top: 0; }
+.station-bulk-actions { gap: 8px; }
+.station-bulk-actions button, .planning-controls button, .city-data-info button { border-radius: 8px; padding: 8px 10px; }
+.station-bulk-actions .text-action { background: #f5fafb; border: 1px solid #cbdde3; }
 
 .map-line-legend { display: block; }
 .map-line-legend summary { cursor: pointer; font-weight: 650; }
