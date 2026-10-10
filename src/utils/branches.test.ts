@@ -7,6 +7,46 @@ import { lineFeatureCollection, stationLineCounts } from './geojson'
 import { cityStatistics, lineStatistics } from './statistics'
 import { extensionNodes } from './planning'
 
+it('merges stations into the drop destination, preserving locked destination, references, controls, persistence and undo', () => {
+  const project = emptyProject()
+  project.stations.east = { id: 'east', name: '武汉火车站东广场', lng: 114.42, lat: 30.6 }
+  project.stations.main = { id: 'main', name: '武汉火车站', lng: 114.4, lat: 30.6 }
+  project.stations.next = { id: 'next', name: '下一站', lng: 114.45, lat: 30.6 }
+  project.waypoints.w = { id: 'w', lng: 114.43, lat: 30.61 }
+  project.lines.nineteen = { id: 'nineteen', name: '19号线', color: '#123456', nodes: [{ type: 'station', id: 'east' }, { type: 'waypoint', id: 'w' }, { type: 'station', id: 'next' }] }
+  project.lines.existing = { id: 'existing', name: '4号线', color: '#654321', status: 'existing', locked: true, nodes: [{ type: 'station', id: 'main' }] }
+  let saved = project
+  const store = createMetroStore({ initialProject: project, persist: (value) => { saved = value } })
+  store.getState().mergeStations('east', 'main')
+  assert.equal(store.getState().project.stations.east, undefined)
+  assert.deepEqual(store.getState().project.stations.main, project.stations.main)
+  assert.equal(store.getState().project.lines.nineteen.nodes[0].id, 'main')
+  assert.equal(store.getState().project.lines.existing, project.lines.existing)
+  assert.deepEqual(store.getState().project.waypoints, project.waypoints)
+  assert.equal(stationLineCounts(store.getState().project).main, 2)
+  assert.equal(validateProject(JSON.parse(JSON.stringify(saved))).stations.main.name, '武汉火车站')
+  store.getState().undo()
+  assert.deepEqual(store.getState().project, project)
+  store.getState().redo()
+  const before = store.getState().project
+  store.getState().mergeStations('main', 'next')
+  assert.equal(store.getState().project, before)
+})
+
+it('collapses adjacent merged nodes and rejects a repeated visit without altering the project', () => {
+  const project = emptyProject()
+  for (const id of ['a', 'b', 'c']) project.stations[id] = { id, name: id, lng: 114, lat: 30 }
+  project.lines.line = { id: 'line', name: '9号线', color: '#123456', nodes: ['a', 'b', 'c'].map((id) => ({ type: 'station', id })) }
+  const store = createMetroStore({ initialProject: project, persist: () => {} })
+  store.getState().mergeStations('a', 'c')
+  assert.equal(store.getState().project, project)
+  store.getState().mergeStations('a', 'b')
+  assert.deepEqual(store.getState().project.lines.line.nodes.map((node) => node.id), ['b', 'c'])
+  validateProject(store.getState().project)
+  store.getState().undo()
+  assert.deepEqual(store.getState().project, project)
+})
+
 it('keeps a branch inside its parent across save, rendering, statistics, deletion and undo', () => {
   let counter = 0
   const project = emptyProject()

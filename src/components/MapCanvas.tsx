@@ -42,6 +42,40 @@ function markerClass(transfer: boolean, selected: boolean): string {
   return `map-station${transfer ? ' map-station--transfer' : ''}${selected ? ' map-station--selected' : ''}`
 }
 
+function mergeTarget(map: MapLibreMap, markers: Map<string, MarkerRecord>, sourceId: string, point: maplibregl.Point): string | null {
+  let target: string | null = null, distance = 22
+  for (const [id, record] of markers) {
+    if (id === sourceId) continue
+    const d = map.project(record.marker.getLngLat()).dist(point)
+    if (d < distance) { distance = d; target = id }
+  }
+  if (!target && map.getLayer('metro-station-labels')) {
+    target = map.queryRenderedFeatures(point, { layers: ['metro-station-labels'] })
+      .map((feature) => feature.properties?.id).find((id) => typeof id === 'string' && id !== sourceId && markers.has(id)) ?? null
+  }
+  return target
+}
+
+function previewMerge(map: MapLibreMap, markers: Map<string, MarkerRecord>, sourceId: string, point: maplibregl.Point) {
+  const target = mergeTarget(map, markers, sourceId, point)
+  for (const [id, record] of markers) {
+    record.element.classList.toggle('map-station--merge-target', id === target)
+    if (id === target) record.element.dataset.mergeName = `松开合并到 ${useMetroStore.getState().project.stations[id].name}`
+  }
+  map.getCanvas().title = target ? `松开合并到 ${useMetroStore.getState().project.stations[target].name}` : '拖到另一个站点或站名上松开，即可合并'
+}
+
+function finishStationDrag(map: MapLibreMap, markers: Map<string, MarkerRecord>, sourceId: string, point: maplibregl.Point, coordinate: maplibregl.LngLat) {
+  const state = useMetroStore.getState()
+  const target = mergeTarget(map, markers, sourceId, point)
+  if (target) state.mergeStations(sourceId, target)
+  else state.updateStation(sourceId, { lng: coordinate.lng, lat: coordinate.lat })
+  for (const record of markers.values()) record.element.classList.remove('map-station--merge-target')
+  map.getCanvas().title = ''
+  const source = useMetroStore.getState().project.stations[sourceId]
+  if (source) markers.get(sourceId)?.marker.setLngLat([source.lng, source.lat])
+}
+
 function syncStationMarkers(map: MapLibreMap, markers: Map<string, MarkerRecord>) {
   const { project, selectedStationId, selectedStationIds, editorMode } = useMetroStore.getState()
   const protectedIds = lockedNodeIds(project, 'station')
@@ -72,9 +106,10 @@ function syncStationMarkers(map: MapLibreMap, markers: Map<string, MarkerRecord>
       marker.on('dragend', () => {
         const state = useMetroStore.getState()
         if (!state.project.stations[stationId]) return
-        const { lng, lat } = marker.getLngLat()
-        state.updateStation(stationId, { lng, lat })
+        const coordinate = marker.getLngLat()
+        finishStationDrag(map, markers, stationId, map.project(coordinate), coordinate)
       })
+      marker.on('drag', () => previewMerge(map, markers, stationId, map.project(marker.getLngLat())))
       record = { marker, element }
       markers.set(stationId, record)
     }
@@ -218,7 +253,9 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
         paint: { 'text-color': '#193b4c', 'text-halo-color': '#ffffff', 'text-halo-width': 2.5 },
       })
     }
+    let ignoreLabelClick = false
     const onMapClick = (event: maplibregl.MapMouseEvent) => {
+      if (ignoreLabelClick) { ignoreLabelClick = false; return }
       if (presentationRef.current) return
       const state = useMetroStore.getState()
       if (state.editorMode === 'add-station') state.createStation(event.lngLat.lng, event.lngLat.lat)
@@ -252,6 +289,45 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
         state.selectWaypoint(null)
       }
     }
+    let labelDrag: { id: string; start: maplibregl.Point; moved: boolean } | null = null
+    const onLabelDown = (event: maplibregl.MapMouseEvent) => {
+      if (presentationRef.current || event.originalEvent.button !== 0 || useMetroStore.getState().editorMode !== 'browse' || !map.getLayer('metro-station-labels')) return
+      const id = map.queryRenderedFeatures(event.point, { layers: ['metro-station-labels'] })[0]?.properties?.id
+      if (typeof id !== 'string') return
+      if (lockedNodeIds(useMetroStore.getState().project, 'station').has(id)) {
+        useMetroStore.getState().setNotice('这个站点已锁定，请先解锁相关线路再拖动。')
+        return
+      }
+      event.preventDefault()
+      labelDrag = { id, start: event.point, moved: false }
+      map.dragPan.disable()
+    }
+    const onLabelMove = (event: maplibregl.MapMouseEvent) => {
+      if (!labelDrag) return
+      if (event.point.dist(labelDrag.start) > 4) labelDrag.moved = true
+      if (!labelDrag.moved) return
+      markerRecords.get(labelDrag.id)?.marker.setLngLat(event.lngLat)
+      previewMerge(map, markerRecords, labelDrag.id, event.point)
+    }
+    const onLabelUp = (event: maplibregl.MapMouseEvent) => {
+      if (!labelDrag) return
+      const { id, moved } = labelDrag
+      labelDrag = null
+      ignoreLabelClick = true
+      map.dragPan.enable()
+      if (moved) finishStationDrag(map, markerRecords, id, event.point, event.lngLat)
+      else useMetroStore.getState().selectStation(id)
+    }
+    const cancelLabelDrag = (event: maplibregl.MapMouseEvent) => {
+      if (event.originalEvent.relatedTarget instanceof Node && container.contains(event.originalEvent.relatedTarget)) return
+      if (!labelDrag) return
+      const station = useMetroStore.getState().project.stations[labelDrag.id]
+      if (station) markerRecords.get(station.id)?.marker.setLngLat([station.lng, station.lat])
+      labelDrag = null
+      map.dragPan.enable()
+      for (const record of markerRecords.values()) record.element.classList.remove('map-station--merge-target')
+      map.getCanvas().title = ''
+    }
     const onMapMoveEnd = () => {
       const center = map.getCenter()
       try {
@@ -264,11 +340,19 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
     resizeObserver.observe(container)
     map.on('style.load', onLoad)
     map.on('click', onMapClick)
+    map.on('mousedown', onLabelDown)
+    map.on('mousemove', onLabelMove)
+    map.on('mouseup', onLabelUp)
+    map.on('mouseout', cancelLabelDrag)
     map.on('moveend', onMapMoveEnd)
     return () => {
       resizeObserver.disconnect()
       map.off('style.load', onLoad)
       map.off('click', onMapClick)
+      map.off('mousedown', onLabelDown)
+      map.off('mousemove', onLabelMove)
+      map.off('mouseup', onLabelUp)
+      map.off('mouseout', cancelLabelDrag)
       map.off('moveend', onMapMoveEnd)
       markerRecords.forEach(({ marker }) => marker.remove())
       markerRecords.clear()
@@ -318,7 +402,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
       </div></details>
       <div className="map-hint" role="status">
         <span className={`mode-dot${editorMode !== 'browse' ? ' mode-dot--active' : ''}`} />
-        {editorMode === 'select-stations' ? `多选站点 · 已选 ${selectedStationIds.length} 个 · 再点取消选择` : editorMode === 'add-station' ? '添加站点 · 点空白处新建，点已有站直接接入' : editorMode === 'add-waypoint' ? pendingInsertIndex === null ? '点击线路插入控制点 · 拖动控制点调整走向' : '点击地图放置两节点间的控制点' : '浏览模式 · 点击节点编辑，拖动节点调整位置'}
+        {editorMode === 'select-stations' ? `多选站点 · 已选 ${selectedStationIds.length} 个 · 再点取消选择` : editorMode === 'add-station' ? '添加站点 · 点空白处新建，点已有站直接接入' : editorMode === 'add-waypoint' ? pendingInsertIndex === null ? '点击线路插入控制点 · 拖动控制点调整走向' : '点击地图放置两节点间的控制点' : '浏览模式 · 拖动站点或站名，放到另一站上合并（保留目标站）'}
       </div>
     </main>
   )

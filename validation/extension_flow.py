@@ -32,7 +32,7 @@ with sync_playwright() as p:
     page.get_by_role('button', name='撤销', exact=True).click()
     expect(page.locator('.line-item')).to_have_count(2)
     page.locator('.line-item').filter(has_text='欢乐谷支线').click()
-    page.locator('#branch-parent').select_option('nine')
+    page.get_by_role('button', name='将欢乐谷支线归入9号线支线', exact=True).click()
     expect(page.locator('.line-item')).to_have_count(1)
     expect(page.locator('.line-item')).to_contain_text('23 站')
     expect(page.locator('.line-branch-item')).to_contain_text('9号线支线')

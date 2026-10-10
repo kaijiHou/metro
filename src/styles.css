@@ -903,3 +903,6 @@ select:focus {
 .map-line-legend summary { cursor: pointer; font-weight: 650; }
 .map-line-legend-items { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 10px; }
 .map-line-legend-items > div { display: flex; align-items: center; gap: 7px; }
+/* The highlighted station is the destination kept after a drag merge. */
+.map-station--merge-target { outline: 4px solid #16805e !important; box-shadow: 0 0 0 8px #ffffffcc !important; }
+.map-station--merge-target::after { content: attr(data-merge-name); position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); padding: 6px 10px; border-radius: 6px; background: #16805e; color: white; font-size: 14px; white-space: nowrap; pointer-events: none; }

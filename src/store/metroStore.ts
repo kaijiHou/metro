@@ -45,6 +45,7 @@ export type MetroState = {
   extendLine: (id: string, end: 'start' | 'end') => void
   createBranch: (stationId: string) => void
   updateStation: (id: string, patch: Partial<Pick<Station, 'name' | 'lng' | 'lat'>>) => void
+  mergeStations: (sourceId: string, targetId: string) => void
   deleteStation: (id: string) => void
   deleteStations: (ids: string[]) => void
   selectStations: (ids: string[]) => void
@@ -256,6 +257,28 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
       if (!updated.name.trim() || !validCoordinates(updated.lng, updated.lat)) return state
       if (updated.name === station.name && updated.lng === station.lng && updated.lat === station.lat) return state
       return { project: { ...state.project, stations: { ...state.project.stations, [id]: updated } } }
+    }),
+    mergeStations: (sourceId, targetId) => set((state) => {
+      const source = state.project.stations[sourceId], target = state.project.stations[targetId]
+      if (!source || !target || sourceId === targetId) return state
+      if (nodeLocked(state.project, 'station', sourceId)) return { notice: { text: '拖动的站点属于已锁定线路，请先解锁相关线路。', kind: 'info' } }
+      for (const line of Object.values(state.project.lines)) {
+        const a = line.nodes.findIndex((node) => node.type === 'station' && node.id === sourceId)
+        const b = line.nodes.findIndex((node) => node.type === 'station' && node.id === targetId)
+        if (a >= 0 && b >= 0 && Math.abs(a - b) !== 1 && !(line.closed && Math.abs(a - b) === line.nodes.length - 1)) return { notice: { text: `${line.name} 已经过这两个不相邻的站，合并会重复经过目标站；请先调整节点顺序。`, kind: 'error' } }
+      }
+      const lines = Object.fromEntries(Object.entries(state.project.lines).map(([id, line]) => {
+        if (!line.nodes.some((node) => node.type === 'station' && node.id === sourceId)) return [id, line]
+        const nodes = line.nodes.map((node) => node.type === 'station' && node.id === sourceId ? { ...node, id: targetId } : node)
+          .filter((node, index, all) => index === 0 || node.type !== all[index - 1].type || node.id !== all[index - 1].id)
+        if (line.closed && nodes.length > 1 && nodes[0].type === nodes[nodes.length - 1].type && nodes[0].id === nodes[nodes.length - 1].id) nodes.pop()
+        return [id, { ...line, nodes }]
+      }))
+      const stations = { ...state.project.stations }
+      delete stations[sourceId]
+      return { project: { ...state.project, lines, stations }, selectedStationId: targetId,
+        selectedStationIds: [...new Set(state.selectedStationIds.map((id) => id === sourceId ? targetId : id))], selectedWaypointId: null,
+        ...cancelPendingInsert(state), notice: { text: `已将 ${source.name} 合并到 ${target.name}，保留目标站名和位置。Ctrl+Z 可撤销。`, kind: 'info' } }
     }),
     deleteStation: (id) => get().deleteStations([id]),
     deleteStations: (ids) => set((state) => {
