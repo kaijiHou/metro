@@ -8,6 +8,33 @@ import { stationLineCounts, lineFeatureCollection, stationLabelCollection } from
 import data from './wuhanConfirmedData.json'
 
 const wuhan = () => validateProject(JSON.parse(readFileSync(new URL('../../public/transit/wuhan.json', import.meta.url), 'utf8')).project)
+it('adds Line 10 future corridors without inventing stations or restoring a deleted older extension', () => {
+  const earlier = addWuhanPlanning(wuhan())
+  for (const corridor of data.futureTen) delete earlier.lines[corridor.id]
+  earlier.appliedUpdates = ['wuhan-confirmed-2026-10-14-v3','wuhan-confirmed-2026-10-14-v4']
+  delete earlier.lines['wuhan-confirmed-6-phase3']
+  const beforeStations = structuredClone(earlier.stations)
+  const beforeLines = structuredClone(earlier.lines)
+  const result = addWuhanPlanning(earlier)
+  assert.deepEqual(Object.entries(result.stations),Object.entries(beforeStations))
+  assert.equal(result.lines['wuhan-confirmed-6-phase3'],undefined)
+  for (const [id,line] of Object.entries(beforeLines)) assert.deepEqual(result.lines[id],line)
+  const parent = result.lines['wuhan-confirmed-10']
+  for (const corridor of data.futureTen) {
+    const line = result.lines[corridor.id]
+    assert.equal(line.parentLineId,parent.id)
+    assert.equal(line.color,parent.color)
+    assert.equal(line.status,'planned')
+    assert.match(line.planningNote!,/走廊/)
+  }
+  const western = result.lines['wuhan-confirmed-10-future-west']
+  assert.deepEqual(western.nodes.filter((node) => node.type==='station').map((node) => result.stations[node.id].name),['枫树五路','四新南路','五里墩','汉口火车站'])
+  const eastern = result.lines['wuhan-confirmed-10-future-east']
+  assert.equal(eastern.nodes.filter((node) => node.type==='station').length,1)
+  assert.equal(result.stations[eastern.nodes[0].id].name,'白玉山')
+  assert.deepEqual(validateProject(JSON.parse(JSON.stringify(result))),result)
+  assert.equal(addWuhanPlanning(result),result)
+})
 it('adds only the four officially documented extensions, with correct station order and shared terminals', () => {
   const base = wuhan(), result = addWuhanPlanning(base)
   assert.deepEqual(result.lines['wuhan-confirmed-3-phase2'].nodes.map((node) => result.stations[node.id].name), ['沌阳大道','车城南路','枫树一路','枫树五路','全力二路','全力三路','文岭'])

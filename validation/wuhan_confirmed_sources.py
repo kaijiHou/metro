@@ -23,6 +23,18 @@ extensions = [
     {'id':'wuhan-confirmed-21-connector', 'parentId':'amap-4201-900000075739-0', 'parentName':'阳逻线', 'part':'延长段（12号线连接线）', 'stations':'后湖大道 新春 中一路'.split(), 'status':'construction', 'note':'后湖大道—新春—中一路，依据市政府2025-02-19工程报道。建设项目名称为12号线连接线，建成后与阳逻线贯通运营，归入阳逻线。新春为公开工程站名，中一路共用8/12号线站点。'},
     {'id':'wuhan-confirmed-11-hanyang', 'parentId':'amap-4201-900000073743-0', 'parentName':'11号线', 'part':'三期汉阳站段', 'stations':'汉阳站 黄金口'.split(), 'status':'planned', 'note':'两站及站序依据汉阳区政府2022-07-28工程说明，归入11号线，与四期共用汉阳站、与4号线共用黄金口。站名有工程依据，未核实当前实际开工状态，按规划显示；不代表已开通。'},
 ]
+future_ten = [
+    {'id':'wuhan-confirmed-10-future-west', 'part':'远期西段（走廊）', 'anchors':[
+        ['常福方向（示意控制点）',114.04,30.44], '枫树五路',
+        ['沌口方向（示意控制点）',114.16,30.48], '四新南路',
+        ['江城大道走廊（示意控制点）',114.226,30.545], '五里墩',
+        ['汉江过江走廊（示意控制点）',114.254,30.577],
+        ['汉口方向（示意控制点）',114.233,30.602], '汉口火车站'],
+     'note':'远期规划的大致走廊，非完整站名表或批复工程线位。常福—汉阳—汉口走向依据市交通局2026-07-03介绍及2025-10-15提案答复；枫树五路换乘3号线依据市政府2024-11-28报道，四新南路换乘12号线依据2024-04-23报道，五里墩换乘4号线依据规划局2022-10-26答复。地域控制点不代表车站；未新增未核实站名，也未加入仙桃段。'},
+    {'id':'wuhan-confirmed-10-future-east', 'part':'远期东向（走廊）', 'anchors':[
+        '白玉山', ['远期过江方向（示意控制点）',114.51,30.647], ['阳逻方向（示意控制点）',114.56,30.672]],
+     'note':'阳逻方向远期走廊，非确定车站或工程线位，依据市交通局2026-07-03公开走向。东段与新港线未来拆分关系、站名和站位以批复及命名通告为准；阳逻方向只是区域控制点，不把它擅自合并为现有阳逻站。'},
+]
 
 # name: longitude, latitude, public POI ID
 gcj = {
@@ -64,7 +76,7 @@ def bd_to_gcj(lng, lat):
     return z * math.cos(theta), z * math.sin(theta)
 
 stations = {}
-for name in dict.fromkeys(ring + eleven + ten + [name for extension in extensions for name in extension['stations']]):
+for name in dict.fromkeys(ring + eleven + ten + [name for extension in extensions for name in extension['stations']] + [anchor for corridor in future_ten for anchor in corridor['anchors'] if isinstance(anchor,str)]):
     existing = next((s for s in base['stations'].values() if s['name'] == name), None)
     if existing:
         stations[name] = dict(existing, coordinateSource='public/transit/wuhan.json')
@@ -81,7 +93,7 @@ for name in dict.fromkeys(ring + eleven + ten + [name for extension in extension
             point = refresh.gcj_to_wgs(*bd_to_gcj(lng, lat))
             source = f'https://www.icauto.com.cn/chuxing/d_{page}.html'
         stations[name] = {'id': f'wuhan-confirmed-station-{name}', 'name': name, 'lng': point[0], 'lat': point[1], 'coordinateSource': source}
-result = {'ring': ring, 'eleven': eleven, 'ten': ten, 'extensions': extensions, 'stations': stations}
+result = {'ring': ring, 'eleven': eleven, 'ten': ten, 'extensions': extensions, 'futureTen':future_ten, 'stations': stations}
 (ROOT / 'src/utils/wuhanConfirmedData.json').write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 assert len(ring) == 37 and len(ten) == 13 and len(eleven) == 8
 assert [len(extension['stations']) for extension in extensions] == [7,3,3,2]

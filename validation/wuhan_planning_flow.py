@@ -33,6 +33,8 @@ with sync_playwright() as p:
     assert [result['stations'][node['id']]['name'] for node in result['lines']['wuhan-confirmed-3-phase2']['nodes']] == ['沌阳大道','车城南路','枫树一路','枫树五路','全力二路','全力三路','文岭']
     assert [result['stations'][node['id']]['name'] for node in result['lines']['wuhan-confirmed-6-phase3']['nodes']] == ['东风公司','江汉大学','博艺路']
     assert result['lines']['wuhan-confirmed-21-connector']['parentLineId']=='amap-4201-900000075739-0'
+    assert result['lines']['wuhan-confirmed-10-future-west']['status']=='planned'
+    assert result['lines']['wuhan-confirmed-10-future-east']['parentLineId']=='wuhan-confirmed-10'
     assert len(result['stations'])==len({s['name'] for s in result['stations'].values()})
     assert len([s for s in result['stations'].values() if s['name']=='汉阳站'])==1
     page.keyboard.press('Control+s')
@@ -64,6 +66,19 @@ with sync_playwright() as p:
     if rendered:
         assert rendered['labels'], 'No station labels rendered at zoom 15'
         assert '港口村' in rendered['labels'], 'Ordinary station label hidden after zooming'
+        page.locator('#station-label-mode').select_option('none')
+        page.wait_for_timeout(300)
+        page.get_by_role('button',name='展示模式',exact=True).click()
+        page.wait_for_timeout(500)
+        assert '港口村' in page.evaluate("testMap.queryRenderedFeatures({layers:['metro-station-labels']}).map(f=>f.properties.name)")
+        assert page.locator('.map-station:visible').count()==0
+        assert page.locator('.map-waypoint:visible').count()==0
+        page.screenshot(path='validation/presentation-station-names.png')
+        page.get_by_role('button',name='返回编辑',exact=True).click()
+        page.wait_for_timeout(300)
+        assert page.locator('#station-label-mode').input_value()=='none'
+        assert not page.evaluate("testMap.queryRenderedFeatures({layers:['metro-station-labels']}).length")
+        page.locator('#station-label-mode').select_option('all')
         page.evaluate("testMap.jumpTo({center:[114.15,30.5525],zoom:14})")
         page.wait_for_timeout(2000)
         assert '汉阳站' in page.evaluate("testMap.queryRenderedFeatures({layers:['metro-station-labels']}).map(f=>f.properties.name)")
@@ -73,6 +88,10 @@ with sync_playwright() as p:
         page.evaluate("testMap.jumpTo({center:[114.12,30.49],zoom:12.5})")
         page.wait_for_timeout(2000)
         page.screenshot(path='validation/wuhan-3-6-extension-preview.png')
+        page.evaluate("testMap.jumpTo({center:[114.17,30.53],zoom:11.5})")
+        page.wait_for_timeout(2000)
+        page.get_by_role('button',name='展示模式',exact=True).click()
+        page.screenshot(path='validation/wuhan-10-future-preview.png')
     assert not errors, errors
     # A separate fresh context keeps the original repair in its undo stack.
     context=browser.new_context()

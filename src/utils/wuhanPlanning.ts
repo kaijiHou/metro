@@ -1,9 +1,11 @@
 import type { LineNode, LineStatus, MetroProject } from '../models/metro'
 import data from './wuhanConfirmedData.json'
 import { validateProject } from './validation'
+import { rootLine } from './planning'
 
-export const WUHAN_PLANNING_VERSION = 'wuhan-confirmed-2026-10-14-v4'
+export const WUHAN_PLANNING_VERSION = 'wuhan-confirmed-2026-10-14-v5'
 const baseVersion = 'wuhan-confirmed-2026-10-14-v3'
+const extensionVersion = 'wuhan-confirmed-2026-10-14-v4'
 const withdrawnVersion = 'wuhan-corridors-2026-10-14-v1'
 const withdrawnIds = new Set([
   ...[9,10,13,14,15,17,18,20,22,23,24,25,26,27,28,29,30,31,32,34,35,37].map((number) => `wuhan-plan-${number}`),
@@ -86,12 +88,28 @@ export function addWuhanPlanning(input: MetroProject): MetroProject {
   const base = addBaseNetwork(input)
   if (base.cityId !== 'wuhan' || base.appliedUpdates?.includes(WUHAN_PLANNING_VERSION)) return base
   const project = structuredClone(base)
-  for (const extension of data.extensions) {
+  if (!project.appliedUpdates?.includes(extensionVersion)) for (const extension of data.extensions) {
     if (project.lines[extension.id]) continue
     const parent = project.lines[extension.parentId] ?? Object.values(project.lines).find((line) => !line.parentLineId && line.name === extension.parentName)
     if (!parent || parent.parentLineId) continue
     const nodes: LineNode[] = extension.stations.map((name) => ({type:'station',id:confirmedStationId(project,name)}))
     project.lines[extension.id] = { id:extension.id, name:`${parent.name}${extension.part}`, color:parent.color, parentLineId:parent.id, status:extension.status as LineStatus, visible:true, locked:false, nodes, sourceLineId:WUHAN_PLANNING_VERSION, planningNote:extension.note }
+  }
+  if (!project.appliedUpdates?.includes(extensionVersion)) project.appliedUpdates = [...(project.appliedUpdates ?? []),extensionVersion]
+  const confirmedTen = project.lines['wuhan-confirmed-10'] ?? Object.values(project.lines).find((line) => !line.parentLineId && line.name === '10号线')
+  if (confirmedTen) {
+    const parent = rootLine(project,confirmedTen)
+    for (const corridor of data.futureTen) {
+      if (project.lines[corridor.id]) continue
+      const nodes: LineNode[] = corridor.anchors.map((anchor,index) => {
+        if (typeof anchor === 'string') return {type:'station',id:confirmedStationId(project,anchor)}
+        let id = `${corridor.id}-control-${index}`
+        while (project.waypoints[id]) id += '-new'
+        project.waypoints[id] = {id,name:String(anchor[0]),lng:Number(anchor[1]),lat:Number(anchor[2])}
+        return {type:'waypoint',id}
+      })
+      project.lines[corridor.id] = {id:corridor.id,name:`${parent.name}${corridor.part}`,color:parent.color,parentLineId:parent.id,status:'planned',visible:true,locked:false,nodes,sourceLineId:WUHAN_PLANNING_VERSION,planningNote:corridor.note}
+    }
   }
   project.appliedUpdates = [...(project.appliedUpdates ?? []),WUHAN_PLANNING_VERSION]
   return validateProject(project)

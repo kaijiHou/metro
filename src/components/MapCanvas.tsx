@@ -6,7 +6,7 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import { INITIAL_CENTER, INITIAL_ZOOM, MAP_STYLE_URL, type MapTarget } from '../config/map'
 import { useMetroStore } from '../store/metroStore'
 import { lineFeatureCollection, nearestLineInsertIndex, stationFeatureCollection, stationLabelCollection } from '../utils/geojson'
-import { lockedNodeIds, lineStatus, statusNames } from '../utils/planning'
+import { lockedNodeIds, lineStatus, rootLine, statusNames } from '../utils/planning'
 import { validCoordinates } from '../utils/validation'
 
 maplibregl.setWorkerUrl(mapWorkerUrl)
@@ -226,7 +226,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
           layout: { ...transit.layout, 'text-font': ['Noto Sans Bold'], 'text-size': ['interpolate', ['linear'], ['zoom'], 11, 15, 15, 18, 18, 20] },
           paint: { ...transit.paint, 'text-color': '#193b4c', 'text-halo-color': '#ffffff', 'text-halo-width': 2.5 } })
       }
-      map.addSource('metro-station-labels', { type: 'geojson', data: stationLabelCollection(useMetroStore.getState().project, useMetroStore.getState().stationLabelMode, useMetroStore.getState().selectedLineId) })
+      map.addSource('metro-station-labels', { type: 'geojson', data: stationLabelCollection(useMetroStore.getState().project, presentationRef.current ? 'all' : useMetroStore.getState().stationLabelMode, useMetroStore.getState().selectedLineId) })
       map.addSource('metro-lines', { type: 'geojson', data: lineFeatureCollection(useMetroStore.getState().project, presentationRef.current ? null : useMetroStore.getState().selectedLineId) })
       map.addLayer({
         id: 'metro-line-shadow',
@@ -259,7 +259,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
         paint: { 'text-color': '#193b4c', 'text-halo-color': '#ffffff', 'text-halo-width': 2 },
       })
       map.addLayer({ id: 'metro-station-labels', type: 'symbol', source: 'metro-station-labels', minzoom: 11.5,
-        layout: { visibility: presentationRef.current ? 'none' : 'visible', 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Bold'], 'text-size': ['interpolate', ['linear'], ['zoom'], 11, 15, 15, 18, 18, 20], 'text-anchor': 'left', 'text-offset': [1, 0],
+        layout: { visibility: 'visible', 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Bold'], 'text-size': ['interpolate', ['linear'], ['zoom'], 11, 15, 15, 18, 18, 20], 'text-anchor': 'left', 'text-offset': [1, 0],
           'text-allow-overlap': ['step', ['zoom'], false, 14, true], 'text-ignore-placement': ['step', ['zoom'], false, 14, true], 'text-padding': 2 },
         paint: { 'text-color': '#193b4c', 'text-halo-color': '#ffffff', 'text-halo-width': 2.5 },
       })
@@ -388,8 +388,8 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
     const source = map.getSource('metro-lines') as GeoJSONSource | undefined
     source?.setData(lineFeatureCollection(project, presentationMode ? null : selectedLineId))
     const labels = map.getSource('metro-station-labels') as GeoJSONSource | undefined
-    labels?.setData(stationLabelCollection(project, stationLabelMode, selectedLineId))
-    if (map.getLayer('metro-station-labels')) map.setLayoutProperty('metro-station-labels', 'visibility', presentationMode ? 'none' : 'visible')
+    labels?.setData(stationLabelCollection(project, presentationMode ? 'all' : stationLabelMode, selectedLineId))
+    if (map.getLayer('metro-station-labels')) map.setLayoutProperty('metro-station-labels', 'visibility', 'visible')
   }, [project, selectedLineId, presentationMode, stationLabelMode])
 
   useEffect(() => {
@@ -415,7 +415,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
       <details open className="map-line-legend" aria-label="线路名称与颜色"><summary>线路图例</summary><div className="map-line-legend-items">
         {Object.values(project.lines).filter((line) => !line.parentLineId && line.visible !== false).map((line) => <div key={line.id}>
           <span className="map-line-swatch" style={{ backgroundColor: line.color, height: lineStatus(line) === 'planned' ? 6 : 4 }} aria-hidden="true" />
-          <span>{line.name} · {lineStatus(line) === 'construction' && line.existingSegments?.length ? '部分在建' : statusNames[lineStatus(line)]}</span>
+          <span>{line.name} · {lineStatus(line) === 'construction' && line.existingSegments?.length ? '部分在建' : [...new Set(Object.values(project.lines).filter((part) => rootLine(project,part).id === line.id).map(lineStatus))].map((status) => statusNames[status]).join(' / ')}</span>
         </div>)}
       </div></details>
       <div className="map-hint" role="status">
