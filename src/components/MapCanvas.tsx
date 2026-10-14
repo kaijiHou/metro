@@ -232,7 +232,6 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
         id: 'metro-line-shadow',
         type: 'line',
         source: 'metro-lines',
-        filter: ['!=', ['get', 'status'], 'construction'],
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: { 'line-color': '#ffffff', 'line-width': ['case', ['get', 'selected'], 10, 8], 'line-opacity': 0.9 },
       })
@@ -247,7 +246,8 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
       map.addLayer({
         id: 'metro-construction-lines', type: 'line', source: 'metro-lines',
         filter: ['==', ['get', 'status'], 'construction'],
-        paint: { 'line-color': ['get', 'color'], 'line-width': ['case', ['get', 'selected'], 7, 4], 'line-dasharray': [2, 2], 'line-opacity': 0.9 },
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': ['get', 'color'], 'line-width': ['case', ['get', 'selected'], 7, 4], 'line-opacity': 0.9 },
       })
       map.addLayer({
         id: 'metro-line-labels', type: 'symbol', source: 'metro-lines',
@@ -414,7 +414,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
       }}>{presentationMode ? '返回编辑' : '展示模式'}</button>
       <details open className="map-line-legend" aria-label="线路名称与颜色"><summary>线路图例</summary><div className="map-line-legend-items">
         {Object.values(project.lines).filter((line) => !line.parentLineId && line.visible !== false).map((line) => <div key={line.id}>
-          <span className="map-line-swatch" style={{ backgroundColor: lineStatus(line) === 'construction' ? 'transparent' : line.color, borderTop: lineStatus(line) === 'construction' ? `3px dashed ${line.color}` : undefined, height: lineStatus(line) === 'planned' ? 6 : 4 }} aria-hidden="true" />
+          <span className="map-line-swatch" style={{ backgroundColor: line.color, height: lineStatus(line) === 'planned' ? 6 : 4 }} aria-hidden="true" />
           <span>{line.name} · {lineStatus(line) === 'construction' && line.existingSegments?.length ? '部分在建' : statusNames[lineStatus(line)]}</span>
         </div>)}
       </div></details>
