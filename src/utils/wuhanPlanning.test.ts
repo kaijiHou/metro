@@ -8,6 +8,52 @@ import { stationLineCounts, lineFeatureCollection, stationLabelCollection } from
 import data from './wuhanConfirmedData.json'
 
 const wuhan = () => validateProject(JSON.parse(readFileSync(new URL('../../public/transit/wuhan.json', import.meta.url), 'utf8')).project)
+it('adds only the four officially documented extensions, with correct station order and shared terminals', () => {
+  const base = wuhan(), result = addWuhanPlanning(base)
+  assert.deepEqual(result.lines['wuhan-confirmed-3-phase2'].nodes.map((node) => result.stations[node.id].name), ['沌阳大道','车城南路','枫树一路','枫树五路','全力二路','全力三路','文岭'])
+  assert.deepEqual(result.lines['wuhan-confirmed-6-phase3'].nodes.map((node) => result.stations[node.id].name), ['东风公司','江汉大学','博艺路'])
+  for (const extension of data.extensions) {
+    const line = result.lines[extension.id]
+    assert.equal(line.parentLineId, extension.parentId)
+    assert.equal(line.status, extension.status)
+    assert.equal(line.color, result.lines[extension.parentId].color)
+    assert.equal(line.nodes.length, extension.stations.length)
+    assert.equal(line.nodes.filter((node) => node.type === 'waypoint').length, 0)
+    for (const name of extension.stations) assert.equal(Object.values(result.stations).filter((station) => station.name === name).length, 1, name)
+  }
+  const middle = Object.values(base.stations).find((station) => station.name === '中一路')!
+  assert.ok(result.lines['wuhan-confirmed-21-connector'].nodes.some((node) => node.id === middle.id))
+  assert.equal(stationLineCounts(result)[middle.id],3)
+  const hanyang = result.lines['wuhan-confirmed-11-hanyang'].nodes[0].id
+  assert.ok(result.lines['wuhan-confirmed-11-west'].nodes.some((node) => node.id === hanyang))
+  assert.ok(!Object.values(result.stations).some((station) => /示意|区域|博学路/.test(station.name)))
+})
+
+it('upgrades a saved v3 project additively, preserving earlier network edits and supporting one undo step', () => {
+  const older = addWuhanPlanning(wuhan())
+  older.appliedUpdates = ['wuhan-confirmed-2026-10-14-v3']
+  for (const extension of data.extensions) delete older.lines[extension.id]
+  const used = new Set(Object.values(older.lines).flatMap((line) => line.nodes.map((node) => node.id)))
+  for (const extension of data.extensions) for (const name of extension.stations) {
+    const id = (data.stations as Record<string,{id:string}>)[name].id
+    if (!used.has(id)) delete older.stations[id]
+  }
+  older.stations.mywen = {id:'mywen',name:'文岭',lng:114.07,lat:30.49}
+  older.lines['amap-4201-900000078508-0'].nodes.pop()
+  older.lines['wuhan-confirmed-11-west'].nodes.pop()
+  older.lines['wuhan-confirmed-10'].name = '我改过的10号线'
+  let saved = older
+  const store = createMetroStore({initialProject:older,persist:(project) => {saved=project}})
+  store.getState().applyWuhanPlanning()
+  const result = store.getState().project
+  for (const [id,line] of Object.entries(older.lines)) assert.deepEqual(result.lines[id],line)
+  assert.ok(result.lines['wuhan-confirmed-3-phase2'].nodes.some((node) => node.id === 'mywen'))
+  assert.deepEqual(result.stations.mywen,older.stations.mywen)
+  assert.deepEqual(validateProject(JSON.parse(JSON.stringify(saved))),result)
+  store.getState().undo(); assert.deepEqual(store.getState().project,older)
+  store.getState().redo(); assert.deepEqual(store.getState().project,result)
+  assert.equal(addWuhanPlanning(result),result)
+})
 it('completes the official 37-stop loop and verified Line 10/11, reusing interchange records', () => {
   const base = wuhan(), result = addWuhanPlanning(base)
   const ring = result.lines['amap-4201-900000078508-0']

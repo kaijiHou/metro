@@ -30,6 +30,9 @@ with sync_playwright() as p:
     assert ring['closed'] and len(ring['nodes'])==37
     assert len(result['lines']['wuhan-confirmed-10']['nodes'])==13
     assert result['lines']['wuhan-confirmed-11-west']['parentLineId']=='amap-4201-900000073743-0'
+    assert [result['stations'][node['id']]['name'] for node in result['lines']['wuhan-confirmed-3-phase2']['nodes']] == ['沌阳大道','车城南路','枫树一路','枫树五路','全力二路','全力三路','文岭']
+    assert [result['stations'][node['id']]['name'] for node in result['lines']['wuhan-confirmed-6-phase3']['nodes']] == ['东风公司','江汉大学','博艺路']
+    assert result['lines']['wuhan-confirmed-21-connector']['parentLineId']=='amap-4201-900000075739-0'
     assert len(result['stations'])==len({s['name'] for s in result['stations'].values()})
     assert len([s for s in result['stations'].values() if s['name']=='汉阳站'])==1
     page.keyboard.press('Control+s')
@@ -65,6 +68,11 @@ with sync_playwright() as p:
         page.wait_for_timeout(2000)
         assert '汉阳站' in page.evaluate("testMap.queryRenderedFeatures({layers:['metro-station-labels']}).map(f=>f.properties.name)")
         page.screenshot(path='validation/wuhan-hanyang-preview.png')
+        # All map route layers must remain solid, including construction sections.
+        assert page.evaluate("testMap.getStyle().layers.filter(l=>l.source==='metro-lines' && l.type==='line').every(l=>!l.paint?.['line-dasharray'])")
+        page.evaluate("testMap.jumpTo({center:[114.12,30.49],zoom:12.5})")
+        page.wait_for_timeout(2000)
+        page.screenshot(path='validation/wuhan-3-6-extension-preview.png')
     assert not errors, errors
     # A separate fresh context keeps the original repair in its undo stack.
     context=browser.new_context()
@@ -77,5 +85,20 @@ with sync_playwright() as p:
     assert 'wuhan-plan-9' in json.loads(undo_page.evaluate("localStorage.getItem('metro-planner.project')"))['lines']
     undo_page.get_by_role('button',name='载入确认线路并清除旧示意',exact=True).click()
     assert 'wuhan-plan-9' not in json.loads(undo_page.evaluate("localStorage.getItem('metro-planner.project')"))['lines']
+    # The user's previously updated v3 save must retain its modified 10/11/12 records.
+    older=json.loads(json.dumps(result))
+    older['appliedUpdates']=['wuhan-confirmed-2026-10-14-v3']
+    for line_id in ['wuhan-confirmed-3-phase2','wuhan-confirmed-6-phase3','wuhan-confirmed-21-connector','wuhan-confirmed-11-hanyang']:
+        del older['lines'][line_id]
+    older['lines']['amap-4201-900000078508-0']['nodes'].pop()
+    older['lines']['wuhan-confirmed-10']['name']='我修改的10号线'
+    upgrade_context=browser.new_context()
+    upgrade_page=upgrade_context.new_page()
+    upgrade_page.add_init_script(f"if(!localStorage.getItem('metro-planner.project')) {{localStorage.setItem('metro-planner.project',{json.dumps(json.dumps(older,ensure_ascii=False))});localStorage.setItem('metro-planner.wuhan-confirmed-2026-10-14-v3.default','applied')}}")
+    upgrade_page.goto('http://127.0.0.1:5173/',wait_until='networkidle')
+    upgraded=json.loads(upgrade_page.evaluate("localStorage.getItem('metro-planner.project')"))
+    assert upgraded['lines']['amap-4201-900000078508-0']==older['lines']['amap-4201-900000078508-0']
+    assert upgraded['lines']['wuhan-confirmed-10']==older['lines']['wuhan-confirmed-10']
+    assert len(upgraded['lines']['wuhan-confirmed-3-phase2']['nodes'])==7
     browser.close()
     print('PASS: withdrawn 30 corridors, 37-stop loop, verified 10/11, shared IDs, Hanyang, save/refresh and undo/manual reapply')

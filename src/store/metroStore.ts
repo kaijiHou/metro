@@ -154,7 +154,7 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
       if (project === state.project) return state
       return { project, stationLabelMode: 'all', selectedLineId: project.lines['amap-4201-900000078508-0']?.id ?? 'wuhan-confirmed-12', selectedStationId: null, selectedStationIds: [], selectedWaypointId: null,
         editorMode: 'browse', extensionEnd: null, pendingInsertIndex: null,
-        notice: { text: '已移除旧远期示意，补齐12号线37站环线、11号线四期及10号线确认区段，并标出汉阳站。Ctrl+Z可撤销。', kind: 'info' } }
+        notice: { text: '武汉确认线路已更新：3号线二期、6号线三期、阳逻线延长段及11号线汉阳站段。换乘共用站点，统一实线显示；Ctrl+Z可撤销。', kind: 'info' } }
     }),
     saveCurrentProject: () => {
       try {

@@ -63,6 +63,63 @@
     "万家咀",
     "白玉山"
   ],
+  "extensions": [
+    {
+      "id": "wuhan-confirmed-3-phase2",
+      "parentId": "amap-4201-420100024331-0",
+      "parentName": "3号线",
+      "part": "二期延长段",
+      "stations": [
+        "沌阳大道",
+        "车城南路",
+        "枫树一路",
+        "枫树五路",
+        "全力二路",
+        "全力三路",
+        "文岭"
+      ],
+      "status": "construction",
+      "note": "采用官方已公开工程站名，非最终运营命名通告。原五座新站依据市政府2024-11-28工程报道；新增车城南路依据经开区2026-09-30在建报道。车城南路按官方路口说明大致定位；其余新增站为公开地图位置。"
+    },
+    {
+      "id": "wuhan-confirmed-6-phase3",
+      "parentId": "amap-4201-420100024335-0",
+      "parentName": "6号线",
+      "part": "三期延长段",
+      "stations": [
+        "东风公司",
+        "江汉大学",
+        "博艺路"
+      ],
+      "status": "construction",
+      "note": "采用官方已公开工程站名，非最终运营命名通告。两座新站江汉大学、博艺路及站序依据市国资委2022-12-30开工报道和2024年规划许可；不把博学路误作站名。新增站为公开地图位置。"
+    },
+    {
+      "id": "wuhan-confirmed-21-connector",
+      "parentId": "amap-4201-900000075739-0",
+      "parentName": "阳逻线",
+      "part": "延长段（12号线连接线）",
+      "stations": [
+        "后湖大道",
+        "新春",
+        "中一路"
+      ],
+      "status": "construction",
+      "note": "后湖大道—新春—中一路，依据市政府2025-02-19工程报道。建设项目名称为12号线连接线，建成后与阳逻线贯通运营，归入阳逻线。新春为公开工程站名，中一路共用8/12号线站点。"
+    },
+    {
+      "id": "wuhan-confirmed-11-hanyang",
+      "parentId": "amap-4201-900000073743-0",
+      "parentName": "11号线",
+      "part": "三期汉阳站段",
+      "stations": [
+        "汉阳站",
+        "黄金口"
+      ],
+      "status": "planned",
+      "note": "两站及站序依据汉阳区政府2022-07-28工程说明，归入11号线，与四期共用汉阳站、与4号线共用黄金口。站名有工程依据，未核实当前实际开工状态，按规划显示；不代表已开通。"
+    }
+  ],
   "stations": {
     "钢都花园": {
       "id": "amap-4201-BV10879662",
@@ -455,6 +512,97 @@
       "lng": 114.489042,
       "lat": 30.605406,
       "coordinateSource": "https://www.amap.com/place/BV11649482"
+    },
+    "沌阳大道": {
+      "id": "amap-4201-BV10060872",
+      "name": "沌阳大道",
+      "lng": 114.151509,
+      "lat": 30.491743,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "车城南路": {
+      "id": "wuhan-confirmed-station-车城南路",
+      "name": "车城南路",
+      "lng": 114.143,
+      "lat": 30.486,
+      "coordinateSource": "https://www.whkfq.gov.cn/xwzx/yw/kfqyw/qnxw/202406/t20240605_2411949.html"
+    },
+    "枫树一路": {
+      "id": "wuhan-confirmed-station-枫树一路",
+      "name": "枫树一路",
+      "lng": 114.124798,
+      "lat": 30.47124,
+      "coordinateSource": "https://www.icauto.com.cn/chuxing/d_18927.html"
+    },
+    "枫树五路": {
+      "id": "wuhan-confirmed-station-枫树五路",
+      "name": "枫树五路",
+      "lng": 114.105014,
+      "lat": 30.462272,
+      "coordinateSource": "https://www.icauto.com.cn/chuxing/d_18928.html"
+    },
+    "全力二路": {
+      "id": "wuhan-confirmed-station-全力二路",
+      "name": "全力二路",
+      "lng": 114.086068,
+      "lat": 30.457566,
+      "coordinateSource": "https://www.icauto.com.cn/chuxing/d_18929.html"
+    },
+    "全力三路": {
+      "id": "wuhan-confirmed-station-全力三路",
+      "name": "全力三路",
+      "lng": 114.077941,
+      "lat": 30.466038,
+      "coordinateSource": "https://www.icauto.com.cn/chuxing/d_18933.html"
+    },
+    "文岭": {
+      "id": "wuhan-confirmed-station-文岭",
+      "name": "文岭",
+      "lng": 114.073409,
+      "lat": 30.488745,
+      "coordinateSource": "https://www.icauto.com.cn/chuxing/d_18932.html"
+    },
+    "东风公司": {
+      "id": "amap-4201-BV10570861",
+      "name": "东风公司",
+      "lng": 114.160483,
+      "lat": 30.502487,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "江汉大学": {
+      "id": "wuhan-confirmed-station-江汉大学",
+      "name": "江汉大学",
+      "lng": 114.152803,
+      "lat": 30.509937,
+      "coordinateSource": "https://www.amap.com/place/BV09081170"
+    },
+    "博艺路": {
+      "id": "wuhan-confirmed-station-博艺路",
+      "name": "博艺路",
+      "lng": 114.150207,
+      "lat": 30.521847,
+      "coordinateSource": "https://www.amap.com/place/BV09081169"
+    },
+    "后湖大道": {
+      "id": "amap-4201-BV10060850",
+      "name": "后湖大道",
+      "lng": 114.298686,
+      "lat": 30.65268,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "新春": {
+      "id": "wuhan-confirmed-station-新春",
+      "name": "新春",
+      "lng": 114.290598,
+      "lat": 30.648399,
+      "coordinateSource": "https://www.icauto.com.cn/chuxing/d_14546.html"
+    },
+    "黄金口": {
+      "id": "amap-4201-BV10060919",
+      "name": "黄金口",
+      "lng": 114.13972,
+      "lat": 30.566378,
+      "coordinateSource": "public/transit/wuhan.json"
     }
   }
 }

@@ -17,6 +17,12 @@ base = json.loads((ROOT / 'public/transit/wuhan.json').read_text(encoding='utf-8
 ring = '钢都花园 园林路 团结大道 汪家墩 秦园中路 公正路 何家垅 十五中 武昌站东广场 瑞安街东 富安街 楚祥大道 省农科院南 光霞 市农科院 夹套河 国博中心南 国博新城 四新南路 四新中路 芳草路 港口村 墨水湖公园 十里铺 汉钢 汉西路南 双墩 汉西路北 华安里 汉口站北广场 石桥 中一路 后湖四路 兴业路 百步亭 丹水池 科普公园'.split()
 eleven = '江安路 江国路 国博中心北 梅林 芳草路 四新大道 汤山 汉阳站'.split()
 ten = '汉口火车站 唐家墩 竹叶山 二七小路 二七路 余家头 钢都花园 工业路 北洋桥 武汉火车站 铁铺岭 万家咀 白玉山'.split()
+extensions = [
+    {'id':'wuhan-confirmed-3-phase2', 'parentId':'amap-4201-420100024331-0', 'parentName':'3号线', 'part':'二期延长段', 'stations':'沌阳大道 车城南路 枫树一路 枫树五路 全力二路 全力三路 文岭'.split(), 'status':'construction', 'note':'采用官方已公开工程站名，非最终运营命名通告。原五座新站依据市政府2024-11-28工程报道；新增车城南路依据经开区2026-09-30在建报道。车城南路按官方路口说明大致定位；其余新增站为公开地图位置。'},
+    {'id':'wuhan-confirmed-6-phase3', 'parentId':'amap-4201-420100024335-0', 'parentName':'6号线', 'part':'三期延长段', 'stations':'东风公司 江汉大学 博艺路'.split(), 'status':'construction', 'note':'采用官方已公开工程站名，非最终运营命名通告。两座新站江汉大学、博艺路及站序依据市国资委2022-12-30开工报道和2024年规划许可；不把博学路误作站名。新增站为公开地图位置。'},
+    {'id':'wuhan-confirmed-21-connector', 'parentId':'amap-4201-900000075739-0', 'parentName':'阳逻线', 'part':'延长段（12号线连接线）', 'stations':'后湖大道 新春 中一路'.split(), 'status':'construction', 'note':'后湖大道—新春—中一路，依据市政府2025-02-19工程报道。建设项目名称为12号线连接线，建成后与阳逻线贯通运营，归入阳逻线。新春为公开工程站名，中一路共用8/12号线站点。'},
+    {'id':'wuhan-confirmed-11-hanyang', 'parentId':'amap-4201-900000073743-0', 'parentName':'11号线', 'part':'三期汉阳站段', 'stations':'汉阳站 黄金口'.split(), 'status':'planned', 'note':'两站及站序依据汉阳区政府2022-07-28工程说明，归入11号线，与四期共用汉阳站、与4号线共用黄金口。站名有工程依据，未核实当前实际开工状态，按规划显示；不代表已开通。'},
+]
 
 # name: longitude, latitude, public POI ID
 gcj = {
@@ -30,6 +36,8 @@ gcj = {
     '北洋桥': (114.407143, 30.602602, 'BV11649484'),
     '铁铺岭': (114.439253, 30.600597, 'BV11310957'),
     '白玉山': (114.494379, 30.602984, 'BV11649482'),
+    '江汉大学': (114.158431, 30.507573, 'BV09081170'),
+    '博艺路': (114.155843, 30.519492, 'BV09081169'),
 }
 # Public map locations, not surveyed engineering center coordinates.
 bd = {
@@ -39,7 +47,15 @@ bd = {
     '江国路': (114.28854163535, 30.50800216442, 14578),
     '工业路': (114.39366224443, 30.62538989106, 14494),
     '万家咀': (114.47907726453, 30.603172427124, 14532),
+    '文岭': (114.08569805289027, 30.49223494696167, 18932),
+    '全力三路': (114.09018958044015, 30.469592927830522, 18933),
+    '全力二路': (114.09827433002995, 30.46126617444225, 18929),
+    '枫树五路': (114.1171387457395, 30.466246748862897, 18928),
+    '枫树一路': (114.136901466959, 30.47519557213376, 18927),
+    '新春': (114.30263263524, 30.651657101089, 14546),
 }
+# This station has an official road-junction location, but no surveyed coordinate in the cited notice.
+approximate = {'车城南路': (114.143, 30.486, 'https://www.whkfq.gov.cn/xwzx/yw/kfqyw/qnxw/202406/t20240605_2411949.html')}
 
 def bd_to_gcj(lng, lat):
     x, y = lng - .0065, lat - .006
@@ -48,12 +64,15 @@ def bd_to_gcj(lng, lat):
     return z * math.cos(theta), z * math.sin(theta)
 
 stations = {}
-for name in dict.fromkeys(ring + eleven + ten):
+for name in dict.fromkeys(ring + eleven + ten + [name for extension in extensions for name in extension['stations']]):
     existing = next((s for s in base['stations'].values() if s['name'] == name), None)
     if existing:
         stations[name] = dict(existing, coordinateSource='public/transit/wuhan.json')
     else:
-        if name in gcj:
+        if name in approximate:
+            lng, lat, source = approximate[name]
+            point = lng, lat
+        elif name in gcj:
             lng, lat, poi = gcj[name]
             point = refresh.gcj_to_wgs(lng, lat)
             source = f'https://www.amap.com/place/{poi}'
@@ -62,7 +81,8 @@ for name in dict.fromkeys(ring + eleven + ten):
             point = refresh.gcj_to_wgs(*bd_to_gcj(lng, lat))
             source = f'https://www.icauto.com.cn/chuxing/d_{page}.html'
         stations[name] = {'id': f'wuhan-confirmed-station-{name}', 'name': name, 'lng': point[0], 'lat': point[1], 'coordinateSource': source}
-result = {'ring': ring, 'eleven': eleven, 'ten': ten, 'stations': stations}
+result = {'ring': ring, 'eleven': eleven, 'ten': ten, 'extensions': extensions, 'stations': stations}
 (ROOT / 'src/utils/wuhanConfirmedData.json').write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 assert len(ring) == 37 and len(ten) == 13 and len(eleven) == 8
+assert [len(extension['stations']) for extension in extensions] == [7,3,3,2]
 print(f'Confirmed supplement: {len(stations)} named stations, 37-stop ring, 13-stop Line 10, 8-stop Line 11 extension.')
