@@ -5,7 +5,7 @@ export type Station = {
   lat: number
 }
 
-export type Waypoint = { id: string; lng: number; lat: number }
+export type Waypoint = { id: string; lng: number; lat: number; name?: string }
 export type LineNode = { type: 'station' | 'waypoint'; id: string }
 
 export type LineStatus = 'existing' | 'construction' | 'planned'
@@ -21,6 +21,7 @@ export type MetroLine = {
   locked?: boolean
   sourceLineId?: string
   parentLineId?: string
+  planningNote?: string
 }
 
 export type MetroProject = {

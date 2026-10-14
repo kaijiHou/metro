@@ -140,9 +140,13 @@ function syncStationMarkers(map: MapLibreMap, markers: Map<string, MarkerRecord>
 }
 
 function syncWaypointMarkers(map: MapLibreMap, markers: Map<string, MarkerRecord>) {
-  const { project, selectedWaypointId } = useMetroStore.getState()
+  const { project, selectedWaypointId, selectedLineId } = useMetroStore.getState()
   const protectedIds = lockedNodeIds(project, 'waypoint')
+  const selectedNodes = new Set(selectedLineId ? project.lines[selectedLineId]?.nodes.map((node) => node.id) : [])
+  const visibleIds = new Set<string>()
   for (const waypoint of Object.values(project.waypoints)) {
+    if (waypoint.name?.includes('示意控制点') && !selectedNodes.has(waypoint.id)) continue
+    visibleIds.add(waypoint.id)
     let record = markers.get(waypoint.id)
     if (!record) {
       const element = document.createElement('button')
@@ -166,11 +170,11 @@ function syncWaypointMarkers(map: MapLibreMap, markers: Map<string, MarkerRecord
     if (position.lng !== waypoint.lng || position.lat !== waypoint.lat) record.marker.setLngLat([waypoint.lng, waypoint.lat])
     record.element.className = `map-waypoint${selectedWaypointId === waypoint.id ? ' map-waypoint--selected' : ''}`
     record.marker.setDraggable(!protectedIds.has(waypoint.id))
-    record.element.title = protectedIds.has(waypoint.id) ? '控制点 · 已锁定' : '控制点 · 拖动调整线路'
+    record.element.title = `${waypoint.name ?? '控制点'} · ${protectedIds.has(waypoint.id) ? '已锁定' : '拖动调整线路'}`
     record.element.setAttribute('aria-label', '选择控制点')
   }
   for (const [id, record] of markers) {
-    if (project.waypoints[id]) continue
+    if (visibleIds.has(id)) continue
     record.marker.remove()
     markers.delete(id)
   }

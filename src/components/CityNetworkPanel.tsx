@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { MapTarget } from '../config/map'
 import { emptyProject } from '../models/metro'
+import { WuhanPlanningPanel } from './WuhanPlanningPanel'
 import { useMetroStore } from '../store/metroStore'
 import { readCityProject } from '../utils/cityProjects'
 import { LEGACY_STORAGE_KEY, STORAGE_KEY } from '../utils/persistence'
@@ -139,5 +140,6 @@ export function CityNetworkPanel({ requestedTarget, onSelectCity, onCatalogLoade
         if (window.confirm(`恢复${activeCity.name}的内置原始线路？当前城市的修改将被替换，可用撤销恢复。`)) void openCity(activeCity, true)
       }}>恢复内置原始线路</button>
     </div>}
+    <WuhanPlanningPanel />
   </div>
 }

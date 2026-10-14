@@ -59,6 +59,7 @@ export function LinePanel() {
     <LinePlanningPanel />
     {line && <div className="line-editor">
       <div className="subheading">编辑当前线路</div>
+      {line.planningNote && <p className="city-data-info">{line.planningNote}</p>}
       {!lines.some((item) => item.parentLineId === line.id) && lines.filter((item) => item.id !== line.id && !item.parentLineId && extensionNodes(item, line)).map((item) => <button key={item.id} type="button" className="station-add-primary" disabled={locked || lineLocked(item)} onClick={() => mergeLineExtension(line.id, item.id)}>并入{item.name}，作为连续延伸</button>)}
       {line.parentLineId && <p className="quiet">{rootLine(project, line).name}的支线 · {line.name}</p>}
       {!lines.some((item) => item.parentLineId === line.id) && <><label className="field-label" htmlFor="branch-parent">支线归属</label><select id="branch-parent" disabled={locked} value={line.parentLineId ?? ''} onChange={(event) => { if (event.target.value) attachBranch(line.id, event.target.value) }}><option value="">独立线路（可选择归入已有线路）</option>{lines.filter((item) => !item.parentLineId && item.id !== line.id && item.nodes.some((node) => node.type === 'station' && line.nodes.some((other) => other.type === 'station' && other.id === node.id))).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></>}
@@ -70,7 +71,7 @@ export function LinePanel() {
       <div className="subheading station-order-heading">节点顺序 <span>{line.nodes.length}</span></div>
       <p className="quiet">点站名可改名；点 ↑ ↓ 调整顺序。</p>
       {line.nodes.length ? <ol className="node-order">{line.nodes.map((node, index) => {
-        const label = node.type === 'station' ? project.stations[node.id]?.name ?? '无效站点' : `控制点 ${++waypointOrdinal}`
+        const label = node.type === 'station' ? project.stations[node.id]?.name ?? '无效站点' : project.waypoints[node.id]?.name ?? `控制点 ${++waypointOrdinal}`
         const selected = node.type === 'station' ? selectedStationId === node.id : selectedWaypointId === node.id
         return <li key={`${node.type}:${node.id}`}>
           <div className={`node-row${selected ? ' node-row--selected' : ''}`}>

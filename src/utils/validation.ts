@@ -33,7 +33,8 @@ export function validateProject(value: unknown): MetroProject {
         typeof raw.lat !== 'number' || !validCoordinates(raw.lng, raw.lat)) {
       throw new Error(`控制点 ${id} 的 ID 或经纬度无效。`)
     }
-    waypoints[id] = { id, lng: raw.lng, lat: raw.lat }
+    if (raw.name !== undefined && (typeof raw.name !== 'string' || !raw.name.trim())) throw new Error(`控制点 ${id} 名称无效。`)
+    waypoints[id] = { id, lng: raw.lng, lat: raw.lat, ...(typeof raw.name === 'string' ? { name: raw.name.trim() } : {}) }
   }
 
   const lines: Record<string, MetroLine> = Object.create(null)
@@ -47,6 +48,7 @@ export function validateProject(value: unknown): MetroProject {
     if (raw.locked !== undefined && typeof raw.locked !== 'boolean') throw new Error(`线路 ${id} 的锁定状态无效。`)
     if (raw.sourceLineId !== undefined && (typeof raw.sourceLineId !== 'string' || !raw.sourceLineId)) throw new Error(`线路 ${id} 的来源标识无效。`)
     if (raw.parentLineId !== undefined && (typeof raw.parentLineId !== 'string' || !raw.parentLineId)) throw new Error(`线路 ${id} 的支线归属无效。`)
+    if (raw.planningNote !== undefined && (typeof raw.planningNote !== 'string' || !raw.planningNote.trim())) throw new Error(`线路 ${id} 的规划说明无效。`)
     const nodes: LineNode[] = []
     if (raw.closed !== undefined && typeof raw.closed !== 'boolean') throw new Error(`线路 ${id} 的环线标记无效。`)
     const seen = new Set<string>()
@@ -66,7 +68,8 @@ export function validateProject(value: unknown): MetroProject {
       status: (raw.status ?? (legacyExisting ? 'existing' : 'planned')) as MetroLine['status'],
       visible: raw.visible ?? true, locked: raw.locked ?? (raw.status === 'existing' || legacyExisting),
       ...(raw.sourceLineId !== undefined ? { sourceLineId: raw.sourceLineId as string } : {}),
-      ...(raw.parentLineId !== undefined ? { parentLineId: raw.parentLineId as string } : {}) }
+      ...(raw.parentLineId !== undefined ? { parentLineId: raw.parentLineId as string } : {}),
+      ...(typeof raw.planningNote === 'string' ? { planningNote: raw.planningNote } : {}) }
   }
   for (const line of Object.values(lines)) {
     if (line.parentLineId && (!lines[line.parentLineId] || lines[line.parentLineId].parentLineId || line.parentLineId === line.id)) throw new Error(`支线 ${line.name} 的所属线路不存在或无效。`)

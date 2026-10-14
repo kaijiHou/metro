@@ -18,3 +18,8 @@ test-results/
 /validation/*.png
 /validation/exported-project.json
 /validation/transit-source/*.json
+/validation/wuhan-*.jpg
+/validation/wuhan-*.pdf
+/validation/wuhan-*.html
+/validation/wuhan-*-first100.txt
+/validation/wuhan-planning-source-review.md

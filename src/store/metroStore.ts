@@ -5,6 +5,7 @@ import { readCityProject, saveCityProject } from '../utils/cityProjects'
 import { activeScenario, defaultScenarioSet, readScenarioSet, saveScenarioSet, withActiveProject, type ScenarioSet } from '../utils/scenarios'
 import { lineLocked, lineStatus, nodeLocked, lockedNodeIds, rootLine, extensionNodes } from '../utils/planning'
 import { validCoordinates } from '../utils/validation'
+import { addWuhanPlanning } from '../utils/wuhanPlanning'
 
 export type Notice = { text: string; kind: 'info' | 'error' } | null
 
@@ -33,6 +34,7 @@ export type MetroState = {
   setNotice: (text: string, kind?: 'info' | 'error') => void
   clearNotice: () => void
   saveCurrentProject: () => void
+  applyWuhanPlanning: () => void
   attachBranch: (lineId: string, parentId: string) => void
   mergeLineExtension: (lineId: string, parentId: string) => void
   renameProject: (name: string) => void
@@ -147,6 +149,13 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
 
     setNotice: (text, kind = 'info') => set({ notice: { text, kind } }),
     clearNotice: () => set({ notice: null }),
+    applyWuhanPlanning: () => set((state) => {
+      const project = addWuhanPlanning(state.project)
+      if (project === state.project) return state
+      return { project, selectedLineId: 'wuhan-plan-9', selectedStationId: null, selectedStationIds: [], selectedWaypointId: null,
+        editorMode: 'browse', extensionEnd: null, pendingInsertIndex: null,
+        notice: { text: '已加入武汉远期规划示意，并替换9号线。换乘共用已有站点，控制点代表大致区域；Ctrl+Z可撤销。', kind: 'info' } }
+    }),
     saveCurrentProject: () => {
       try {
         if (scenarioStorageBroken) throw new Error('方案数据损坏')
