@@ -14,6 +14,7 @@ export function validateProject(value: unknown): MetroProject {
   if (value.version !== 2) throw new Error('不支持的项目版本。当前仅校验 version: 2。')
   if (value.cityId !== undefined && (typeof value.cityId !== 'string' || !/^[a-z][a-z0-9-]{0,63}$/.test(value.cityId))) throw new Error('无效的城市标识。')
   if (typeof value.name !== 'string' || !value.name.trim()) throw new Error('项目名称不能为空。')
+  if (value.appliedUpdates !== undefined && (!Array.isArray(value.appliedUpdates) || !value.appliedUpdates.every((item) => typeof item === 'string' && item.length > 0))) throw new Error('项目更新标记无效。')
   if (!isRecord(value.stations)) throw new Error('缺少有效的 stations 对象。')
   if (!isRecord(value.waypoints)) throw new Error('缺少有效的 waypoints 对象。')
   if (!isRecord(value.lines)) throw new Error('缺少有效的 lines 对象。')
@@ -49,6 +50,7 @@ export function validateProject(value: unknown): MetroProject {
     if (raw.sourceLineId !== undefined && (typeof raw.sourceLineId !== 'string' || !raw.sourceLineId)) throw new Error(`线路 ${id} 的来源标识无效。`)
     if (raw.parentLineId !== undefined && (typeof raw.parentLineId !== 'string' || !raw.parentLineId)) throw new Error(`线路 ${id} 的支线归属无效。`)
     if (raw.planningNote !== undefined && (typeof raw.planningNote !== 'string' || !raw.planningNote.trim())) throw new Error(`线路 ${id} 的规划说明无效。`)
+    if (raw.existingSegments !== undefined && (!Array.isArray(raw.existingSegments) || !raw.existingSegments.every((pair) => Array.isArray(pair) && pair.length === 2 && pair.every((nodeId) => typeof nodeId === 'string' && nodeId.length > 0)))) throw new Error(`线路 ${id} 的已开通区间标记无效。`)
     const nodes: LineNode[] = []
     if (raw.closed !== undefined && typeof raw.closed !== 'boolean') throw new Error(`线路 ${id} 的环线标记无效。`)
     const seen = new Set<string>()
@@ -69,10 +71,11 @@ export function validateProject(value: unknown): MetroProject {
       visible: raw.visible ?? true, locked: raw.locked ?? (raw.status === 'existing' || legacyExisting),
       ...(raw.sourceLineId !== undefined ? { sourceLineId: raw.sourceLineId as string } : {}),
       ...(raw.parentLineId !== undefined ? { parentLineId: raw.parentLineId as string } : {}),
+      ...(Array.isArray(raw.existingSegments) ? { existingSegments: raw.existingSegments.map((pair) => [...pair]) as [string, string][] } : {}),
       ...(typeof raw.planningNote === 'string' ? { planningNote: raw.planningNote } : {}) }
   }
   for (const line of Object.values(lines)) {
     if (line.parentLineId && (!lines[line.parentLineId] || lines[line.parentLineId].parentLineId || line.parentLineId === line.id)) throw new Error(`支线 ${line.name} 的所属线路不存在或无效。`)
   }
-  return { version: 2, name: value.name.trim(), stations, waypoints, lines, ...(typeof value.cityId === 'string' ? { cityId: value.cityId } : {}) }
+  return { version: 2, name: value.name.trim(), stations, waypoints, lines, ...(typeof value.cityId === 'string' ? { cityId: value.cityId } : {}), ...(Array.isArray(value.appliedUpdates) ? { appliedUpdates: [...value.appliedUpdates] as string[] } : {}) }
 }

@@ -1,0 +1,460 @@
+{
+  "ring": [
+    "钢都花园",
+    "园林路",
+    "团结大道",
+    "汪家墩",
+    "秦园中路",
+    "公正路",
+    "何家垅",
+    "十五中",
+    "武昌站东广场",
+    "瑞安街东",
+    "富安街",
+    "楚祥大道",
+    "省农科院南",
+    "光霞",
+    "市农科院",
+    "夹套河",
+    "国博中心南",
+    "国博新城",
+    "四新南路",
+    "四新中路",
+    "芳草路",
+    "港口村",
+    "墨水湖公园",
+    "十里铺",
+    "汉钢",
+    "汉西路南",
+    "双墩",
+    "汉西路北",
+    "华安里",
+    "汉口站北广场",
+    "石桥",
+    "中一路",
+    "后湖四路",
+    "兴业路",
+    "百步亭",
+    "丹水池",
+    "科普公园"
+  ],
+  "eleven": [
+    "江安路",
+    "江国路",
+    "国博中心北",
+    "梅林",
+    "芳草路",
+    "四新大道",
+    "汤山",
+    "汉阳站"
+  ],
+  "ten": [
+    "汉口火车站",
+    "唐家墩",
+    "竹叶山",
+    "二七小路",
+    "二七路",
+    "余家头",
+    "钢都花园",
+    "工业路",
+    "北洋桥",
+    "武汉火车站",
+    "铁铺岭",
+    "万家咀",
+    "白玉山"
+  ],
+  "stations": {
+    "钢都花园": {
+      "id": "amap-4201-BV10879662",
+      "name": "钢都花园",
+      "lng": 114.363635,
+      "lat": 30.614196,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "园林路": {
+      "id": "amap-4201-BV10060943",
+      "name": "园林路",
+      "lng": 114.372581,
+      "lat": 30.602514,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "团结大道": {
+      "id": "amap-4201-BV10879674",
+      "name": "团结大道",
+      "lng": 114.357972,
+      "lat": 30.594743,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "汪家墩": {
+      "id": "amap-4201-BV10575981",
+      "name": "汪家墩",
+      "lng": 114.34457,
+      "lat": 30.587506,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "秦园中路": {
+      "id": "amap-4201-BV09357632",
+      "name": "秦园中路",
+      "lng": 114.337317,
+      "lat": 30.580859,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "公正路": {
+      "id": "amap-4201-BV10879665",
+      "name": "公正路",
+      "lng": 114.3316,
+      "lat": 30.558592,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "何家垅": {
+      "id": "amap-4201-BV10952881",
+      "name": "何家垅",
+      "lng": 114.325975,
+      "lat": 30.550229,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "十五中": {
+      "id": "amap-4201-BV10879667",
+      "name": "十五中",
+      "lng": 114.321841,
+      "lat": 30.539644,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "武昌站东广场": {
+      "id": "amap-4201-BV11587197",
+      "name": "武昌站东广场",
+      "lng": 114.316784,
+      "lat": 30.531388,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "瑞安街东": {
+      "id": "amap-4201-BV09362314",
+      "name": "瑞安街东",
+      "lng": 114.313997,
+      "lat": 30.515037,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "富安街": {
+      "id": "amap-4201-BV10879675",
+      "name": "富安街",
+      "lng": 114.314955,
+      "lat": 30.502058,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "楚祥大道": {
+      "id": "amap-4201-BV09357628",
+      "name": "楚祥大道",
+      "lng": 114.314631,
+      "lat": 30.492598,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "省农科院南": {
+      "id": "amap-4201-BV09416843",
+      "name": "省农科院南",
+      "lng": 114.311267,
+      "lat": 30.483746,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "光霞": {
+      "id": "amap-4201-BV11527772",
+      "name": "光霞",
+      "lng": 114.287632,
+      "lat": 30.481002,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "市农科院": {
+      "id": "amap-4201-BV09416846",
+      "name": "市农科院",
+      "lng": 114.271879,
+      "lat": 30.481701,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "夹套河": {
+      "id": "amap-4201-BV09416845",
+      "name": "夹套河",
+      "lng": 114.263173,
+      "lat": 30.486507,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "国博中心南": {
+      "id": "amap-4201-BV10570926",
+      "name": "国博中心南",
+      "lng": 114.230365,
+      "lat": 30.506917,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "国博新城": {
+      "id": "amap-4201-BV09357624",
+      "name": "国博新城",
+      "lng": 114.22175,
+      "lat": 30.509439,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "四新南路": {
+      "id": "amap-4201-BV10879669",
+      "name": "四新南路",
+      "lng": 114.210263,
+      "lat": 30.515286,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "四新中路": {
+      "id": "amap-4201-BV10971454",
+      "name": "四新中路",
+      "lng": 114.200568,
+      "lat": 30.521211,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "芳草路": {
+      "id": "amap-4201-BV10971452",
+      "name": "芳草路",
+      "lng": 114.19664,
+      "lat": 30.530698,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "港口村": {
+      "id": "amap-4201-BV10879660",
+      "name": "港口村",
+      "lng": 114.201905,
+      "lat": 30.540099,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "墨水湖公园": {
+      "id": "amap-4201-BV09357635",
+      "name": "墨水湖公园",
+      "lng": 114.208504,
+      "lat": 30.551923,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "十里铺": {
+      "id": "amap-4201-BV10417326",
+      "name": "十里铺",
+      "lng": 114.213977,
+      "lat": 30.561771,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "汉钢": {
+      "id": "wuhan-confirmed-station-汉钢",
+      "name": "汉钢",
+      "lng": 114.228408,
+      "lat": 30.567752,
+      "coordinateSource": "https://www.icauto.com.cn/chuxing/d_14416.html"
+    },
+    "汉西路南": {
+      "id": "wuhan-confirmed-station-汉西路南",
+      "name": "汉西路南",
+      "lng": 114.231613,
+      "lat": 30.579795,
+      "coordinateSource": "https://www.amap.com/place/BV09416844"
+    },
+    "双墩": {
+      "id": "amap-4201-BV10060862",
+      "name": "双墩",
+      "lng": 114.226581,
+      "lat": 30.589115,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "汉西路北": {
+      "id": "wuhan-confirmed-station-汉西路北",
+      "name": "汉西路北",
+      "lng": 114.222498,
+      "lat": 30.602751,
+      "coordinateSource": "https://www.amap.com/place/BV09416842"
+    },
+    "华安里": {
+      "id": "wuhan-confirmed-station-华安里",
+      "name": "华安里",
+      "lng": 114.231556,
+      "lat": 30.616501,
+      "coordinateSource": "https://www.amap.com/place/BV09357636"
+    },
+    "汉口站北广场": {
+      "id": "wuhan-confirmed-station-汉口站北广场",
+      "name": "汉口站北广场",
+      "lng": 114.249777,
+      "lat": 30.62387,
+      "coordinateSource": "https://www.amap.com/place/BV09357626"
+    },
+    "石桥": {
+      "id": "amap-4201-BV10060888",
+      "name": "石桥",
+      "lng": 114.259848,
+      "lat": 30.633082,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "中一路": {
+      "id": "amap-4201-BV10904560",
+      "name": "中一路",
+      "lng": 114.275742,
+      "lat": 30.642333,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "后湖四路": {
+      "id": "wuhan-confirmed-station-后湖四路",
+      "name": "后湖四路",
+      "lng": 114.289953,
+      "lat": 30.640188,
+      "coordinateSource": "https://www.amap.com/place/BV10879671"
+    },
+    "兴业路": {
+      "id": "amap-4201-BV10060851",
+      "name": "兴业路",
+      "lng": 114.29878,
+      "lat": 30.643533,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "百步亭": {
+      "id": "wuhan-confirmed-station-百步亭",
+      "name": "百步亭",
+      "lng": 114.312266,
+      "lat": 30.650591,
+      "coordinateSource": "https://www.amap.com/place/BV10879673"
+    },
+    "丹水池": {
+      "id": "amap-4201-BV10060933",
+      "name": "丹水池",
+      "lng": 114.324538,
+      "lat": 30.645739,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "科普公园": {
+      "id": "amap-4201-BV10804905",
+      "name": "科普公园",
+      "lng": 114.359399,
+      "lat": 30.620034,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "江安路": {
+      "id": "amap-4201-BV11432187",
+      "name": "江安路",
+      "lng": 114.287993,
+      "lat": 30.521295,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "江国路": {
+      "id": "wuhan-confirmed-station-江国路",
+      "name": "江国路",
+      "lng": 114.276561,
+      "lat": 30.504679,
+      "coordinateSource": "https://www.icauto.com.cn/chuxing/d_14578.html"
+    },
+    "国博中心北": {
+      "id": "amap-4201-BV10060877",
+      "name": "国博中心北",
+      "lng": 114.237231,
+      "lat": 30.513069,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "梅林": {
+      "id": "wuhan-confirmed-station-梅林",
+      "name": "梅林",
+      "lng": 114.214241,
+      "lat": 30.521337,
+      "coordinateSource": "https://www.icauto.com.cn/chuxing/d_14576.html"
+    },
+    "四新大道": {
+      "id": "amap-4201-BV10060867",
+      "name": "四新大道",
+      "lng": 114.189105,
+      "lat": 30.53765,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "汤山": {
+      "id": "wuhan-confirmed-station-汤山",
+      "name": "汤山",
+      "lng": 114.175352,
+      "lat": 30.543954,
+      "coordinateSource": "https://www.icauto.com.cn/chuxing/d_14573.html"
+    },
+    "汉阳站": {
+      "id": "wuhan-confirmed-station-汉阳站",
+      "name": "汉阳站",
+      "lng": 114.148715,
+      "lat": 30.552487,
+      "coordinateSource": "https://www.amap.com/place/BV09160179"
+    },
+    "汉口火车站": {
+      "id": "amap-4201-BV10057987",
+      "name": "汉口火车站",
+      "lng": 114.24954,
+      "lat": 30.617938,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "唐家墩": {
+      "id": "amap-4201-BV10060887",
+      "name": "唐家墩",
+      "lng": 114.26586,
+      "lat": 30.6201,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "竹叶山": {
+      "id": "amap-4201-BV10575985",
+      "name": "竹叶山",
+      "lng": 114.281682,
+      "lat": 30.627748,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "二七小路": {
+      "id": "amap-4201-BV10570862",
+      "name": "二七小路",
+      "lng": 114.302362,
+      "lat": 30.631246,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "二七路": {
+      "id": "amap-4201-BV10420613",
+      "name": "二七路",
+      "lng": 114.31329,
+      "lat": 30.627414,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "余家头": {
+      "id": "amap-4201-BV10804920",
+      "name": "余家头",
+      "lng": 114.34666,
+      "lat": 30.610358,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "工业路": {
+      "id": "wuhan-confirmed-station-工业路",
+      "name": "工业路",
+      "lng": 114.38161,
+      "lat": 30.621608,
+      "coordinateSource": "https://www.icauto.com.cn/chuxing/d_14494.html"
+    },
+    "北洋桥": {
+      "id": "wuhan-confirmed-station-北洋桥",
+      "name": "北洋桥",
+      "lng": 114.401595,
+      "lat": 30.604873,
+      "coordinateSource": "https://www.amap.com/place/BV11649484"
+    },
+    "武汉火车站": {
+      "id": "amap-4201-BV10058420",
+      "name": "武汉火车站",
+      "lng": 114.418842,
+      "lat": 30.60965,
+      "coordinateSource": "public/transit/wuhan.json"
+    },
+    "铁铺岭": {
+      "id": "wuhan-confirmed-station-铁铺岭",
+      "name": "铁铺岭",
+      "lng": 114.433745,
+      "lat": 30.602891,
+      "coordinateSource": "https://www.amap.com/place/BV11310957"
+    },
+    "万家咀": {
+      "id": "wuhan-confirmed-station-万家咀",
+      "name": "万家咀",
+      "lng": 114.46725,
+      "lat": 30.599219,
+      "coordinateSource": "https://www.icauto.com.cn/chuxing/d_14532.html"
+    },
+    "白玉山": {
+      "id": "wuhan-confirmed-station-白玉山",
+      "name": "白玉山",
+      "lng": 114.489042,
+      "lat": 30.605406,
+      "coordinateSource": "https://www.amap.com/place/BV11649482"
+    }
+  }
+}

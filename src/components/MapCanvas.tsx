@@ -259,7 +259,8 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
         paint: { 'text-color': '#193b4c', 'text-halo-color': '#ffffff', 'text-halo-width': 2 },
       })
       map.addLayer({ id: 'metro-station-labels', type: 'symbol', source: 'metro-station-labels', minzoom: 11.5,
-        layout: { visibility: presentationRef.current ? 'none' : 'visible', 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Bold'], 'text-size': ['interpolate', ['linear'], ['zoom'], 11, 15, 15, 18, 18, 20], 'text-anchor': 'left', 'text-offset': [1, 0] },
+        layout: { visibility: presentationRef.current ? 'none' : 'visible', 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Bold'], 'text-size': ['interpolate', ['linear'], ['zoom'], 11, 15, 15, 18, 18, 20], 'text-anchor': 'left', 'text-offset': [1, 0],
+          'text-allow-overlap': ['step', ['zoom'], false, 14, true], 'text-ignore-placement': ['step', ['zoom'], false, 14, true], 'text-padding': 2 },
         paint: { 'text-color': '#193b4c', 'text-halo-color': '#ffffff', 'text-halo-width': 2.5 },
       })
     }
@@ -414,7 +415,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
       <details open className="map-line-legend" aria-label="线路名称与颜色"><summary>线路图例</summary><div className="map-line-legend-items">
         {Object.values(project.lines).filter((line) => !line.parentLineId && line.visible !== false).map((line) => <div key={line.id}>
           <span className="map-line-swatch" style={{ backgroundColor: lineStatus(line) === 'construction' ? 'transparent' : line.color, borderTop: lineStatus(line) === 'construction' ? `3px dashed ${line.color}` : undefined, height: lineStatus(line) === 'planned' ? 6 : 4 }} aria-hidden="true" />
-          <span>{line.name} · {statusNames[lineStatus(line)]}</span>
+          <span>{line.name} · {lineStatus(line) === 'construction' && line.existingSegments?.length ? '部分在建' : statusNames[lineStatus(line)]}</span>
         </div>)}
       </div></details>
       <div className="map-hint" role="status">

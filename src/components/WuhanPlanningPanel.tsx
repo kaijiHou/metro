@@ -1,28 +1,30 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useMetroStore } from '../store/metroStore'
 import { WUHAN_PLANNING_VERSION } from '../utils/wuhanPlanning'
 
 export function WuhanPlanningPanel() {
   const cityId = useMetroStore((state) => state.project.cityId)
   const scenarioId = useMetroStore((state) => state.activeScenarioId)
-  const imported = useMetroStore((state) => Object.values(state.project.lines).some((line) => line.sourceLineId === WUHAN_PLANNING_VERSION))
+  const imported = useMetroStore((state) => state.project.appliedUpdates?.includes(WUHAN_PLANNING_VERSION))
   const apply = useMetroStore((state) => state.applyWuhanPlanning)
+  const attempted = useRef(new Set<string>())
   useEffect(() => {
     if (cityId !== 'wuhan') return
-    // Replace only the first active Wuhan scenario, not every saved alternative.
-    const key = `metro-planner.${WUHAN_PLANNING_VERSION}.auto-applied`
+    const key = `metro-planner.${WUHAN_PLANNING_VERSION}.${scenarioId}`
+    if (attempted.current.has(key)) return
+    attempted.current.add(key)
     try {
+      // Undo stays undone after refresh; every saved scenario has its own marker.
       if (localStorage.getItem(key)) return
       apply()
       if (useMetroStore.getState().notice?.kind !== 'error') localStorage.setItem(key, 'applied')
-    } catch { useMetroStore.getState().setNotice('规划示意自动载入失败，可点击下方按钮重试。', 'error') }
+    } catch { useMetroStore.getState().setNotice('确认线路载入失败，可点击下方按钮重试。', 'error') }
   }, [cityId, scenarioId, apply])
   if (cityId !== 'wuhan') return null
   return <div className="city-data-info">
-    <strong>武汉远期规划 · 大致走廊示意</strong>
-    <span>换乘共用已有站点。示意控制点是区域位置，不代表已确定车站；线路相交不等于换乘。</span>
-    <span>新版公开图、官方回复及旧版参考综合整理，待核实部分见各线路说明。</span>
-    <a href="https://www.ditiee.com/thread-1424-1-1.html" target="_blank" rel="noreferrer">2024—2035规划展示图与来源</a>
-    {!imported && <button type="button" onClick={apply}>加入规划示意并替换9号线</button>}
+    <strong>武汉已确认线路补充</strong>
+    <span>12号线37站成环、11号线四期、10号线已确认区段。未开通部分有在建标记，换乘共用站点。</span>
+    <a href="https://jtj.wuhan.gov.cn/jtzx/tzgg/202506/t20250617_2596751.shtml" target="_blank" rel="noreferrer">12号线正式站名</a>
+    {!imported && <button type="button" onClick={apply}>载入确认线路并清除旧示意</button>}
   </div>
 }

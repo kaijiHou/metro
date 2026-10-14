@@ -22,11 +22,13 @@ export type MetroLine = {
   sourceLineId?: string
   parentLineId?: string
   planningNote?: string
+  existingSegments?: [string, string][]
 }
 
 export type MetroProject = {
   version: 2
   cityId?: string
+  appliedUpdates?: string[]
   name: string
   stations: Record<string, Station>
   waypoints: Record<string, Waypoint>

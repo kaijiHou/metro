@@ -55,11 +55,31 @@ export function lineFeatureCollection(project: MetroProject, selectedLineId: str
       if (coordinate) coordinates.push(coordinate)
     }
     if (coordinates.length < 2) continue
+    const properties = { id: line.id, name: parent.name, color: parent.color, status: line.status ?? 'planned', selected: !!(selectedLineId && project.lines[selectedLineId] && rootLine(project, project.lines[selectedLineId]).id === parent.id) }
+    if (line.status === 'construction' && line.existingSegments?.length) {
+      const opened = new Set(line.existingSegments.flatMap(([a,b]) => [`${a}:${b}`, `${b}:${a}`]))
+      // Old opening markers only affect still-adjacent nodes. New or edited edges stay construction.
+      let section: [number,number][] = [], sectionStatus = ''
+      for (let index = 0; index < line.nodes.length - (line.closed ? 0 : 1); index++) {
+        const a = line.nodes[index], b = line.nodes[(index+1) % line.nodes.length]
+        const from = resolveLineNodeCoordinate(project,a), to = resolveLineNodeCoordinate(project,b)
+        if (!from || !to) continue
+        const status = opened.has(`${a.id}:${b.id}`) ? 'existing' : 'construction'
+        if (status !== sectionStatus && section.length >= 2) {
+          features.push({ type:'Feature', geometry:{type:'LineString',coordinates:section}, properties:{...properties,status:sectionStatus} })
+          section = []
+        }
+        if (!section.length) section.push(from)
+        section.push(to); sectionStatus = status
+      }
+      if (section.length >= 2) features.push({ type:'Feature', geometry:{type:'LineString',coordinates:section}, properties:{...properties,status:sectionStatus} })
+      continue
+    }
     if (line.closed) coordinates.push(coordinates[0])
     features.push({
       type: 'Feature',
       geometry: { type: 'LineString', coordinates },
-      properties: { id: line.id, name: parent.name, color: parent.color, status: line.status ?? 'planned', selected: !!(selectedLineId && project.lines[selectedLineId] && rootLine(project, project.lines[selectedLineId]).id === parent.id) },
+      properties,
     })
   }
   return { type: 'FeatureCollection', features }

@@ -152,9 +152,9 @@ export function createMetroStore(options: CreateMetroStoreOptions = {}) {
     applyWuhanPlanning: () => set((state) => {
       const project = addWuhanPlanning(state.project)
       if (project === state.project) return state
-      return { project, selectedLineId: 'wuhan-plan-9', selectedStationId: null, selectedStationIds: [], selectedWaypointId: null,
+      return { project, stationLabelMode: 'all', selectedLineId: project.lines['amap-4201-900000078508-0']?.id ?? 'wuhan-confirmed-12', selectedStationId: null, selectedStationIds: [], selectedWaypointId: null,
         editorMode: 'browse', extensionEnd: null, pendingInsertIndex: null,
-        notice: { text: '已加入武汉远期规划示意，并替换9号线。换乘共用已有站点，控制点代表大致区域；Ctrl+Z可撤销。', kind: 'info' } }
+        notice: { text: '已移除旧远期示意，补齐12号线37站环线、11号线四期及10号线确认区段，并标出汉阳站。Ctrl+Z可撤销。', kind: 'info' } }
     }),
     saveCurrentProject: () => {
       try {
