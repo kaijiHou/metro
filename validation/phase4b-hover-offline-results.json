@@ -1,0 +1,19 @@
+{
+  "base": "http://127.0.0.1:5174/",
+  "checks": 10,
+  "passed": [
+    "fresh profile renders national outlines and province names with all public internet blocked",
+    "style has no external glyph URL",
+    "real mouse hover over Wuhan polygon displays city and province",
+    "tooltip follows pointer within the same city",
+    "moving to another actual polygon changes city name",
+    "leaving the map removes hover label",
+    "style rebuild clears old popup and restores hover",
+    "another province and its city labels load locally while internet is blocked",
+    "footprint makes zero public internet requests",
+    "no JavaScript runtime errors"
+  ],
+  "remoteRequests": [],
+  "runtimeErrors": [],
+  "offlineMethod": "Public internet requests blocked in a fresh profile; localhost remains running. Not a service-worker offline installation."
+}

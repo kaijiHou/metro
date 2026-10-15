@@ -361,3 +361,11 @@ PASS：路径穿越、重复 ID/路径、未知城市、错误 schema、图片�
 - 既有 ESLint 9.36 弃用提示和 MapLibre 主包超过 500kB 的构建提示仍存在；安装、lint、构建均成功。
 - NOT RUN：Firefox/Safari、实体手机硬件、全部 339 区域逐城人工现势核对、单独 EXIF 旋转 JPEG 样本。实现使用原生 from-image 方向处理，实测 JPEG 为常规编码样本。
 - GPS 定位/步行导航未实现，遵循本阶段明确边界。
+
+## 足迹悬浮与断网补充验收（2026-10-15）
+
+基线 `5d23b2125675558fdcc68418153d49d180303e99`。新增跟随鼠标的“城市 · 省份”提示；离开地图、移动视图、重建样式、卸载地图均清理提示。将足迹页文字改为 MapLibre 6 本地字形，删除外部 glyph URL，中文标签使用已安装字体，不下载字体文件。省市 GeoJSON 和默认图本就随项目保存，无需另外缓存公网地图。
+
+`validation/phase4b_hover_offline_flow.py` 使用全新隔离浏览器，阻断所有公网请求，保留本地服务：真实省界/省名渲染、无 glyph URL、武汉鼠标悬停、同城跟随、鄂州切换、移出消失、样式重建恢复、切湖南加载长沙、零公网请求、零 JS 异常共 10 项 PASS。它验证“断开互联网但本地服务仍运行”，不声称停止本地服务或 Service Worker 离线安装可用；地铁详细底图仍需联网。截图 `validation/phase4b-hover-offline-preview.png` 为真实浏览器输出，仅本地保留。
+
+补充检查：lint PASS、105 单测 PASS、生产构建 PASS。生产预览上的同一断网流程结果与运行地址记录在 `validation/phase4b-hover-offline-results.json`；最终提交 CI 以交付消息链接为准。
