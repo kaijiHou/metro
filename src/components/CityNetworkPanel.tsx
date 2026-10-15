@@ -3,6 +3,7 @@ import type { MapTarget } from '../config/map'
 import { emptyProject } from '../models/metro'
 import { WuhanPlanningPanel } from './WuhanPlanningPanel'
 import { useMetroStore } from '../store/metroStore'
+import { useViewStore } from '../store/viewStore'
 import { readCityProject } from '../utils/cityProjects'
 import { LEGACY_STORAGE_KEY, STORAGE_KEY } from '../utils/persistence'
 import { cityMapTarget, fetchCityCatalog, fetchCityProject, findTransitCity, type TransitCity } from '../utils/transit'
@@ -22,6 +23,7 @@ export function CityNetworkPanel({ requestedTarget, onSelectCity, onCatalogLoade
   const controllerRef = useRef<AbortController | null>(null)
   const projectCityId = useMetroStore((state) => state.project.cityId)
   const activeCity = cities.find((city) => city.id === projectCityId)
+  const navigateOnly = useViewStore((state)=>state.presentationMode)
 
   const openCity = useCallback(async (city: TransitCity, original = false) => {
     controllerRef.current?.abort()
@@ -30,6 +32,7 @@ export function CityNetworkPanel({ requestedTarget, onSelectCity, onCatalogLoade
     setOpening(city.name)
     setMessage('')
     try {
+      if(useViewStore.getState().presentationMode){onSelectCity(cityMapTarget(city));setMessage(`已定位到${city.name}，当前规划项目保持不变。`);return}
       const current = useMetroStore.getState().project
       if (!original && current.cityId === city.id) {
         onSelectCity(cityMapTarget(city))
@@ -43,7 +46,7 @@ export function CityNetworkPanel({ requestedTarget, onSelectCity, onCatalogLoade
         catch (failure) { if (controller.signal.aborted) throw failure }
       }
       const project = saved ?? await fetchCityProject(city, controller.signal)
-      if (controller.signal.aborted || controllerRef.current !== controller) return
+      if (controller.signal.aborted || controllerRef.current !== controller || useViewStore.getState().presentationMode) return
       const state = useMetroStore.getState()
       if (original && state.project.cityId === city.id) state.loadProject(project)
       else if (!state.switchCity(project)) return
@@ -103,8 +106,12 @@ export function CityNetworkPanel({ requestedTarget, onSelectCity, onCatalogLoade
   }, [cities, requestedTarget, openCity])
 
   useEffect(() => () => controllerRef.current?.abort(), [])
+  useEffect(() => {
+    if (navigateOnly) { controllerRef.current?.abort(); controllerRef.current = null; setOpening('') }
+  }, [navigateOnly])
 
   const openCustom = () => {
+    if (useViewStore.getState().presentationMode) { setMessage("浏览模式保留当前规划；请切回规划模式再打开自主规划。"); return }
     controllerRef.current?.abort()
     setOpening('')
     try {
@@ -136,10 +143,10 @@ export function CityNetworkPanel({ requestedTarget, onSelectCity, onCatalogLoade
       <span>内置数据获取：{activeCity.retrievedAt.slice(0, 10)} · <a href="https://map.amap.com/subway/index.html" target="_blank" rel="noreferrer">高德地铁图</a></span>
       <span>先复制为规划线路，或明确解锁后修改现状副本。各城市分别保存修改。</span>
       <span>按真实站点连线，非实际轨道走向；新开线路以运营方公告为准。</span>
-      <button type="button" className="text-action" disabled={!!opening} onClick={() => {
+      <button type="button" className="text-action" disabled={!!opening||navigateOnly} onClick={() => {
         if (window.confirm(`恢复${activeCity.name}的内置原始线路？当前城市的修改将被替换，可用撤销恢复。`)) void openCity(activeCity, true)
       }}>恢复内置原始线路</button>
     </div>}
-    <WuhanPlanningPanel />
+    {!navigateOnly && <WuhanPlanningPanel />}
   </div>
 }

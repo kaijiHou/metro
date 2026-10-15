@@ -11,3 +11,9 @@ Phase 3 读取时将内置线路标记为 `existing`、`visible: true`、`locked
 重新生成：在项目根目录用 Python 3.10+ 执行 `python scripts/update-transit.py`。脚本限制同时两个数据请求，全部城市转换成功后才替换正式快照；原始响应留在忽略版本控制的 `validation/transit-source/` 供复核。`python scripts/update-transit.py --cached` 可用已有原始响应复验转换。更新后运行单元测试和浏览器流程，并核对新增或退出的线路。
 
 第三方源数据不因本项目代码的 MIT 许可而获得额外授权；引用、再分发及使用应遵守数据提供方适用条款。
+
+## Phase 4 漫游与出入口
+
+本期没有新增抓取或改动 public/transit 下的快照。全国浏览按视口读取原58城文件；浏览不代表实时运营数据。现有高德来源的再分发条款仍需独立复核，原有风险不因新增浏览功能消失，也未扩大为新的数据采集。
+
+出入口来源为用户点击后按需查询的 OpenStreetMap/Overpass，© OpenStreetMap contributors，ODbL，https://www.openstreetmap.org/copyright 。站区关系之外的附近入口不自动归属；同名站区关系为候选关联，不声称官方核实。原始数据仅内存缓存，不批量爬取/提交出口库。查询服务适用公共资源限制，https://dev.overpass-api.de/overpass-doc/en/preface/commons.html 。完整规则见 STATION_EXITS.md。

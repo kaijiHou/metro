@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { INITIAL_CENTER, type MapTarget } from '../config/map'
 import { validCoordinates } from '../utils/validation'
 import { CityNetworkPanel } from './CityNetworkPanel'
+import { useViewStore } from '../store/viewStore'
 import { findTransitCity, type TransitCity } from '../utils/transit'
 
 type CityResult = { id: string; name: string; description: string; center: [number, number] }
@@ -67,7 +68,7 @@ export function CitySearch({ onSelectCity }: { onSelectCity: (target: MapTarget)
     const local = cities.filter((item) => [item.name, item.id, ...item.aliases].some((name) => name.toLowerCase().includes(city.toLowerCase().replace(/市$/, ''))))
     if (local.length) {
       setResults(local.map((item) => ({ id: item.id, name: item.name, description: `${item.name} · ${item.lineCount} 条线路 / 支线 · ${item.stationCount} 站`, center: item.center })))
-      setMessage('选择城市，载入真实线路或恢复你的修改。')
+      setMessage(useViewStore.getState().presentationMode?'选择城市，仅定位地图，保留当前规划。':'选择城市，载入真实线路或恢复你的修改。')
       return
     }
     if (Date.now() - lastRequestAt.current < 1100) {

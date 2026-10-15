@@ -56,3 +56,11 @@
 浏览器使用稳定键 `metro-planner.project` 保存当前项目，schema 版本由 JSON 内部 `version` 决定。各城市副本使用 `metro-planner.city.<cityId>`，自主规划使用 `metro-planner.city.custom`，选择城市时恢复相应副本。多方案另存于 `metro-planner.scenarios.<cityId>` 或 `metro-planner.scenarios.custom`，每个城市最多 5 个完整项目。启动时优先读取稳定键；若不存在才读取旧 v1 键。旧项目成功迁移、校验并写入稳定键后，才删除旧键。旧数据损坏或新键写入失败时保留旧数据并显示错误提示。导出始终为 v2，导出内容为当前方案。
 
 未知附加字段会在校验后丢弃；v2 线路若仍含旧 `stationIds` 字段会被拒绝。小型示例位于 `validation/fixtures/`。
+
+## Phase 4 只读数据边界
+
+MetroProject 仍是 v2，既有 v1→v2 migration 保持。背景线网复制自内置快照，只放内存缓存；GeoJSON 的 id 使用 cityId:sourceId，避免跨城同名/同ID串站。点击返回原始 stationId、cityId、cityName、lineNames、来源URL与WGS84坐标。
+
+`StationExit` 独立于 Station：id、cityId、stationId、lng、lat、可选ref/name/exitTo/sourceUrl/fetchedAt、wheelchair、source和confidence；实际定义见 src/models/exits.ts。OSM对象以cityId:osm:node:objectId去重，不能用出口编号作为唯一键。人工JSON导入校验城市与站点所属及坐标，只用于本次查看，不进入项目JSON，也不声称自动持久化。
+
+尚未创建旅行足迹数据库。后续 visits/photos/settings 应以独立 IndexedDB/Dexie 库保存，城市代码不与地铁cityId混用，照片Blob不进入localStorage或项目JSON。

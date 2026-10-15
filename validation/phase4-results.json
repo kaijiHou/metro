@@ -1,0 +1,77 @@
+{
+  "baseline": "c708d4eb742a3587b155b808a4bb5fbde6763c87",
+  "scope": "Phase4 first delivery: roaming and station exits; travel/albums/ZIP NOT IMPLEMENTED",
+  "unitTests": {
+    "passed": 94,
+    "failed": 0
+  },
+  "lint": "0 errors, 0 warnings",
+  "build": [
+    "root successful",
+    "/metro/ successful, known bundle-size warning"
+  ],
+  "npmCi": "Successful under existing local Node24.19.0; existing ESLint deprecated warning",
+  "audit": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "roamingAndExits": {
+    "checks": 23,
+    "passed": [
+      "browse removes editor DOM markers",
+      "Wuhan planning data remains drawn",
+      "Wuhan station missing data is honest",
+      "pan to Changsha loads network without city selection",
+      "Changsha station identity and relation-member fixture exits",
+      "exit locates actual provided coordinate",
+      "retry bypasses cache and recovers from failure",
+      "close clears exit source",
+      "combined viewport shows Wuhan and Changsha",
+      "rapid panning ends at latest viewport",
+      "returning to city uses cache",
+      "browse city picker does not switch project",
+      "custom project entry cannot replace project while browsing",
+      "existing-only avoids current city duplication",
+      "auto-off removes national overview but retains selected existing city",
+      "rapid station changes keep latest city/station identity",
+      "old delayed station response cannot overwrite latest exits",
+      "style reload restores isolated network/exit layers",
+      "planning project/scenario/history/persistence unchanged",
+      "planning editor markers restored",
+      "undo restores actual last user edit",
+      "redo restores edited project",
+      "no browser runtime exceptions"
+    ],
+    "errors": []
+  },
+  "failureFlow": [
+    "catalog failure retries locally without page reload",
+    "city 404 degrades locally and retry restores network without editing project",
+    "entering browse cancels pending planning city switch",
+    "mobile page has no horizontal overflow"
+  ],
+  "production": {
+    "status": "PASS",
+    "base": "/metro/",
+    "cityRequests": [
+      "http://127.0.0.1:5174/metro/transit/catalog.json",
+      "http://127.0.0.1:5174/metro/transit/catalog.json",
+      "http://127.0.0.1:5174/metro/transit/wuhan.json",
+      "http://127.0.0.1:5174/metro/transit/ezhou.json",
+      "http://127.0.0.1:5174/metro/transit/changsha.json",
+      "http://127.0.0.1:5174/metro/transit/xiangtan.json"
+    ],
+    "projectPreserved": true,
+    "runtimeErrors": []
+  },
+  "liveOsm": {
+    "status": "FAILED",
+    "error": "HTTP Error 504: Gateway Timeout",
+    "seconds": 13.78
+  },
+  "ci": "Check delivery HEAD run after push, not inferred from local tests"
+}

@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
+import { useViewStore } from '../store/viewStore'
 import { useMetroStore } from '../store/metroStore'
 import { downloadProject, parseProjectJson } from '../utils/persistence'
 import type { MapTarget } from '../config/map'
 
 export function ProjectPanel({ onProjectLoaded }: { onProjectLoaded: (target: MapTarget) => void }) {
+  const readOnly = useViewStore((state) => state.presentationMode)
   const project = useMetroStore((state) => state.project)
   const loadProject = useMetroStore((state) => state.loadProject)
   const startNewProject = useMetroStore((state) => state.startNewProject)
@@ -29,6 +31,7 @@ export function ProjectPanel({ onProjectLoaded }: { onProjectLoaded: (target: Ma
     try {
       if (file.size > 5 * 1024 * 1024) throw new Error('文件超过 5 MB，请选择较小的项目 JSON。')
       const parsed = parseProjectJson(await file.text())
+      if (useViewStore.getState().presentationMode) throw new Error('已切到浏览模式，请返回规划模式后再导入。')
       loadProject(parsed)
       const station = Object.values(parsed.stations)[0]
       if (station) onProjectLoaded({ center: [station.lng, station.lat], zoom: 10, label: station.name })
@@ -43,6 +46,7 @@ export function ProjectPanel({ onProjectLoaded }: { onProjectLoaded: (target: Ma
       <header className="topbar">
         <div className="brand"><span className="brand-mark" aria-hidden="true"><i /><i /><i /></span><span>Metro <strong>Planner</strong></span></div>
         <div className="topbar-actions">
+          {readOnly ? <span className="quiet">浏览中 · 规划已保留</span> : <>
           <button type="button" onClick={undo} disabled={!canUndo} title="撤销上一步（Ctrl+Z）">撤销</button>
           <button type="button" onClick={redo} disabled={!canRedo} title="重做上一步（Ctrl+Y）">重做</button>
           <button type="button" onClick={() => {
@@ -51,6 +55,7 @@ export function ProjectPanel({ onProjectLoaded }: { onProjectLoaded: (target: Ma
             newProjectDialog.current?.showModal()
           }}>新建项目</button>
           <button type="button" onClick={() => fileRef.current?.click()}>导入 JSON</button>
+          </>}
           <button type="button" className="button-primary" onClick={() => downloadProject(project)}>导出 JSON</button>
           <input ref={fileRef} type="file" accept=".json,application/json" hidden onChange={(event) => void importProject(event.target.files?.[0])} aria-label="选择项目 JSON 文件" />
         </div>

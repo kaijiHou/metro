@@ -6,7 +6,7 @@
 
 `CitySearch` 结合 `CityNetworkPanel` 载入 `public/transit/` 内置城市线网或恢复城市副本；首次无保存项目时载入武汉，已有项目保持。未知城市使用 OpenStreetMap Nominatim 搜索定位地图。切换前保存当前项目，失败则保留；切换成功清空撤销历史，避免跨城市撤销。MapLibre 的 `moveend` 保存独立视角，地图视角不写入项目 JSON。
 
-Phase 3 的 `status`、`visible`、`locked`、`sourceLineId` 是 schema v2 可选线路字段。内置现状线默认锁定；用户规划线叠加在同一个项目中。Store 在所有修改拓扑、移动或删除节点的入口检查锁定状态，地图 Marker 的拖动能力同步关闭。复制线路为规划线时复制控制点本体，站点继续共用现状站点；规划站位必须通过新建站点实现。`lineFeatureCollection()` 跳过隐藏线路，MapLibre 按状态用实线、虚线和不同线宽渲染；站名标签由 Symbol Layer 显示。
+Phase 3 的 `status`、`visible`、`locked`、`sourceLineId` 是 schema v2 可选线路字段。内置现状线默认锁定；用户规划线叠加在同一个项目中。Store 在所有修改拓扑、移动或删除节点的入口检查锁定状态，地图 Marker 的拖动能力同步关闭。复制线路为规划线时复制控制点本体，站点继续共用现状站点；规划站位必须通过新建站点实现。`lineFeatureCollection()` 跳过隐藏线路，MapLibre 按状态用实线和不同线宽渲染；站名标签由 Symbol Layer 显示。
 
 `statistics.ts` 计算沿节点路径的长度与站距。`scenarios.ts` 校验每城市最多五个完整项目快照；默认方案继续沿用旧城市存储键，额外方案保存在 `metro-planner.scenarios.<cityId>`。方案和城市切换都在保存当前项目后载入目标项目，清空 Undo/Redo 和临时选择，不重置地图视角。数据源更新时现有方案不会被自动替换。详见 [规划模型](PLANNING_MODEL.md)。
 
@@ -33,3 +33,15 @@ Store 在项目对象变化时记录前一个不可变快照，最多保留 50 �
 `src/utils/geojson.ts` 是线路节点坐标解析的唯一位置：station 从 `project.stations` 取坐标，waypoint 从 `project.waypoints` 取坐标，按 `nodes` 顺序形成 `[lng, lat]`。异常悬空引用在开发模式下警告并跳过；少于两个有效节点不生成 LineString。正常 JSON 导入会先由 validation 拦截悬空引用。
 
 导入与本地恢复依次执行 `JSON.parse` → `migrateProjectToCurrent()` → `validateProject()`。v1 线路的有序 `stationIds` 由纯函数转成 v2 station nodes，导入后内存与导出格式都为 v2。浏览器启动优先读取稳定键 `metro-planner.project`；没有时读取旧 v1 键，迁移并校验后先写新键，写入成功才删除旧键。失败时保留旧数据并在页面提示错误。
+
+## Phase 4：隔离的全国浏览与出口
+
+`viewStore` 只保存浏览 UI 状态与只读站点选择，不持久化到项目。`BrowseNetworkLoader` 独立保存有界 LRU（12 城）、待处理请求与 generation；并发最多4个，视口变化250ms防抖，范围按 catalog.bounds 相交选城。缓存容量不限制当下可见城市数量。失效请求取消，旧 generation 不发布。缓存和 GeoJSON 都不进入 MetroProject/Scenario/Undo。
+
+沿用唯一 `MapCanvas`/MapLibre 实例，style.load 重建 sources/layers 并恢复当前数据。browse-cities、browse-lines、browse-stations、station-exits 与编辑 sources 隔离。zoom<7 为城市点，>=7 线路，>=10 站点，>=12 背景站名。浏览模式移除编辑 DOM Markers，切回增量恢复。当前规划城市去重；仅看现状时隐藏当前编辑 sources 并读取该城原始快照。禁用全国自动展示仍可显示当前城现状。
+
+`CityNetworkPanel` 在浏览中只能定位；自定义项目、恢复快照、武汉补充等编辑入口受模式限制。模式变化不会重新触发曾经选择城市的加载。地图移动只保存可选地图视角，不调用 switchCity/loadProject。浏览时项目改名/新建/导入/撤销 UI 隐藏，Ctrl+Z/Y 不修改项目，Ctrl+S 仍可保存原方案。
+
+`StationDetailDrawer` 为当前 cityId+stationId 的独立生命周期；新选择取消旧出口请求，清空图层；异步人工导入也验证当前选择，成功后取消尚未完成的在线请求。`ExitInfoService` 仅点击按需 Overpass 请求：超时20秒，真实请求起点至少间隔1.5秒；取消的等待不占未来时段。成功/空结果缓存24小时最多100站，失败不缓存，显式重试跳过缓存。Map 卸载取消请求/定时器，清理监听与 Marker，Map.remove 清理 sources/layers。
+
+旅行足迹、相册、IndexedDB 和 ZIP 尚未接入，当前没有第二套地图或个人图片数据。

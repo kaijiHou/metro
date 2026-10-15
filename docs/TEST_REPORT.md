@@ -1,5 +1,56 @@
 # 测试报告
 
+## Phase 4 第一批：全国漫游与站点出口（2026-10-15）
+
+本批实现需求文档允许的最小完整范围。基线 `c708d4eb742a3587b155b808a4bb5fbde6763c87`，main。**不是整个Phase 4完成：市级足迹、相册、Dexie/IndexedDB、默认城市照片、ZIP备份均未实现/NOT RUN。** GPS只有设计文档。
+
+| 检查 | 实际结果 |
+|---|---|
+| npm ci | 成功，Node v24.19.0；存在原有ESLint 9.36.0停止支持提示 |
+| npm run lint | 成功，0错误/0警告 |
+| npm test | 94 PASS，0 FAIL |
+| npm run build | 默认根路径成功；另运行 --base=/metro/ 成功；保留MapLibre大包>500KB提示 |
+| npm audit --audit-level=moderate | 0漏洞（validation/phase4-audit.json），没有将审计警告写为PASS |
+| Playwright全国漫游/出口 | 23个检查通过，Chrome独立profile，真实底图与原始城市快照；出口内容使用明示模拟响应 |
+| Playwright错误/重试/手机 | 4个检查通过：catalog失败本地重试、城市404重试、切浏览取消在途编辑城市切换、390px无横向溢出 |
+| 生产子路径 | /metro/真实生产构建打开，catalog/长沙快照都从/metro/transit加载，项目不变，0运行异常 |
+| 真实OSM查询 | FAILED：一次长沙附近请求返回HTTP 504，13.78秒；不声称真实出口覆盖验收通过 |
+| git diff --check | 通过；无快照改动、无用户照片、新增原始边界不发布 |
+| GitHub CI | 推送后检查对应HEAD实际运行，不能用本地通过代替；交付消息给出远端运行结果 |
+
+### 已验证的保护与功能
+
+武汉保留个人线路和独立方案→浏览→地图到长沙自动加载→两城同屏→快速返回→缓存命中；浏览中的城市下拉和自主规划入口都不会替换项目。回规划后项目JSON、activeScenarioId、方案列表、持久化字符串、canUndo/canRedo相同，实际撤销/重做恢复用户最后的改名。
+
+浏览中无编辑DOM Marker，站点通过GeoJSON点击；点击武汉/长沙车站城市关联正确。模拟的OSM关系成员出口正确显示编号/坐标/候选置信/无方向提示；非成员附近入口不会被收录（单元测试）。错误503后显式重试能绕过缓存，再回空状态；换站取消旧查询，延迟旧响应不覆盖新站，关闭清空出口源；同Map样式重载重建独立图层。
+
+生产子路径第一次检查遇到底图初始化超时，重试通过；底图仍依赖第三方网络。安装依赖第一次因自有Vite占用Windows原生模块报EPERM，停服后npm ci成功；系统Node20.12.1触发传递依赖引擎提示，最终采用本机已有Node24.19.0验证，CI同步为24。没有新增依赖，没有升级锁文件。默认根构建和子路径构建均实际执行。
+
+### 五城快照回归
+
+与基线JSON内容逐项完全一致（工作区CRLF与Git对象LF不作字节一致声明）：
+
+| 城市 | 线路/支段 | 站点 |
+|---|---:|---:|
+| 武汉 | 13 | 289 |
+| 长沙 | 7 | 151 |
+| 北京 | 27 | 410 |
+| 上海 | 24 | 418 |
+| 广州 | 23 | 332 |
+
+原58城文件、项目v2/v1升级、Scenario、Station/Waypoint、锁定/Undo/Redo单元回归保持；Windows启动器未修改，本地Vite已重新启动。没有把规划线改作运营线。既有高德快照再分发许可仍是原有待复核风险；没有擅自删除或新增抓取。
+
+### 复现与产物
+
+- `validation/phase4_roaming_flow.py`：开发服务器5173；23个漫游/出口检查。
+- `validation/phase4_failure_flow.py`：开发服务器5173；只在请求/错误测试中使用明示空白底图，不据此宣称视觉底图覆盖。
+- `validation/phase4_production_flow.py`：先构建 --base=/metro/，预览5174 --base=/metro/；验证生产BASE_URL。
+- 脚本使用项目现有Python/Playwright/Chrome独立浏览空间，不接触用户浏览数据。机器结果：validation/phase4-results.json、phase4-snapshot-counts.json、phase4-audit.json、phase4-live-osm.json。
+- 完整本地输出：validation/phase4-*.log；截图：phase4-roaming-preview.png、phase4-production-preview.png、phase4-mobile-preview.png。日志/截图按既有规则不提交。
+
+未交付项、边界资料门槛见TRAVEL_FOOTPRINT.md；出口局限见STATION_EXITS.md；下一阶段设计见NAVIGATION_ROADMAP.md。
+
+
 ## 展示站名与10号线远期走廊（2026-10-14）
 
 - 展示模式显示站名并隐藏圆圈与控制点；切出后保留编辑模式筛选。

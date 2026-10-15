@@ -8,6 +8,13 @@ import { useMetroStore } from '../store/metroStore'
 import { lineFeatureCollection, nearestLineInsertIndex, stationFeatureCollection, stationLabelCollection } from '../utils/geojson'
 import { lockedNodeIds, lineStatus, rootLine, statusNames } from '../utils/planning'
 import { validCoordinates } from '../utils/validation'
+import { useViewStore } from '../store/viewStore'
+import { BrowseNetworkLoader,type BrowseResult } from '../services/browseNetworkLoader'
+import { addBrowseLayers,syncBrowseLayers,syncExitLayers } from '../services/mapBrowseLayers'
+import { cityMapTarget,fetchCityCatalog,type TransitCity } from '../utils/transit'
+import type { BrowseStation } from '../utils/browseGeojson'
+import type { StationExit } from '../models/exits'
+import { StationDetailDrawer } from './StationDetailDrawer'
 
 maplibregl.setWorkerUrl(mapWorkerUrl)
 
@@ -181,7 +188,20 @@ function syncWaypointMarkers(map: MapLibreMap, markers: Map<string, MarkerRecord
 }
 
 export function MapCanvas({ target }: { target: MapTarget | null }) {
-  const [presentationMode, setPresentationMode] = useState(false)
+  const presentationMode = useViewStore((state)=>state.presentationMode)
+  const setPresentationMode = useViewStore((state)=>state.setPresentationMode)
+  const autoNetworks = useViewStore((state)=>state.autoNetworks)
+  const existingOnly = useViewStore((state)=>state.existingOnly)
+  const browseStation = useViewStore((state)=>state.station)
+  const [catalog,setCatalog]=useState<TransitCity[]>([])
+  const [browseResult,setBrowseResult]=useState<BrowseResult>({projects:{},loading:[],errors:{}})
+  const [catalogError,setCatalogError]=useState('')
+  const catalogRef=useRef(catalog)
+  const resultRef=useRef(browseResult)
+  const loaderRef=useRef<BrowseNetworkLoader|null>(null)
+  const retryCatalogRef=useRef<()=>void>(()=>{})
+  const reloadRef=useRef<()=>void>(()=>{})
+  const exitsRef=useRef<StationExit[]>([])
   const presentationRef = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
@@ -199,7 +219,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
       presentationRef.current = false
       setPresentationMode(false)
     }
-  }), [])
+  }), [setPresentationMode])
   const stationLabelMode = useMetroStore((state) => state.stationLabelMode)
   const pendingInsertIndex = useMetroStore((state) => state.pendingInsertIndex)
 
@@ -216,6 +236,23 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
       zoom: initialView.zoom,
     })
     mapRef.current = map
+    const loader=new BrowseNetworkLoader()
+    loaderRef.current=loader
+    const catalogController=new AbortController()
+    const loadCatalog=()=>{setCatalogError('');void fetchCityCatalog(catalogController.signal).then((cities)=>{if(!catalogController.signal.aborted){catalogRef.current=cities;setCatalog(cities);reloadRef.current()}}).catch((error)=>{if(!catalogController.signal.aborted)setCatalogError(error instanceof Error?error.message:'城市目录暂不可用')})}
+    retryCatalogRef.current=loadCatalog
+    loadCatalog()
+    let loadTimer:ReturnType<typeof setTimeout>|undefined
+    const refreshNetworks=()=>{
+      clearTimeout(loadTimer)
+      loadTimer=setTimeout(()=>{
+        const bounds=map.getBounds()
+        const view=useViewStore.getState()
+        const visibleCatalog=view.autoNetworks?catalogRef.current:catalogRef.current.filter((city)=>view.presentationMode&&view.existingOnly&&city.id===useMetroStore.getState().project.cityId)
+        void loader.update(visibleCatalog,{west:bounds.getWest(),south:bounds.getSouth(),east:bounds.getEast(),north:bounds.getNorth(),zoom:map.getZoom()},view.presentationMode&&view.existingOnly?undefined:useMetroStore.getState().project.cityId,view.autoNetworks||(view.presentationMode&&view.existingOnly),(next)=>{resultRef.current=next;setBrowseResult(next);syncBrowseLayers(map,next,view.autoNetworks?catalogRef.current:[])})
+      },250)
+    }
+    reloadRef.current=refreshNetworks
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right')
 
     const onLoad = () => {
@@ -263,11 +300,35 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
           'text-allow-overlap': ['step', ['zoom'], false, 14, true], 'text-ignore-placement': ['step', ['zoom'], false, 14, true], 'text-padding': 2 },
         paint: { 'text-color': '#193b4c', 'text-halo-color': '#ffffff', 'text-halo-width': 2.5 },
       })
+      addBrowseLayers(map)
+      map.setLayoutProperty('metro-readonly-stations','visibility',presentationRef.current?'visible':'none')
+      if(presentationRef.current&&useViewStore.getState().existingOnly){(map.getSource('metro-lines') as GeoJSONSource).setData({type:'FeatureCollection',features:[]});(map.getSource('metro-station-labels') as GeoJSONSource).setData({type:'FeatureCollection',features:[]})}
+      syncBrowseLayers(map,resultRef.current,useViewStore.getState().autoNetworks?catalogRef.current:[])
+      syncExitLayers(map,exitsRef.current)
+      refreshNetworks()
     }
     let ignoreLabelClick = false
     const onMapClick = (event: maplibregl.MapMouseEvent) => {
       if (ignoreLabelClick) { ignoreLabelClick = false; return }
-      if (presentationRef.current) return
+      const readLayers=['browse-station-points','browse-station-names',...(presentationRef.current?['metro-readonly-stations','metro-station-labels']:[])].filter((id)=>map.getLayer(id))
+      const readonly=readLayers.length?map.queryRenderedFeatures(event.point,{layers:readLayers})[0]:undefined
+      if(readonly&&readonly.geometry.type==='Point'){
+        const properties=readonly.properties??{}
+        const current=useMetroStore.getState().project
+        const stationId=String(properties.stationId??properties.id)
+        const isBackground=typeof properties.cityId==='string'
+        const cityId=isBackground?properties.cityId:current.cityId??'custom'
+        const city=catalogRef.current.find((item)=>item.id===cityId)
+        const lineNames=isBackground?JSON.parse(String(properties.lineNames??'[]')) as string[]:[...new Set(Object.values(current.lines).filter((line)=>line.nodes.some((node)=>node.type==='station'&&node.id===stationId)).map((line)=>rootLine(current,line).name))]
+        const selected:BrowseStation={id:stationId,name:String(properties.name),lng:readonly.geometry.coordinates[0],lat:readonly.geometry.coordinates[1],cityId,cityName:city?.name??current.name,lineNames,sourceUrl:isBackground?String(properties.sourceUrl):city?.sourceUrl??''}
+        useViewStore.getState().setStation(selected);return
+      }
+      if(presentationRef.current){
+        const cityPoint=map.getLayer('browse-city-points')?map.queryRenderedFeatures(event.point,{layers:['browse-city-points','browse-city-names']})[0]:undefined
+        const city=catalogRef.current.find((item)=>item.id===cityPoint?.properties?.id)
+        if(city)map.fitBounds(city.bounds,{padding:60,maxZoom:12})
+        return
+      }
       const state = useMetroStore.getState()
       if (state.editorMode === 'add-station') state.createStation(event.lngLat.lng, event.lngLat.lat)
       else if (state.editorMode === 'add-waypoint' && state.selectedLineId) {
@@ -343,6 +404,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
       map.getCanvas().title = ''
     }
     const onMapMoveEnd = () => {
+      refreshNetworks()
       const center = map.getCenter()
       try {
         localStorage.setItem(MAP_VIEW_KEY, JSON.stringify({ center: [center.lng, center.lat], zoom: map.getZoom() }))
@@ -360,6 +422,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
     map.on('mouseout', cancelLabelDrag)
     map.on('moveend', onMapMoveEnd)
     return () => {
+      catalogController.abort();clearTimeout(loadTimer);loader.dispose();loaderRef.current=null
       resizeObserver.disconnect()
       map.off('style.load', onLoad)
       map.off('click', onMapClick)
@@ -377,6 +440,9 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
     }
   }, [])
 
+  useEffect(()=>{presentationRef.current=presentationMode;if(presentationMode)useMetroStore.getState().setEditorMode('browse');const map=mapRef.current;if(map?.getLayer('metro-readonly-stations'))map.setLayoutProperty('metro-readonly-stations','visibility',presentationMode?'visible':'none')},[presentationMode])
+  useEffect(()=>{reloadRef.current()},[autoNetworks,project.cityId,presentationMode,existingOnly])
+
   useEffect(() => {
     if (target?.bounds) mapRef.current?.fitBounds(target.bounds, { padding: 55, maxZoom: 12, duration: 1000 })
     else if (target) mapRef.current?.flyTo({ center: target.center, zoom: target.zoom, essential: true })
@@ -386,22 +452,35 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
     const map = mapRef.current
     if (!map) return
     const source = map.getSource('metro-lines') as GeoJSONSource | undefined
-    source?.setData(lineFeatureCollection(project, presentationMode ? null : selectedLineId))
+    const lines=lineFeatureCollection(project,presentationMode?null:selectedLineId)
+    if(presentationMode&&existingOnly)lines.features=[]
+    source?.setData(lines)
     const labels = map.getSource('metro-station-labels') as GeoJSONSource | undefined
-    labels?.setData(stationLabelCollection(project, presentationMode ? 'all' : stationLabelMode, selectedLineId))
+    labels?.setData(stationLabelCollection(project, presentationMode&&existingOnly?'none':presentationMode ? 'all' : stationLabelMode, selectedLineId))
     if (map.getLayer('metro-station-labels')) map.setLayoutProperty('metro-station-labels', 'visibility', 'visible')
-  }, [project, selectedLineId, presentationMode, stationLabelMode])
+  }, [project, selectedLineId, presentationMode, stationLabelMode,existingOnly])
 
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
+    if(presentationMode){for(const record of markersRef.current.values())record.marker.remove();markersRef.current.clear();for(const record of waypointMarkersRef.current.values())record.marker.remove();waypointMarkersRef.current.clear();return}
     syncStationMarkers(map, markersRef.current)
     syncWaypointMarkers(map, waypointMarkersRef.current)
-  }, [project, selectedStationId, selectedStationIds, selectedWaypointId, editorMode])
+  }, [project, selectedStationId, selectedStationIds, selectedWaypointId, editorMode,presentationMode])
+
+  const onExits=useRef((exits:StationExit[])=>{exitsRef.current=exits;if(mapRef.current)syncExitLayers(mapRef.current,exits)}).current
 
   return (
     <main className={`map-area${presentationMode ? ' map-area--presentation' : editorMode !== 'browse' ? ' map-area--adding' : ''}`}>
       <div ref={containerRef} className="map-canvas" aria-label="地铁线路规划地图" />
+      <div className="transit-browse-controls">
+        <label><input type="checkbox" checked={autoNetworks} onChange={(event)=>useViewStore.getState().setAutoNetworks(event.target.checked)}/>全国线网自动展示</label>
+        {presentationMode&&<label><input type="checkbox" checked={existingOnly} onChange={(event)=>useViewStore.getState().setExistingOnly(event.target.checked)}/>仅看已建成线路</label>}
+        <button type="button" onClick={()=>{const city=catalog.find((item)=>item.id===project.cityId);if(city){const target=cityMapTarget(city);mapRef.current?.fitBounds(target.bounds!,{padding:60,maxZoom:12})}}}>返回我的规划城市</button>
+        {browseResult.loading.length>0&&<small role="status">载入 {browseResult.loading.length} 个城市…</small>}
+        {(catalogError||Object.keys(browseResult.errors).length>0)&&<span role="status">{catalogError||'部分城市暂未载入'} <button type="button" onClick={()=>{if(catalogError)retryCatalogRef.current();else reloadRef.current()}}>重试线网</button></span>}
+      </div>
+      {browseStation&&<StationDetailDrawer key={`${browseStation.cityId}:${browseStation.id}`} station={browseStation} onClose={()=>useViewStore.getState().setStation(null)} onExits={onExits} onLocate={(exit)=>mapRef.current?.flyTo({center:[exit.lng,exit.lat],zoom:17})}/>}
       {!presentationMode && editorMode === 'browse' && selectedStationId && lockedNodeIds(project, 'station').has(selectedStationId) && <div className="map-unlock-station" role="status">
         <span>{project.stations[selectedStationId]?.name} · 已锁定</span>
         <button type="button" onClick={() => useMetroStore.getState().unlockStation(selectedStationId)}>解锁并拖动</button>
@@ -413,14 +492,16 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
         setPresentationMode(next)
       }}>{presentationMode ? '返回编辑' : '展示模式'}</button>
       <details open className="map-line-legend" aria-label="线路名称与颜色"><summary>线路图例</summary><div className="map-line-legend-items">
-        {Object.values(project.lines).filter((line) => !line.parentLineId && line.visible !== false).map((line) => <div key={line.id}>
+        {!(presentationMode&&existingOnly)&&<strong className="map-legend-city">当前规划 · {catalog.find((city)=>city.id===project.cityId)?.name??project.name}</strong>}
+        {(presentationMode&&existingOnly?[]:Object.values(project.lines)).filter((line) => !line.parentLineId && line.visible !== false).map((line) => <div key={line.id}>
           <span className="map-line-swatch" style={{ backgroundColor: line.color, height: lineStatus(line) === 'planned' ? 6 : 4 }} aria-hidden="true" />
           <span>{line.name} · {lineStatus(line) === 'construction' && line.existingSegments?.length ? '部分在建' : [...new Set(Object.values(project.lines).filter((part) => rootLine(project,part).id === line.id).map(lineStatus))].map((status) => statusNames[status]).join(' / ')}</span>
         </div>)}
+        {Object.entries(browseResult.projects).map(([cityId,network])=><div key={cityId} style={{display:'contents'}}><strong className="map-legend-city">{catalog.find((city)=>city.id===cityId)?.name??cityId} · 现状快照</strong>{Object.values(network.lines).filter((line)=>!line.parentLineId).map((line)=><div key={`${cityId}:${line.id}`}><span className="map-line-swatch" style={{backgroundColor:line.color,height:4}} aria-hidden="true"/><span>{line.name}</span></div>)}</div>)}
       </div></details>
       <div className="map-hint" role="status">
         <span className={`mode-dot${editorMode !== 'browse' ? ' mode-dot--active' : ''}`} />
-        {editorMode === 'select-stations' ? `多选站点 · 已选 ${selectedStationIds.length} 个 · 再点取消选择` : editorMode === 'add-station' ? '添加站点 · 点空白处新建，点已有站直接接入' : editorMode === 'add-waypoint' ? pendingInsertIndex === null ? '点击线路插入控制点 · 拖动控制点调整走向' : '点击地图放置两节点间的控制点' : '浏览模式 · 拖动站点或站名，放到另一站上合并（保留目标站）'}
+        {presentationMode ? '只读浏览 · 拖动地图漫游，点击站点查看出入口' : editorMode === 'select-stations' ? `多选站点 · 已选 ${selectedStationIds.length} 个 · 再点取消选择` : editorMode === 'add-station' ? '添加站点 · 点空白处新建，点已有站直接接入' : editorMode === 'add-waypoint' ? pendingInsertIndex === null ? '点击线路插入控制点 · 拖动控制点调整走向' : '点击地图放置两节点间的控制点' : '浏览模式 · 拖动站点或站名，放到另一站上合并（保留目标站）'}
       </div>
     </main>
   )

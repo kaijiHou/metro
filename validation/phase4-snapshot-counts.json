@@ -1,0 +1,30 @@
+{
+  "baseline": "c708d4eb742a3587b155b808a4bb5fbde6763c87",
+  "cities": {
+    "wuhan": {
+      "lines": 13,
+      "stations": 289,
+      "contentIdenticalToBaseline": true
+    },
+    "changsha": {
+      "lines": 7,
+      "stations": 151,
+      "contentIdenticalToBaseline": true
+    },
+    "beijing": {
+      "lines": 27,
+      "stations": 410,
+      "contentIdenticalToBaseline": true
+    },
+    "shanghai": {
+      "lines": 24,
+      "stations": 418,
+      "contentIdenticalToBaseline": true
+    },
+    "guangzhou": {
+      "lines": 23,
+      "stations": 332,
+      "contentIdenticalToBaseline": true
+    }
+  }
+}
