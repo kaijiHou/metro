@@ -1,0 +1,27 @@
+{
+  "baseline": "875273a3745e7c9042070becbac2b59f746d52a2",
+  "cities": 58,
+  "allOriginalSnapshotContentUnchanged": true,
+  "fiveCities": {
+    "beijing": {
+      "lines": 27,
+      "stations": 410
+    },
+    "guangzhou": {
+      "lines": 23,
+      "stations": 332
+    },
+    "shanghai": {
+      "lines": 24,
+      "stations": 418
+    },
+    "wuhan": {
+      "lines": 13,
+      "stations": 289
+    },
+    "changsha": {
+      "lines": 7,
+      "stations": 151
+    }
+  }
+}

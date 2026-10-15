@@ -1,0 +1,38 @@
+{
+  "boundary": {
+    "source": "OCHA/HDX COD-AB China; ITOS",
+    "license": "CC BY 3.0 IGO",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0/igo/legalcode",
+    "version": "ocha2020-hdx-v1",
+    "retrievedAt": "2026-10-15",
+    "urls": {
+      "geometry": "https://data.humdata.org/dataset/17a2aaa2-dea9-4a2e-8b3f-92d1bdfb850c/resource/9e67ddf9-ce26-4b7a-82b1-51e5ca0714c8/download/chn_adm_ocha_2020_shp.zip",
+      "gazetteer": "https://data.humdata.org/dataset/17a2aaa2-dea9-4a2e-8b3f-92d1bdfb850c/resource/20eb7fd0-cf6b-4e05-af2d-7e124b6a37cc/download/chn_admgz_2020.xlsx"
+    },
+    "sha256": {
+      "geometry": "f6a1f0fd969dbcc830e395c8211746730a80e8429585e045c6b0da92cd6e0ec9",
+      "gazetteer": "4a05ade08da62d4b166c6ec864d2806b41432c5ae9904f17b40b9c24629e2c6c"
+    },
+    "modifications": [
+      "WGS84 geometry validation",
+      "round coordinates to 6 decimals",
+      "select municipal-level units",
+      "merge Laiwu into Jinan",
+      "province outlines for display only"
+    ]
+  },
+  "defaultPhotos": [
+    {
+      "file": "wuhan-yellow-crane.jpg",
+      "cityCode": "ocha2020-CN042120",
+      "source": "https://www.goodfreephotos.com/china/hubei/wuhan/yellow-crane-tower-in-the-city.jpg.php",
+      "originalUrl": "https://www.goodfreephotos.com/albums/china/hubei/wuhan/yellow-crane-tower-in-the-city.jpg",
+      "license": "CC0 / Public Domain",
+      "terms": "https://www.goodfreephotos.com/pages/creative-commons-license-terms/",
+      "author": "GoodFreePhotos; no individual photographer listed on file page",
+      "retrievedAt": "2026-10-15",
+      "bytes": 865755,
+      "sha256": "d048bc33d10b3eada15d35810de25670f0f6c9c4749eff9f26ded9619ca1fc11"
+    }
+  ]
+}

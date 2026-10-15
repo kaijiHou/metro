@@ -1,0 +1,144 @@
+{
+  "baseline": "875273a3745e7c9042070becbac2b59f746d52a2",
+  "boundary": {
+    "source": "OCHA/HDX COD-AB China original SHP + PCODE gazetteer",
+    "license": "CC BY 3.0 IGO",
+    "municipalUnits": 339,
+    "provinceGroups": 33,
+    "provinceOutlines": 34,
+    "currentNationwideComplete": false
+  },
+  "unitTests": {
+    "pass": 105,
+    "fail": 0
+  },
+  "footprintBrowser": {
+    "checks": 32,
+    "passed": [
+      "only one active map instance",
+      "real Wuhan polygon click selects Wuhan",
+      "licensed Wuhan default actual image loads with attribution",
+      "Wuhan visit saves multiple optional dates; Huanggang/Xiangyang unaffected",
+      "only Wuhan fill state lights",
+      "city selection keeps a recognizable national overview",
+      "style rebuild restores city outlines and saved fill states",
+      "province filter uses supported municipal denominator",
+      "real PNG JPEG WebP decode and thumbnails; unsupported HEIC rejects",
+      "multi-photo uploads persist original and thumbnail Blobs",
+      "cover, captions, order and keyboard lightbox work",
+      "all/default/mine filters share data without copying",
+      "non-metro city can light and has honest city placeholder",
+      "unlight keeps photos/dates/notes",
+      "view switch preserves project/scenario/undo/persistence",
+      "travel Blob URLs revoked after leaving",
+      "planning undo still restores user edit",
+      "planning redo still works",
+      "refresh preserves visits, cover, captions and binary photo bytes",
+      "cancel and corrupt image retain album",
+      "quota failure visible without false success or data loss",
+      "full photo ZIP generated from user action",
+      "failed ZIP keeps existing visits and photos",
+      "return after refresh preserves planning project and current history",
+      "real ZIP imports to empty isolated DB with exact original hashes and metadata",
+      "deleting cover atomically falls back to remaining personal photo",
+      "browser replace restore restores deleted original and cover",
+      "mobile resize retains a visible China outline overview",
+      "390px mobile has no horizontal overflow",
+      "IndexedDB unavailable shows readable error and disables false export",
+      "no private photo uploads to external services",
+      "no browser runtime exceptions"
+    ],
+    "runtimeErrors": [],
+    "backupBytes": 7125,
+    "scope": "Real licensed city polygons/default photo; synthetic user photos; real browser IndexedDB and ZIP."
+  },
+  "production": {
+    "status": "PASS",
+    "base": "/metro/",
+    "footprintRequests": [
+      "http://127.0.0.1:5174/metro/footprint/catalog.json",
+      "http://127.0.0.1:5174/metro/footprint/province-outlines.json",
+      "http://127.0.0.1:5174/metro/footprint/CN065.json",
+      "http://127.0.0.1:5174/metro/footprint/CN015.json",
+      "http://127.0.0.1:5174/metro/footprint/CN021.json",
+      "http://127.0.0.1:5174/metro/footprint/CN062.json",
+      "http://127.0.0.1:5174/metro/footprint/CN042.json",
+      "http://127.0.0.1:5174/metro/footprint/CN036.json",
+      "http://127.0.0.1:5174/metro/footprint/CN044.json",
+      "http://127.0.0.1:5174/metro/footprint/CN045.json",
+      "http://127.0.0.1:5174/metro/footprint/CN081.json",
+      "http://127.0.0.1:5174/metro/footprint/CN033.json",
+      "http://127.0.0.1:5174/metro/footprint/CN054.json",
+      "http://127.0.0.1:5174/metro/footprint/CN063.json",
+      "http://127.0.0.1:5174/metro/footprint/CN053.json",
+      "http://127.0.0.1:5174/metro/footprint/CN051.json",
+      "http://127.0.0.1:5174/metro/footprint/CN052.json",
+      "http://127.0.0.1:5174/metro/footprint/CN064.json",
+      "http://127.0.0.1:5174/metro/footprint/CN014.json",
+      "http://127.0.0.1:5174/metro/footprint/CN061.json",
+      "http://127.0.0.1:5174/metro/footprint/CN043.json",
+      "http://127.0.0.1:5174/metro/footprint/CN050.json",
+      "http://127.0.0.1:5174/metro/footprint/CN035.json",
+      "http://127.0.0.1:5174/metro/footprint/CN034.json",
+      "http://127.0.0.1:5174/metro/footprint/CN041.json",
+      "http://127.0.0.1:5174/metro/footprint/CN013.json",
+      "http://127.0.0.1:5174/metro/footprint/CN037.json",
+      "http://127.0.0.1:5174/metro/footprint/CN012.json",
+      "http://127.0.0.1:5174/metro/footprint/CN011.json",
+      "http://127.0.0.1:5174/metro/footprint/CN022.json",
+      "http://127.0.0.1:5174/metro/footprint/CN023.json",
+      "http://127.0.0.1:5174/metro/footprint/CN031.json",
+      "http://127.0.0.1:5174/metro/footprint/CN032.json",
+      "http://127.0.0.1:5174/metro/footprint/CN082.json",
+      "http://127.0.0.1:5174/metro/footprint/CN046.json",
+      "http://127.0.0.1:5174/metro/footprint/wuhan-yellow-crane.jpg"
+    ],
+    "photoUploadAndZip": true,
+    "metroProjectUnchanged": true,
+    "runtimeErrors": []
+  },
+  "transitBrowserPass": 23,
+  "errorAndMobilePass": 5,
+  "gates": {
+    "npmCi": "PASS",
+    "lint": "PASS",
+    "rootBuild": "PASS",
+    "metroSubpathBuild": "PASS",
+    "npmAuditVulnerabilities": 0,
+    "npmPreview": "PASS"
+  },
+  "snapshotRegression": {
+    "baseline": "875273a3745e7c9042070becbac2b59f746d52a2",
+    "cities": 58,
+    "allOriginalSnapshotContentUnchanged": true,
+    "fiveCities": {
+      "beijing": {
+        "lines": 27,
+        "stations": 410
+      },
+      "guangzhou": {
+        "lines": 23,
+        "stations": 332
+      },
+      "shanghai": {
+        "lines": 24,
+        "stations": 418
+      },
+      "wuhan": {
+        "lines": 13,
+        "stations": 289
+      },
+      "changsha": {
+        "lines": 7,
+        "stations": 151
+      }
+    }
+  },
+  "notRun": [
+    "Firefox/Safari",
+    "physical mobile hardware",
+    "all339 current administrative boundaries independent review",
+    "separate EXIF-rotated JPEG sample"
+  ],
+  "ci": "Final pushed HEAD verified separately in delivery message"
+}

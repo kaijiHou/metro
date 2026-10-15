@@ -281,3 +281,83 @@ CI 位于 `.github/workflows/ci.yml`，在 push 和 pull request 时使用 Ubunt
 - Vite 提示 MapLibre 主包超过默认 500 kB 阈值；MapLibre 是第一阶段核心依赖，本次不为提示进行业务无关拆分。
 - Node.js 20.12.1 安装依赖时会提示 MapLibre 间接依赖声明 Node 22，但 lint、测试、构建和浏览器回归均在 Node 20.12.1 通过；GitHub CI 使用 Node 20 最新维护版本。
 - 本阶段仍只有 schema v1 和直线站点序列；Waypoint、nodes、重排序与 Undo/Redo 未实现。
+
+## Phase 4B 交付验收（2026-10-15）
+
+本节为本次实际结果；前文为历史阶段记录。基线为 `875273a3745e7c9042070becbac2b59f746d52a2`。本节随 Phase 4B 功能提交；最终提交 SHA、main 同步和对应 CI 运行链接以交付消息为准。
+
+### 1. 行政区与轮廓地图
+
+- PASS：OCHA/HDX COD-AB China 原始 SHP 的 ADM2_PCODE 与同源 XLSX 字典按精确代码关联，逐项核对名称、上级、行政层级；WGS84 几何合法性验证和莱芜并入济南处理。许可 CC BY 3.0 IGO，来源、下载地址、处理步骤见 `docs/FOOTPRINT_DATA_SOURCES.md`。
+- 当前支持 339 个市级区域、33 个省级分组；另含 34 个省级轮廓。代码为版本化 HDX PCODE，不冒充 GB/T 行政代码。统计分母采用已支持区域；湖北为 13。源数据名含 2020，HDX 标记 reviewed 2024，并非当前全国行政区划完整核验。
+- 21 条原始记录因县级、省级或错误层级排除，其中台湾整体仅作为不可点亮的省级轮廓；不能把 21 当作全国仅缺 21 个城市。详细排除记录和覆盖边界见 mapping-audit.json、sources.json。
+- PASS：全国轮廓默认视图、深蓝仪表盘、真实省界/省名、点亮市区、搜索、筛省；城市选择打开详情且保持全国视野，放大后显示市界，无街道/卫星底图。390px 布局仍保持可识别的中国轮廓。
+
+### 2. 真实浏览器结果及截图
+
+`validation/phase4b_footprint_flow.py` 在隔离 Chromium profile 运行，32 项 PASS，0 个运行时异常；结构化结果见 `validation/phase4b-browser-results.json`。
+
+真实武汉多边形点击、点亮状态和其他城市 feature-state 已检查：武汉点亮后黄冈/襄阳不变；可点亮非地铁城市；省份筛选、样式重建、取消点亮保留日期/备注/照片均 PASS。
+
+本地真实截图（忽略提交，未读取用户相册）：`validation/phase4b-outline-default-preview.png`、`phase4b-wuhan-preview.png`、`phase4b-mobile-viewport.png`。个人上传测试使用合成图片；行政边界和默认黄鹤楼照片为真实来源，未用模拟市界证明覆盖。
+
+### 3. 城市相册与许可
+
+- PASS：PNG/JPEG/WebP 实际解码，多图上传、原图与缩略图 Blob 保存、全部/默认/我的过滤、查看大图和键盘切换、封面、排序、备注、删除及封面回退、刷新恢复、ObjectURL 释放。HEIC 拒绝且提供提示。
+- 默认图当前仅武汉黄鹤楼。GoodFreePhotos 原始页面声明 Public Domain/CC0，条款明确允许个人及商用；实际图片、SHA256、原始页面及条款链接记录在 sources.json，界面显示署名。其余城市为真实占位，可自行上传照片；没有假称全国都有版权默认图。
+- 用户照片仅保存在当前 origin 的本地浏览器中。测试未发出照片外传 POST。清除站点数据可能丢失，ZIP 备份为用户自持备份。
+
+### 4. 数据库与异常
+
+Dexie `MetroFootprintDB` v1：visits 索引 `cityCode,status`；photos 索引 `photoId,cityCode,[cityCode+sortOrder]`；settings 主键 `key`（预留设置，目前无业务记录）。与 MetroProject/localStorage 的存储和事务隔离。未来升级应增加 Dexie version 并显式迁移，不能删除用户库。
+
+PASS：重新打开数据库、持久化原图字节、取消点亮保留相册、关联封面修复、日期校验、单图/总量限制、配额失败、禁用 IndexedDB 的明确错误提示、事务中途失败完全回滚。限制为每张 20MB、全库 300 张/160MB；容量估算不是浏览器配额保证。
+
+### 5. ZIP 备份/恢复
+
+PASS：manifest schema1 + 实际原图二进制 + SHA256 的完整 ZIP；在新的隔离浏览器中导入后逐张核对原始字节哈希、日期、备注、封面。合并和覆盖模式均验证，覆盖恢复已删照片；全部验证通过后才开始原子事务。
+
+PASS：路径穿越、重复 ID/路径、未知城市、错误 schema、图片损坏、关联错误、超限、实际解压量超过声明、有效大备注自导出再导入、清库后事务后段失败回滚。ZIP/总解压上限 180MB，manifest 16MB，使用受限流式解压。导入取消或失败不更改原记录。
+
+### 6. 地铁回归与隔离证据
+
+- 原 Phase 4 浏览器流程 23 项 PASS；异常/移动端流程 5 项 PASS。外部底图顶层样式失败时保留本地可编辑线网并支持重试；错误场景使用明确的 503/404/受控 Overpass fixture，不用于证明公网数据覆盖。
+- 足迹切换前后比较完整项目、Scenario、Undo/Redo 和已持久化字符串，且实际执行撤销/重做，结果不变。全国浏览武汉→长沙自动加载和出口详情回归 PASS。
+- `validation/phase4b-snapshot-regression.json`：58 个原始地铁城市快照 JSON 内容与基线完全相同。以下为前后相同的线/站数量。
+
+| 城市 | 基线线路/站点 | 本次线路/站点 |
+| --- | --- | --- |
+| 武汉 | 13 / 289 | 13 / 289 |
+| 长沙 | 7 / 151 | 7 / 151 |
+| 北京 | 27 / 410 | 27 / 410 |
+| 上海 | 24 / 418 | 24 / 418 |
+| 广州 | 23 / 332 | 23 / 332 |
+
+### 7. 命令和生产环境
+
+| 实际执行项 | 结果 |
+| --- | --- |
+| Node 24 下 npm ci | PASS，221 个依赖安装 |
+| npm run lint | PASS，0 errors / 0 warnings |
+| npm test | PASS，105 tests / 0 fail |
+| npm run build（根路径） | PASS |
+| /metro/ 子路径构建 | PASS |
+| npm audit --audit-level=moderate | PASS，0 vulnerabilities |
+| npm run preview | PASS，实际预览服务启动并完成下面两组测试 |
+| 足迹 /metro/ 生产 smoke | PASS，本地目录/省界/默认图正确请求，真实上传/ZIP 下载，原项目保留 |
+| 地铁 /metro/ 生产 smoke | PASS，目录/武汉/鄂州/长沙/湘潭资源正确请求，原项目保留 |
+
+机器报告：`validation/phase4b-browser-results.json`、`phase4b-production-results.json`、`phase4b-snapshot-regression.json`、`phase4b-audit.json`；命令原始日志保存在本地 validation 的 phase4b-*.log，未提交大量截图或下载原件。
+
+### 8. 依赖与 CI
+
+新增固定版本 Dexie 4.4.6（Apache-2.0）、JSZip 3.10.2（双许可中选择 MIT）、开发依赖 fake-indexeddb 6.2.5。CI 使用 Node 24，执行安装、lint、单测、构建。最终 push 对应 HEAD 的 CI 应实际运行完成，并在交付消息给出结果和链接。
+
+### 9. 已知限制与 NOT RUN
+
+- 339 个区域为历史来源的可支持子集，未独立逐一核验当前法定边界；不承诺全国所有城市、县级直辖单位和最新区划齐全。台湾未作为整省“城市”入库。
+- 默认版权照片目前只有武汉，其余城市为空占位；不包含全国照片包。
+- 浏览器本地存储与站点 origin 绑定，无云同步。外部文字 glyph 和原地铁底图依赖网络，断网可影响地名/底图；足迹轮廓几何使用本地静态数据。
+- 既有 ESLint 9.36 弃用提示和 MapLibre 主包超过 500kB 的构建提示仍存在；安装、lint、构建均成功。
+- NOT RUN：Firefox/Safari、实体手机硬件、全部 339 区域逐城人工现势核对、单独 EXIF 旋转 JPEG 样本。实现使用原生 from-image 方向处理，实测 JPEG 为常规编码样本。
+- GPS 定位/步行导航未实现，遵循本阶段明确边界。

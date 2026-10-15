@@ -196,6 +196,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
   const [catalog,setCatalog]=useState<TransitCity[]>([])
   const [browseResult,setBrowseResult]=useState<BrowseResult>({projects:{},loading:[],errors:{}})
   const [catalogError,setCatalogError]=useState('')
+  const [basemapUnavailable,setBasemapUnavailable]=useState(false)
   const catalogRef=useRef(catalog)
   const resultRef=useRef(browseResult)
   const loaderRef=useRef<BrowseNetworkLoader|null>(null)
@@ -414,6 +415,12 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
     }
     const resizeObserver = new ResizeObserver(() => map.resize())
     resizeObserver.observe(container)
+    const onBasemapError=()=>{
+      if(map.getStyle()?.layers?.length)return
+      setBasemapUnavailable(true)
+      map.setStyle({version:8,glyphs:'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',sources:{},layers:[{id:'local-network-background',type:'background',paint:{'background-color':'#edf2f5'}}]},{diff:false})
+    }
+    map.on('error',onBasemapError)
     map.on('style.load', onLoad)
     map.on('click', onMapClick)
     map.on('mousedown', onLabelDown)
@@ -424,6 +431,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
     return () => {
       catalogController.abort();clearTimeout(loadTimer);loader.dispose();loaderRef.current=null
       resizeObserver.disconnect()
+      map.off('error',onBasemapError)
       map.off('style.load', onLoad)
       map.off('click', onMapClick)
       map.off('mousedown', onLabelDown)
@@ -474,6 +482,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
     <main className={`map-area${presentationMode ? ' map-area--presentation' : editorMode !== 'browse' ? ' map-area--adding' : ''}`}>
       <div ref={containerRef} className="map-canvas" aria-label="地铁线路规划地图" />
       <div className="transit-browse-controls">
+        {basemapUnavailable&&<span role="status">网络底图暂不可用，显示本地线网。<button onClick={()=>{setBasemapUnavailable(false);mapRef.current?.setStyle(MAP_STYLE_URL,{diff:false})}}>重试底图</button></span>}
         <label><input type="checkbox" checked={autoNetworks} onChange={(event)=>useViewStore.getState().setAutoNetworks(event.target.checked)}/>全国线网自动展示</label>
         {presentationMode&&<label><input type="checkbox" checked={existingOnly} onChange={(event)=>useViewStore.getState().setExistingOnly(event.target.checked)}/>仅看已建成线路</label>}
         <button type="button" onClick={()=>{const city=catalog.find((item)=>item.id===project.cityId);if(city){const target=cityMapTarget(city);mapRef.current?.fitBounds(target.bounds!,{padding:60,maxZoom:12})}}}>返回我的规划城市</button>

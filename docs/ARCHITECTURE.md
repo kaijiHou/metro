@@ -44,4 +44,12 @@ Store 在项目对象变化时记录前一个不可变快照，最多保留 50 �
 
 `StationDetailDrawer` 为当前 cityId+stationId 的独立生命周期；新选择取消旧出口请求，清空图层；异步人工导入也验证当前选择，成功后取消尚未完成的在线请求。`ExitInfoService` 仅点击按需 Overpass 请求：超时20秒，真实请求起点至少间隔1.5秒；取消的等待不占未来时段。成功/空结果缓存24小时最多100站，失败不缓存，显式重试跳过缓存。Map 卸载取消请求/定时器，清理监听与 Marker，Map.remove 清理 sources/layers。
 
-旅行足迹、相册、IndexedDB 和 ZIP 尚未接入，当前没有第二套地图或个人图片数据。
+Phase 4B已接入下述旅行模块，业务数据仍与MetroProject隔离。
+
+## Phase 4B：旅行独立视图
+
+App主导航transit/travel存在viewStore，仅UI状态；旅行页面lazy加载，Dexie/JSZip不会拖入首次地铁页业务。Vite显式预优化这两个依赖，避免首次切页临时优化导致开发服务器刷新并丢会话撤销栈。旅行使用独立FootprintMap，切页卸载旧地图，不同时运行两个大型实例；App清除过期一次性定位target，原交通视角保留在已有独立视角键。
+
+src/footprint分离只读adminCatalog/分区几何缓存、types、db/repository、imageProcessing、backup、FootprintPage/CityPhotoAlbum/TravelMemories和地图图层。旅行库没有MetroProject/metroStore业务依赖。MapLibre按cityCode promoteId与feature-state填色，真实省级轮廓仅展示；点击城市只选择、查相册，不点亮或自动放大。省份筛选才定位省级范围。style.load重建轮廓/标签/市级sources后恢复访问与选择状态，异步视口generation阻止旧加载覆盖新视野。
+
+repo事务覆盖照片/封面一致性、删除修复、备份合并/覆盖。图片处理和ZIP验证在事务外完成，最终一次写入；事务失败回滚。组件读取有当前城市/卸载守卫，原图与缩略图ObjectURL清理，上传始终绑定发起城市。详情/底部回忆不复用其它城市的图。足迹异常显示独立消息，不改地铁通知或数据。

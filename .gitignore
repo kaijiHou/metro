@@ -25,3 +25,8 @@ test-results/
 /validation/wuhan-planning-source-review.md
 
 /validation/phase4-china-adm2.geojson
+
+/validation/phase4b-*.xlsx
+/validation/phase4b-*.html
+/validation/phase4b-*.zip
+/validation/phase4b-*.geojson

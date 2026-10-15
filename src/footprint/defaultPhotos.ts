@@ -1,0 +1,2 @@
+import {footprintUrl} from './adminCatalog'
+export const defaultPhotos=[{id:'default-wuhan-yellow-crane',cityCode:'ocha2020-CN042120',url:footprintUrl('wuhan-yellow-crane.jpg'),title:'武汉 · 黄鹤楼',author:'GoodFreePhotos（文件页未单列摄影者）',license:'CC0 / Public Domain',source:'https://www.goodfreephotos.com/china/hubei/wuhan/yellow-crane-tower-in-the-city.jpg.php',licenseUrl:'https://www.goodfreephotos.com/pages/creative-commons-license-terms/'}]

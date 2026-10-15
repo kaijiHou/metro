@@ -1,24 +1,49 @@
-# 市级旅行足迹：尚未实现
+# 市级旅行足迹与城市相册（Phase 4B 已实现）
 
-本次按Phase 4任务允许的分步范围先交付全国地铁漫游与出入口。市级点亮、城市详情/相册、默认黄鹤楼图、Dexie、IndexedDB以及ZIP备份/恢复均未实现、未验收，没有可用入口。现有规划JSON导出不包含照片，也不能冒充旅行备份。
+## 使用
 
-## 已做的资料研究与未通过的门槛
+顶部“我的旅行足迹”打开独立市级轮廓总览。点击城市只高亮和查看；明确“标记已到过”才点亮。选择省份只筛选列表、定位该省，不保存省级到访。左侧搜索省/市名称与别名，无地铁的黄冈等同样可点亮。默认保持中国全貌，不因点一座城市自动放大成满屏多边形。真实支持339市级单元、33省级分组，边界版本与缺口见FOOTPRINT_DATA_SOURCES.md；地图另显示34个省级轮廓，不等于可点亮台湾整省。
 
-- geoBoundaries gbOpen CHN ADM2为2391个单元，检查后属于县级，不能直接标作市级足迹。
-- gbHumanitarian CHN ADM2（boundaryID CHN-ADM2-99377448，2020，361个单元，提交9469f09）标注 CC BY 3.0 IGO，来源HDX公开资料：https://www.geoboundaries.org/api/current/gbHumanitarian/CHN/ADM2/ 、https://data.humdata.org/dataset/cod-ab-chn 。
-- 检查候选文件发现台湾为一整个“Taiwan province”几何，不能作为市级；缺少中文省市与稳定行政代码完整映射。未经映射审计不能发布为全国城市目录。
-- 候选原始边界仅留本地validation/phase4-china-adm2.geojson，已忽略版本控制，不发布不完整数据。尚未核验可发布的武汉默认照片，仓库未增加照片资源。
+访问日期选填、可多次增删编辑、去重排序；备注最多5000字。取消点亮保留日期、备注、照片；只有独立“删除该城市全部旅行资料”确认操作才删除其旅行记录和个人图，地铁项目完全不受影响。
 
-## 后续完成条件
+## 相册与封面
 
-市为最小单位，地级市/自治州/盟/地区逐一有稳定代码与真实边界；直辖市整体视为市级，港澳适用粒度需文档化，台湾应采用可追溯市/县级几何或明确缺失，不能全省代替一市。无地铁地区也必须能点亮。使用MapLibre Fill/Outline，省份只汇总；取消点亮不删照片。
+全部照片、城市默认、我的照片是同一套记录的三个过滤视图；数量徽标真实反映可见集合，不复制图片。武汉默认黄鹤楼来自GoodFreePhotos公共领域/CC0，点击来源可核验；目前其它城市没有系统实拍，显示专属文字占位。不是AI风景或借用其它城市照片。
 
-独立Dexie库MetroFootprintDB：visits(cityCode,status,visitedDates,note,coverPhotoId,updatedAt)、photos(photoId,cityCode,blob,thumbnailBlob,mimeType,fileName,caption,takenAt,sortOrder,createdAt)、settings(key,value)。跨城隔离，删除封面用事务修复引用。JPEG/PNG/WebP验证和缩略图生成、多文件逐项反馈、配额/禁用存储错误都需实现与验证。
+个人上传支持JPEG/PNG/WebP，多选最多50张/次；单张20MB，解码后上限4000万像素，全库300张/160MB（原图+缩略图）。校验MIME、签名及浏览器解码；保留原始Blob，createImageBitmap按EXIF方向解码缩略图，最长边360px。每个文件有保存/失败反馈，部分失败不丢其它已成功文件。HEIC、损坏或超限图片提示失败。图片解码可能在像素上限检查前占用浏览器内存，因此超大像素照片建议先缩小。
 
-默认图片必须逐城核验许可与署名；武汉需真实授权黄鹤楼图，其余没有授权图时显示专属占位，不借其它城市图片。全部/默认/我的照片是同一相册过滤，不复制数据。用户照片留本地Blob，禁止Git/第三方自动上传。
+左右按钮、缩略图、方向键与手机滑动切图，点击放大/Escape关闭。个人图可改说明/日期、前后排序、设城市封面、确认删除。手选个人封面优先，删封面事务内回退剩余第一张个人图，再由UI回退系统图或占位。右侧城市头图和底部城市回忆也读取真实封面；没有来源可靠的其它城市照片时用文字，不用示例图冒充。
 
-ZIP应包含manifest和photos二进制；路径遍历、重复ID、未知城市、跨城归属、大小/数量/解压限制、封面完整性均需验证，提供合并/覆盖并事务回滚；需完整导出→导入往返测试后才可交付。
+上传切换城市时任务仍归属最初城市并报告完成/失败；处理任务期间主导航禁止离开，避免状态不明。Blob/ObjectURL按组件/选择生命周期创建与回收，备份下载URL也回收；无自动图片上传或云同步。
 
-## 将来存储的用户说明
+## IndexedDB / Dexie
 
-IndexedDB将是浏览器本地数据库，不是D:\metro文件，也不是云同步；localhost、127.0.0.1、端口和浏览器profile分别隔离。清理网站数据可能丢失记录，申请persist也不保证永久保存。将来必须提供ZIP主动备份。**这些是后续要求，目前并未创建该数据库。**
+独立 `MetroFootprintDB`，Dexie4.4.6（Apache-2.0），schema版本1：
+
+| 表 | 主键/索引 | 内容 |
+|---|---|---|
+| visits | cityCode；status | visited/unvisited、visitedDates[]、note、coverPhotoId?、updatedAt |
+| photos | photoId；cityCode；[cityCode+sortOrder] | 原图Blob、thumbnailBlob、mimeType、fileName、caption、takenAt、sortOrder、createdAt |
+| settings | key | value字符串，预留本库偏好；当前UI临时选择不计旅行记录 |
+
+市级字典、边界与系统默认图是静态只读资源，不复制到每个数据库。照片添加/封面引用/删除/排序/恢复使用Dexie事务；日期严格验证真实年月日。库升级必须追加Dexie版本与迁移，不编辑既有v1定义去清库；更换行政代码需要显式映射，不能按同名城市猜测归属。当前未提供跨来源代码迁移。
+
+读取失败不把记录假作空库，不允许伪成功导出；可重试。配额不足、IndexedDB禁用等显示可读错误。navigator.storage.estimate提供近似本站用量；申请persist只作可选，不保证永不清除。
+
+数据库与**浏览器/站点origin/profile**绑定：localhost、127.0.0.1、端口、不同浏览器都可能是独立空间。数据不在D:\metro文件夹，不是MySQL或云存储；清理网站数据会丢记录。请主动ZIP备份。
+
+## 完整ZIP备份与恢复
+
+JSZip3.10.2，选择MIT许可。用户主动点击导出，读事务取得一致快照，ZIP包含manifest.json（schemaVersion1、导出时间、全部visits、图片元数据/归属/封面/路径/SHA256）和photos/<cityCode>/<photoId>.<jpg|png|webp>实际原图。缩略图不重复备份，导入时用真实浏览器解码重建；系统默认图不复制进备份。
+
+合并：备份状态与备注优先，同城日期集合合并；相同图片ID仅可属于同城，允许备份替换该ID内容。覆盖：确认后仅替换旅行visits/photos；不改地铁项目和方案。settings暂只有空表/临时UI，不作为旅行记录备份。
+
+未知城市拒绝，不映射到其它城。先审中央目录和本地文件头，再受限流式解压；拒绝Zip Slip/绝对路径/反斜杠/多卷/加密/ZIP64/重复中央条目/未知压缩方式。压缩包与声明解压总量180MB，manifest16MB，原图20MB，照片300张，全库恢复160MB。校验路径与元数据一一对应、文件数、MIME/扩展名/签名、SHA256、真实解码、日期和跨城封面关联。流式处理中实际膨胀超声明或上限即停止；不因中央目录伪报小尺寸就无限累积。
+
+全部验证完成后一次事务写入；任何校验/配额/事务失败不留半套恢复。合并还检查与已有照片ID的跨城冲突。ZIP会包含私人照片，请自行安全保管，代码push不是同步相册。
+
+## 与轨道交通隔离
+
+足迹页面没有MetroProject引用，不复用58城地铁目录；没有GPS/步行/换乘导航。主导航同时只有一个MapLibre地图在运行；离开原地图清理实例，返回按原地图位置恢复，Zustand项目/Scenario与撤销历史留在内存，旅行操作不写地铁localStorage。刷新会按原有设计重载规划数据，撤销历史本来不跨刷新持久化。
+
+实际测试结果见TEST_REPORT.md。默认只有武汉系统实拍；339个支持区域并非全国现行行政区全覆盖，缺失在UI明确展示。GPS仍仅保留NAVIGATION_ROADMAP.md，不自动开发。

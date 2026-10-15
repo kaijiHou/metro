@@ -9,12 +9,23 @@ with sync_playwright() as p:
     page=browser.new_page(viewport={'width':1440,'height':1000})
     page.add_init_script(f"localStorage.setItem('metro-planner.project',{json.dumps(json.dumps(project,ensure_ascii=False))})")
     # No visual claims: controlled background only for request/error lifecycle checks.
-    page.route('https://tiles.openfreemap.org/styles/liberty',lambda route:route.fulfill(content_type='application/json',body=json.dumps({'version':8,'glyphs':'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf','sources':{},'layers':[{'id':'blank','type':'background','paint':{'background-color':'#edf2f5'}}]})))
+    basemap_broken={'value':True}
+    def basemap(route):
+        if basemap_broken['value']:route.fulfill(status=503,body='basemap offline');return
+        route.fulfill(content_type='application/json',body=json.dumps({'version':8,'glyphs':'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf','sources':{},'layers':[{'id':'blank','type':'background','paint':{'background-color':'#edf2f5'}}]}))
+    page.route('https://tiles.openfreemap.org/styles/liberty',basemap)
     broken={'catalog':True,'city':True}
     page.route('**/transit/catalog.json',lambda route:route.fulfill(status=503,body='offline') if broken['catalog'] else route.continue_())
     page.route('**/transit/changsha.json',lambda route:route.fulfill(status=404,body='missing') if broken['city'] else route.continue_())
     page.goto('http://127.0.0.1:5173/',wait_until='networkidle')
     page.evaluate("""async()=>{window.metro=(await import('/src/store/metroStore.ts')).useMetroStore;const el=document.querySelector('.map-canvas');let fiber=el[Object.keys(el).find(k=>k.startsWith('__reactFiber'))];while(fiber&&fiber.type?.name!=='MapCanvas')fiber=fiber.return;for(let hook=fiber?.memoizedState;hook;hook=hook.next){const m=hook.memoizedState?.current;if(m?.queryRenderedFeatures){window.testMap=m;break}}window.sentinel=1}""")
+    page.wait_for_function("testMap.getLayer('browse-station-points')")
+    expect(page.locator('.transit-browse-controls')).to_contain_text('网络底图暂不可用')
+    assert page.evaluate("testMap.getLayer('local-network-background')!==undefined")
+    basemap_broken['value']=False
+    page.get_by_role('button',name='重试底图',exact=True).click()
+    page.wait_for_function("testMap.getLayer('blank')&&testMap.getLayer('browse-station-points')")
+    print('PASS: failed basemap preserves local transit layers and explicit retry rebuilds them',flush=True)
     before=page.evaluate('JSON.stringify(metro.getState().project)')
     controls=page.locator('.transit-browse-controls')
     expect(controls).to_contain_text('暂时无法加载城市目录')

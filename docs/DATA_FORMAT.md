@@ -63,4 +63,4 @@ MetroProject 仍是 v2，既有 v1→v2 migration 保持。背景线网复制自
 
 `StationExit` 独立于 Station：id、cityId、stationId、lng、lat、可选ref/name/exitTo/sourceUrl/fetchedAt、wheelchair、source和confidence；实际定义见 src/models/exits.ts。OSM对象以cityId:osm:node:objectId去重，不能用出口编号作为唯一键。人工JSON导入校验城市与站点所属及坐标，只用于本次查看，不进入项目JSON，也不声称自动持久化。
 
-尚未创建旅行足迹数据库。后续 visits/photos/settings 应以独立 IndexedDB/Dexie 库保存，城市代码不与地铁cityId混用，照片Blob不进入localStorage或项目JSON。
+Phase 4B已建立独立IndexedDB/Dexie库MetroFootprintDB v1：visits(cityCode,status,visitedDates,note,coverPhotoId,updatedAt)、photos(photoId,cityCode,blob,thumbnailBlob,mimeType,fileName,caption,takenAt,sortOrder,createdAt)、settings(key,value)。旅行cityCode如ocha2020-CN042120是HDX版本代码，不与地铁cityId=wuhan混用。照片Blob不进入localStorage或项目JSON。ZIP schemaVersion1包含visits、照片元数据/SHA256/路径与实际原图二进制，缩略图导入时重建；校验和覆盖范围见TRAVEL_FOOTPRINT.md。
