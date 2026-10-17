@@ -6,27 +6,38 @@ export function parseCatalog(value:unknown):Catalog{
  const c=value as Catalog
  if(!c||!Array.isArray(c.cities)||!c.cities.length||!Array.isArray(c.missing))throw Error('城市目录格式错误。')
  const ids=new Set<string>()
- for(const city of c.cities){
-  if(!/^ocha2020-CN\d{6}$/.test(city.cityCode)||ids.has(city.cityCode)||!/^CN\d{3}$/.test(city.provinceCode)||!city.name||!city.provinceName||!Array.isArray(city.aliases)||city.bounds.length!==4||!city.bounds.every(Number.isFinite)||city.bounds[0]>=city.bounds[2]||city.bounds[1]>=city.bounds[3])throw Error('城市代码或行政边界映射不合法。')
+ if(c.counties!==undefined&&!Array.isArray(c.counties))throw Error('区县目录格式错误。')
+ for(const city of allRegions(c)){
+  if(!/^(ocha2020-CN\d{6}|gb2017-[a-f0-9]{16})$/.test(city.cityCode)||ids.has(city.cityCode)||!/^CN\d{3}$/.test(city.provinceCode)||!city.name||!city.provinceName||!Array.isArray(city.aliases)||city.bounds.length!==4||!city.bounds.every(Number.isFinite)||city.bounds[0]>=city.bounds[2]||city.bounds[1]>=city.bounds[3])throw Error('城市代码或行政边界映射不合法。')
   ids.add(city.cityCode)
+  if(city.kind==='county'&&city.parentCityCode&&!c.cities.some(parent=>parent.cityCode===city.parentCityCode&&parent.provinceCode===city.provinceCode))throw Error('区县与上级市归属不一致。')
  }
  return c
 }
 export function getCatalog(){
- catalogPromise??=fetch(footprintUrl('catalog.json')).then((r)=>{if(!r.ok)throw Error('城市目录加载失败，可重试。');return r.json()}).then(parseCatalog).catch((e)=>{catalogPromise=undefined;throw e})
+ catalogPromise??=Promise.all(['catalog.json','counties/catalog.json'].map(file=>fetch(footprintUrl(file)).then(r=>{if(!r.ok)throw Error('旅行行政目录加载失败，可重试。');return r.json()}))).then(([city,county])=>parseCatalog({...city,counties:county.cities,provinces:county.provinces})).catch((e)=>{catalogPromise=undefined;throw e})
  return catalogPromise
 }
 export type CityGeometry=FeatureCollection<Polygon|MultiPolygon,{cityCode:string;name:string}>
 const geometryCache=new Map<string,Promise<CityGeometry>>()
 export function getProvinceGeometry(province:string,catalog:Catalog){
- if(!geometryCache.has(province))geometryCache.set(province,fetch(footprintUrl(`${province}.json`)).then(async(r)=>{
+ const key=`${catalog.geometryFolder??''}${province}`
+ if(!geometryCache.has(key))geometryCache.set(key,fetch(footprintUrl(`${key}.json`)).then(async(r)=>{
   if(!r.ok)throw Error('部分市界加载失败，可重试；列表和相册仍可使用。')
   const data=await r.json() as CityGeometry
   const known=new Set(catalog.cities.filter((c)=>c.provinceCode===province).map((c)=>c.cityCode))
-  if(data.type!=='FeatureCollection'||data.features.length!==known.size||new Set(data.features.map((f)=>f.properties.cityCode)).size!==known.size||data.features.some((f)=>!known.has(f.properties.cityCode)||!['Polygon','MultiPolygon'].includes(f.geometry.type)))throw Error('市界与城市目录不匹配。')
-  return data
- }).catch((e)=>{geometryCache.delete(province);throw e}))
- return geometryCache.get(province)!
+  const features=catalog.geometryFolder?data.features.filter(f=>known.has(f.properties.cityCode)):data.features
+  if(data.type!=='FeatureCollection'||features.length!==known.size||new Set(features.map((f)=>f.properties.cityCode)).size!==known.size||features.some((f)=>!known.has(f.properties.cityCode)||!['Polygon','MultiPolygon'].includes(f.geometry.type)))throw Error('边界与旅行目录不匹配。')
+  return {...data,features}
+ }).catch((e)=>{geometryCache.delete(key);throw e}))
+ return geometryCache.get(key)!
+}
+export function allRegions(catalog:Catalog){return [...catalog.cities,...(catalog.counties??[])]}
+export function countyCities(catalog:Catalog){return (catalog.counties??[]).filter(r=>r.level==='County-level city')}
+export function provinceProgress(catalog:Catalog,visits:Visit[]){
+ const visited=new Set(visits.filter(v=>v.status==='visited').map(v=>v.cityCode)),regions=allRegions(catalog)
+ const provinces=catalog.provinces??[...new Map(regions.map(r=>[r.provinceCode,r.provinceName])).entries()].map(([code,name])=>({code,name}))
+ return provinces.map(p=>{const local=regions.filter(r=>r.provinceCode===p.code),been=local.filter(r=>visited.has(r.cityCode));return {...p,visited:been.length>0,counties:been.filter(r=>r.level==='County-level city').length,cities:been.filter(r=>r.kind!=='county').length,totalCounties:local.filter(r=>r.level==='County-level city').length}})
 }
 export function footprintStats(catalog:Catalog,visits:Visit[]){
  const visited=new Set(visits.filter((v)=>v.status==='visited').map((v)=>v.cityCode))

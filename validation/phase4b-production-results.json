@@ -3,7 +3,9 @@
   "base": "/metro/",
   "footprintRequests": [
     "http://127.0.0.1:5174/metro/footprint/catalog.json",
+    "http://127.0.0.1:5174/metro/footprint/counties/catalog.json",
     "http://127.0.0.1:5174/metro/footprint/province-outlines.json",
+    "http://127.0.0.1:5174/metro/footprint/counties/CN042.json",
     "http://127.0.0.1:5174/metro/footprint/CN065.json",
     "http://127.0.0.1:5174/metro/footprint/CN015.json",
     "http://127.0.0.1:5174/metro/footprint/CN021.json",

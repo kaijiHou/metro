@@ -1,5 +1,5 @@
-export type City = {cityCode:string;name:string;aliases:string[];provinceCode:string;provinceName:string;level:string;bounds:[number,number,number,number];shapeId:string}
-export type Catalog = {version:string;license:string;attribution:string;cities:City[];missing:{name:string;province:string;level:string;reason:string}[];notes:string[]}
+export type City = {cityCode:string;name:string;aliases:string[];provinceCode:string;provinceName:string;level:string;bounds:[number,number,number,number];shapeId:string;kind?:'county';parentCityCode?:string;parentCityName?:string;labelPoint?:[number,number]}
+export type Catalog = {version:string;license:string;attribution:string;cities:City[];counties?:City[];provinces?:{code:string;name:string;bounds?:[number,number,number,number]}[];geometryFolder?:string;missing:{name:string;province:string;level:string;reason:string}[];notes:string[]}
 export type Visit = {cityCode:string;status:'visited'|'unvisited';visitedDates:string[];note:string;coverPhotoId?:string;updatedAt:string}
 export type Photo = {photoId:string;cityCode:string;blob:Blob;thumbnailBlob:Blob;mimeType:string;fileName:string;caption:string;takenAt:string;sortOrder:number;createdAt:string}
 export const MAX_PHOTOS=300

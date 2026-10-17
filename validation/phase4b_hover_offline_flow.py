@@ -24,6 +24,7 @@ with sync_playwright() as p:
     record['active']=True
     page.get_by_role('button',name='我的旅行足迹',exact=True).click()
     expect(page.get_by_role('textbox',name='搜索旅行城市')).to_be_visible()
+    page.get_by_role('button',name='市级足迹',exact=True).click()
     page.evaluate("""()=>{let f=document.querySelector('.footprint-map-canvas');f=f[Object.keys(f).find(k=>k.startsWith('__reactFiber'))];while(f){for(let h=f.memoizedState;h&&typeof h==='object';h=h.next){if(h.memoizedState?.current?.queryRenderedFeatures){window.testMap=h.memoizedState.current;return}}f=f.return}throw Error('Map not found')}""")
     page.wait_for_function("testMap.getSource('footprint-cities')&&testMap.queryRenderedFeatures({layers:['footprint-province-names']}).length>10")
     check('fresh profile renders national outlines and province names with all public internet blocked')

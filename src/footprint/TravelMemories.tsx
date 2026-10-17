@@ -11,7 +11,7 @@ function useCityCover(repo:FootprintRepository,visit:Visit,version:number){
 }
 export function CityBanner({city,visit,repo,version}:{city:City;visit:Visit;repo:FootprintRepository;version:number}){
  const cover=useCityCover(repo,visit,version)
- return <div className={`footprint-city-banner${cover.url?' footprint-city-banner--photo':''}`} style={cover.url?{backgroundImage:`linear-gradient(180deg,#07152299,#07152255 45%,#071522f0),url("${cover.url}")`}:undefined}><span className="eyebrow">{city.provinceName} · 市级旅行记录</span><h2>{city.name}</h2><span>{visit.status==='visited'?'已到过':'尚未点亮'} · {visit.visitedDates.length?`${visit.visitedDates.length}次到访日期`:'日期选填'}</span>{cover.url&&<small>{cover.isOwn?'个人封面 · 仅存本地':<a href={cover.system!.source} target="_blank" rel="noreferrer">GoodFreePhotos · CC0 / Public Domain</a>}</small>}</div>
+ return <div className={`footprint-city-banner${cover.url?' footprint-city-banner--photo':''}`} style={cover.url?{backgroundImage:`linear-gradient(180deg,#07152299,#07152255 45%,#071522f0),url("${cover.url}")`}:undefined}><span className="eyebrow">{[city.provinceName,city.parentCityName,city.level==='County-level city'?'县级市旅行记录':city.kind==='county'?'历史区县记录':'市级旅行记录'].filter(Boolean).join(' · ')}</span><h2>{city.name}</h2><span>{visit.status==='visited'?'已到过':'尚未点亮'} · {visit.visitedDates.length?`${visit.visitedDates.length}次到访日期`:'日期选填'}</span>{cover.url&&<small>{cover.isOwn?'个人封面 · 仅存本地':<a href={cover.system!.source} target="_blank" rel="noreferrer">GoodFreePhotos · CC0 / Public Domain</a>}</small>}</div>
 }
 function MemoryCard({city,visit,repo,version,onSelect}:{city:City;visit:Visit;repo:FootprintRepository;version:number;onSelect:(code:string)=>void}){
  const cover=useCityCover(repo,visit,version)

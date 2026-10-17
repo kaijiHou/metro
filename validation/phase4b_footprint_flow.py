@@ -36,6 +36,7 @@ with sync_playwright() as p:
  before=metro_state()
  page.get_by_role('button',name='我的旅行足迹',exact=True).click()
  expect(page.get_by_role('textbox',name='搜索旅行城市')).to_be_visible()
+ page.get_by_role('button',name='市级足迹',exact=True).click()
  page.wait_for_function("document.querySelector('.footprint-stats')")
  init_db(page);map_ref(page,'.footprint-map-canvas')
  page.wait_for_function("testMap.getLayer('footprint-fill')")

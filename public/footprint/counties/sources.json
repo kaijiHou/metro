@@ -1,0 +1,25 @@
+{
+  "urls": {
+    "geometry": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/9469f09/releaseData/gbOpen/CHN/ADM3/geoBoundaries-CHN-ADM3_simplified.geojson",
+    "areas": "https://raw.githubusercontent.com/modood/Administrative-divisions-of-China/c49d495b40ac73eb1a66f6eeae5f8fd10696f035/dist/areas.json",
+    "cities": "https://raw.githubusercontent.com/modood/Administrative-divisions-of-China/c49d495b40ac73eb1a66f6eeae5f8fd10696f035/dist/cities.json"
+  },
+  "sha256": {
+    "geometry": "ea64fe24f193e319ce48895f229a5b3f46d2a60f3f3df67e6172ab037e4cc8fd",
+    "areas": "fbe1575eecba4ffd4d50c3d2d6887bd873ceca6a203fb2d66698b5007826b6b6",
+    "cities": "3f569aaa0bfbeba72f1597657511c64f54107baae71710fef7146f390a41af32"
+  },
+  "license": "https://opendatacommons.org/licenses/odbl/1-0/",
+  "nameLicense": "https://raw.githubusercontent.com/modood/Administrative-divisions-of-China/c49d495b40ac73eb1a66f6eeae5f8fd10696f035/LICENSE",
+  "metadata": "https://www.geoboundaries.org/api/current/gbOpen/CHN/ADM3/",
+  "sourceGeometryCount": 2864,
+  "supported": 2467,
+  "excluded": 397,
+  "modifications": [
+    "geometry validation",
+    "round coordinates to 6 decimals",
+    "province/city spatial crosswalk",
+    "unique bilingual name matching; exclude ambiguities"
+  ],
+  "retrievedAt": "2026-10-17"
+}

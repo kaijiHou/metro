@@ -5,7 +5,7 @@ import {MAX_LIBRARY_BYTES,MAX_PHOTO_BYTES,MAX_PHOTOS} from './types'
 import {digest,processImage,imageSignature} from './imageProcessing'
 const MAX_ZIP=180*1024*1024
 const MANIFEST_LIMIT=16*1024*1024
-const safePath=/^(manifest\.json|photos\/ocha2020-CN\d{6}\/[a-zA-Z0-9-]{1,80}\.(jpg|png|webp))$/
+const safePath=/^(manifest\.json|photos\/(ocha2020-CN\d{6}|gb2017-[a-f0-9]{16})\/[a-zA-Z0-9-]{1,80}\.(jpg|png|webp))$/
 type Metadata=Omit<Photo,'blob'|'thumbnailBlob'>&{path:string;sha256:string}
 type Manifest={schemaVersion:1;exportedAt:string;visits:Visit[];photos:Metadata[]}
 const extension=(mime:string)=>({'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[mime])

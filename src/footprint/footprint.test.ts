@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs'
 import JSZip from 'jszip'
 import {FootprintDB} from './db'
 import {FootprintRepository} from './repository'
-import {parseCatalog,footprintStats,type CityGeometry} from './adminCatalog'
+import {parseCatalog,footprintStats,allRegions,provinceProgress,countyCities,type CityGeometry} from './adminCatalog'
 import {blankVisit,cleanDates,MAX_PHOTO_BYTES,type Photo} from './types'
 import {exportBackup,importBackup,inspectZip} from './backup'
 import {digest,imageSignature} from './imageProcessing'
@@ -16,6 +16,46 @@ const png=new Blob([Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAA
 const photo=(cityCode:string,id:string):Photo=>({photoId:id,cityCode,blob:png,thumbnailBlob:png,mimeType:'image/png',fileName:`${id}.png`,caption:'江边回忆',takenAt:'2025-05-01',sortOrder:0,createdAt:'2026-10-15T00:00:00.000Z'})
 function database(){const db=new FootprintDB(`MetroFootprint-test-${crypto.randomUUID()}`);return new FootprintRepository(db,new Set(catalog.cities.map((c)=>c.cityCode)))}
 const processor=async(blob:Blob)=>new Blob([await blob.arrayBuffer()],{type:blob.type}) // Unit only; real decoding is exercised in Chrome.
+it('county catalog has unique versioned IDs, real polygons and consistent city/province ownership',()=>{
+ const counties=JSON.parse(readFileSync(new URL('../../public/footprint/counties/catalog.json',import.meta.url),'utf8'))
+ const combined=parseCatalog({...catalog,counties:counties.cities,provinces:counties.provinces})
+ assert.ok(combined.counties!.length>2300)
+ assert.equal(combined.provinces!.length,34)
+ const visible=countyCities(combined)
+ assert.equal(visible.length,352)
+ assert.ok(visible.some(r=>r.name==='汉川市'));assert.ok(!visible.some(r=>['洪山区','江夏区','通山县','东莞市','中山市','儋州市'].includes(r.name)))
+ assert.equal(new Set(allRegions(combined).map(r=>r.cityCode)).size,allRegions(combined).length)
+ for(const province of new Set(combined.counties!.map(r=>r.provinceCode))){
+  const geometry=JSON.parse(readFileSync(new URL(`../../public/footprint/counties/${province}.json`,import.meta.url),'utf8')) as CityGeometry
+  assert.equal(geometry.features.length,combined.counties!.filter(r=>r.provinceCode===province).length)
+  for(const f of geometry.features)assert.equal(combined.counties!.find(r=>r.cityCode===f.properties.cityCode)?.provinceCode,province)
+ }
+ for(const name of ['汉川市','仙桃市','赤壁市','洪山区','江夏区'])assert.ok(combined.counties!.some(r=>r.name===name&&r.provinceCode==='CN042'))
+ const bad={...combined.counties![0],parentCityCode:wuhan,provinceCode:'CN043'}
+ assert.throws(()=>parseCatalog({...catalog,counties:[bad]}))
+})
+it('county visits, old city notes/photos and full ZIP restore coexist without marking every child; province lists update from either level',async()=>{
+ const counties=JSON.parse(readFileSync(new URL('../../public/footprint/counties/catalog.json',import.meta.url),'utf8'))
+ const combined=parseCatalog({...catalog,counties:counties.cities,provinces:counties.provinces})
+ const county=combined.counties!.find(r=>r.name==='汉川市'&&r.provinceCode==='CN042')!
+ const repos=[0,1].map(()=>new FootprintRepository(new FootprintDB(`County-test-${crypto.randomUUID()}`),new Set(allRegions(combined).map(r=>r.cityCode))))
+ try{
+  const [repo,copy]=repos
+  await repo.saveVisit(wuhan,{status:'visited',note:'原武汉记录'});await repo.addPhoto(photo(wuhan,'old-city-photo'))
+  assert.equal(provinceProgress(combined,await repo.visits()).find(p=>p.code==='CN042')!.counties,0)
+  await repo.saveVisit(county.cityCode,{status:'visited',visitedDates:['2026-10-17'],note:'去过汉川'});await repo.addPhoto(photo(county.cityCode,'county-photo'))
+  const progress=provinceProgress(combined,await repo.visits())
+  assert.equal(progress.filter(p=>p.visited).length,1);assert.equal(progress.filter(p=>!p.visited).length,33)
+  assert.equal(progress.find(p=>p.code==='CN042')!.counties,1);assert.equal(progress.find(p=>p.code==='CN042')!.cities,1)
+  assert.equal((await repo.visits()).length,2)
+  await importBackup(await exportBackup(repo),copy,'replace',processor)
+  assert.equal((await copy.db.visits.get(wuhan))!.note,'原武汉记录');assert.equal((await copy.db.visits.get(county.cityCode))!.note,'去过汉川')
+  assert.equal(await digest((await copy.photos(wuhan))[0].blob),await digest(png));assert.equal((await copy.photos(county.cityCode))[0].photoId,'county-photo')
+  await repo.saveVisit(county.cityCode,{status:'unvisited'});assert.equal(provinceProgress(combined,await repo.visits()).find(p=>p.code==='CN042')!.visited,true)
+  await repo.saveVisit(wuhan,{status:'unvisited'});assert.equal(provinceProgress(combined,await repo.visits()).find(p=>p.code==='CN042')!.visited,false)
+  assert.equal((await repo.photos(county.cityCode)).length,1)
+ }finally{for(const repo of repos)await repo.db.delete()}
+})
 it('339 licensed city units have stable unique codes, explicit parents, proper special levels and excluded Taiwan province',()=>{
  assert.equal(catalog.cities.length,339);assert.equal(new Set(catalog.cities.map((c)=>c.cityCode)).size,339)
  assert.equal(new Set(catalog.cities.map((c)=>c.provinceCode)).size,33)

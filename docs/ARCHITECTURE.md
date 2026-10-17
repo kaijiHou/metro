@@ -53,3 +53,5 @@ App主导航transit/travel存在viewStore，仅UI状态；旅行页面lazy加载
 src/footprint分离只读adminCatalog/分区几何缓存、types、db/repository、imageProcessing、backup、FootprintPage/CityPhotoAlbum/TravelMemories和地图图层。旅行库没有MetroProject/metroStore业务依赖。MapLibre按cityCode promoteId与feature-state填色，真实省级轮廓仅展示；点击城市只选择、查相册，不点亮或自动放大。省份筛选才定位省级范围。style.load重建轮廓/标签/市级sources后恢复访问与选择状态，异步视口generation阻止旧加载覆盖新视野。
 
 repo事务覆盖照片/封面一致性、删除修复、备份合并/覆盖。图片处理和ZIP验证在事务外完成，最终一次写入；事务失败回滚。组件读取有当前城市/卸载守卫，原图与缩略图ObjectURL清理，上传始终绑定发起城市。详情/底部回忆不复用其它城市的图。足迹异常显示独立消息，不改地铁通知或数据。
+
+县级市足迹：同一旅行库通过稳定区域主键扩展，界面只选County-level city。省份进度独立汇总所有既有到访，范围34；全国初始仅显示省界和已有县级市足迹，选省或放大后按省载入几何，过滤县/区再交给MapLibre。地图重建和层级切换使用新目录重建feature-state，保留单实例原则。详情见FOOTPRINT_COUNTY_UPGRADE.md。
