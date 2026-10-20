@@ -1,0 +1,24 @@
+{
+  "checks": 12,
+  "passed": [
+    "rendered app provides the travel entry",
+    "old browser records migrate automatically into the shared file",
+    "independent Edge and Chrome share migrated dates, notes and identical photo bytes",
+    "a second browser edit automatically updates first-browser map/statistics and parent lighting",
+    "cross-browser refresh preserves unsaved note drafts while updating clean fields",
+    "shared export ZIP contains actual photos and all city records",
+    "photo deletion and cover fallback propagate to another browser",
+    "ZIP import updates the one shared store and all open browsers",
+    "server restart and browser refresh retain exact photo bytes and notes",
+    "legacy browser data is preserved as backup rather than overwritten",
+    "shared data rejects missing tokens, cross-site writes and direct database downloads",
+    "no browser runtime exceptions"
+  ],
+  "browsers": [
+    "Chrome",
+    "Edge"
+  ],
+  "photoSHA256": "6964758152e4e10bfc035ea06c117c59070b582f44c7c97a44a8ad0c260d86f1",
+  "runtimeErrors": [],
+  "isolated": true
+}

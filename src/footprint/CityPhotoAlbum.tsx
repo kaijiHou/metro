@@ -1,6 +1,6 @@
 import {useEffect,useRef,useState} from 'react'
 import type {Photo,Visit} from './types'
-import type {FootprintRepository} from './repository'
+import type {FootprintStore} from './repository'
 import {defaultPhotos} from './defaultPhotos'
 import {processImage} from './imageProcessing'
 import {storageError} from './types'
@@ -10,7 +10,7 @@ function PhotoEditor({photo,onSave,disabled}:{photo:Photo;disabled:boolean;onSav
  const [caption,setCaption]=useState(photo.caption),[takenAt,setTakenAt]=useState(photo.takenAt)
  return <fieldset disabled={disabled} className="footprint-photo-edit"><label>照片说明<input aria-label="照片说明" maxLength={1000} value={caption} onChange={(e)=>setCaption(e.target.value)}/></label><label>照片日期<input aria-label="照片日期" type="date" value={takenAt} onChange={(e)=>setTakenAt(e.target.value)}/></label><button onClick={()=>onSave(caption,takenAt)}>保存照片说明</button></fieldset>
 }
-export function CityPhotoAlbum({code,name,visit,repo,version,onChange,onMessage,disabled,onUploadState}:{code:string;name:string;visit:Visit;repo:FootprintRepository;version:number;onChange:()=>void;onMessage:(message:string)=>void;disabled:boolean;onUploadState:(busy:boolean)=>void}){
+export function CityPhotoAlbum({code,name,visit,repo,version,onChange,onMessage,disabled,onUploadState}:{code:string;name:string;visit:Visit;repo:FootprintStore;version:number;onChange:()=>void;onMessage:(message:string)=>void;disabled:boolean;onUploadState:(busy:boolean)=>void}){
  const [photos,setPhotos]=useState<Photo[]>([]),[error,setError]=useState(''),[loading,setLoading]=useState(true),[tab,setTab]=useState('all'),[activeId,setActive]=useState(''),[uploading,setUploading]=useState(false),[progress,setProgress]=useState<string[]>([])
  const input=useRef<HTMLInputElement>(null),dialog=useRef<HTMLDialogElement>(null),swipe=useRef(0),alive=useRef(true)
  useEffect(()=>{alive.current=true;const element=input.current;const cancel=()=>onMessage('未选择照片，已有相册保持。');element?.addEventListener('cancel',cancel);return()=>{alive.current=false;element?.removeEventListener('cancel',cancel)}},[onMessage])
@@ -40,7 +40,7 @@ export function CityPhotoAlbum({code,name,visit,repo,version,onChange,onMessage,
  }
  return <section className="footprint-album" aria-label="城市相册" onKeyDown={(e)=>{if((e.target as HTMLElement).matches('input,textarea'))return;if(e.key==='ArrowLeft'){e.preventDefault();move(-1)}if(e.key==='ArrowRight'){e.preventDefault();move(1)}}}>
   <div className="section-header"><h3>城市相册</h3><button disabled={disabled||uploading} onClick={()=>input.current?.click()}>上传照片</button></div>
-  <p className="quiet">我的照片仅存本浏览器，不会自动上传。单张20MB，全部相册共300张/160MB。</p>
+  <p className="quiet">我的照片保存在本机共享文件，各浏览器共用。单张20MB，全部相册共300张/160MB。</p>
   <input hidden ref={input} type="file" multiple accept="image/jpeg,image/png,image/webp" aria-label="上传城市照片" onChange={(e)=>{const files=Array.from(e.target.files??[]);e.target.value='';void upload(files)}}/>
   <div className="footprint-photo-tabs" role="group" aria-label="照片筛选">{[['all','全部照片',defaults.length+photos.length],['default','城市默认',defaults.length],['mine','我的照片',photos.length]].map(([key,label,count])=><button key={key} aria-pressed={tab===key} onClick={()=>{setTab(String(key));setActive('')}}>{label} <span>{count}</span></button>)}</div>
   {loading&&<p role="status">读取相册…</p>}{error&&<p role="alert">{error}<button onClick={onChange}>重试相册</button></p>}

@@ -11,9 +11,12 @@ if not errorlevel 1 (
   exit /b 0
 )
 
-where node.exe >nul 2>nul
+set "METRO_NODE=node.exe"
+node.exe -e "process.exit(Number(process.versions.node.split('.')[0])>=24?0:1)" >nul 2>nul
+if errorlevel 1 set "METRO_NODE=%USERPROFILE%\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
+"%METRO_NODE%" -e "process.exit(Number(process.versions.node.split('.')[0])>=24?0:1)" >nul 2>nul
 if errorlevel 1 (
-  echo 未找到 Node.js，请先安装 Node.js 后重试。
+  echo 本机共享资料需要 Node.js 24，请安装后重新启动。
   goto failed
 )
 if not exist "node_modules\vite\bin\vite.js" (
@@ -24,7 +27,7 @@ if not exist "node_modules\vite\bin\vite.js" (
 echo 正在启动地铁线路规划器，稍后会自动打开浏览器。
 echo 使用期间请保留此窗口，可以最小化；关闭窗口即可停止服务。
 echo 地址：http://127.0.0.1:5173/
-call npm.cmd run dev -- --port 5173 --strictPort --open
+"%METRO_NODE%" node_modules\vite\bin\vite.js --host 127.0.0.1 --port 5173 --strictPort --open
 if errorlevel 1 goto failed
 exit /b 0
 

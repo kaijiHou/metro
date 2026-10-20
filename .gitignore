@@ -31,3 +31,5 @@ test-results/
 /validation/phase4b-*.zip
 /validation/phase4b-*.geojson
 /.local-recovery/
+/data/*.sqlite*
+/validation/shared-storage/

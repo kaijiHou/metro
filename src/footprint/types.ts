@@ -11,4 +11,4 @@ export function cleanDates(values:unknown):string[]{
  if(!Array.isArray(values)||values.length>500||!values.every((v)=>typeof v==='string'&&dateValid(v)))throw Error('访问日期无效，请使用真实的年月日。')
  return [...new Set(values as string[])].sort()
 }
-export function storageError(error:unknown){const e=error as {name?:string;message?:string};return /quota/i.test(`${e?.name} ${e?.message}`)?'浏览器空间不足，未保存。请先备份，再释放空间。':`本地存储操作失败，未宣称保存成功：${e?.message??'浏览器可能禁用了IndexedDB，请检查设置或重试。'}`}
+export function storageError(error:unknown){const e=error as {name?:string;message?:string};return /quota/i.test(`${e?.name} ${e?.message}`)?'存储空间不足，未保存。请先备份，再释放空间。':`本地存储操作失败，未宣称保存成功：${e?.message??'请检查本机资料服务是否运行，再重试。'}`}

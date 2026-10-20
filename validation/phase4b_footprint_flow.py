@@ -5,6 +5,8 @@ from playwright.sync_api import sync_playwright,expect
 ROOT=Path(__file__).resolve().parents[1]
 CAT=json.loads((ROOT/'public/footprint/catalog.json').read_text(encoding='utf-8'))
 CODES={c['name']:c['cityCode'] for c in CAT['cities']}
+from shared_storage_test_guard import check_storage
+check_storage('http://127.0.0.1:5173/')
 checks=[]
 def check(name,ok=True):
  assert ok,name

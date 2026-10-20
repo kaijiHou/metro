@@ -3,6 +3,8 @@ import json,base64
 from pathlib import Path
 from playwright.sync_api import sync_playwright,expect
 ROOT=Path(__file__).resolve().parents[1]
+from shared_storage_test_guard import check_storage
+check_storage('http://127.0.0.1:5174/metro/',allow_shared=True)
 with sync_playwright() as p:
  browser=p.chromium.launch(channel='chrome',headless=True,args=['--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader'])
  page=browser.new_page(viewport={'width':1600,'height':1100},accept_downloads=True)
@@ -34,15 +36,27 @@ with sync_playwright() as p:
  with page.expect_download() as download:page.get_by_role('button',name='导出我的全部旅行足迹 ZIP',exact=True).click()
  path=ROOT/'validation/phase4b-production.zip';download.value.save_as(path)
  assert path.stat().st_size>len(png)
+ # A failed service must not silently create a browser-local library.
+ blocked=browser.new_page(viewport={'width':1440,'height':1000})
+ blocked.route('**/api/footprint/**',lambda route:route.abort())
+ blocked.goto('http://127.0.0.1:5174/metro/',wait_until='networkidle')
+ blocked.get_by_role('button',name='我的旅行足迹',exact=True).click()
+ expect(blocked.get_by_role('button',name='重试本地资料',exact=True)).to_be_visible()
+ expect(blocked.get_by_role('region',name='足迹保存状态')).to_have_count(0)
+ blocked.unroute('**/api/footprint/**')
+ blocked.get_by_role('button',name='重试本地资料',exact=True).click()
+ expect(blocked.get_by_role('region',name='足迹保存状态')).to_contain_text('已保存 1 个市级足迹',timeout=20000)
+ expect(blocked.get_by_role('region',name='足迹保存状态')).to_contain_text('1 个县级市足迹')
+ blocked.close()
  page.get_by_role('button',name='轨道交通地图',exact=True).click()
  assert page.evaluate("localStorage.getItem('metro-planner.project')")==project
  assert any('/metro/footprint/catalog.json' in u for u in urls)
  assert any('/metro/footprint/CN042.json' in u for u in urls)
  assert any('/metro/footprint/counties/catalog.json' in u for u in urls)
  assert any('/metro/footprint/province-outlines.json' in u for u in urls)
- assert all('/metro/footprint/' in u for u in urls)
+ assert all('/metro/footprint/' in u or '/metro/api/footprint/' in u for u in urls)
  assert not errors,errors
- result={'status':'PASS','base':'/metro/','footprintRequests':urls,'photoUploadAndZip':True,'metroProjectUnchanged':True,'runtimeErrors':errors}
+ result={'status':'PASS','base':'/metro/','footprintRequests':urls,'photoUploadAndZip':True,'serviceFailureAndRetry':True,'metroProjectUnchanged':True,'runtimeErrors':errors}
  (ROOT/'validation/phase4b-production-results.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
  print(json.dumps(result,ensure_ascii=False),flush=True)
  browser.close()

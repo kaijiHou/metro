@@ -10,6 +10,8 @@ county=next(c for c in catalog['cities'] if c['name']=='汉川市' and c['provin
 geo=json.loads((ROOT/'public/footprint/counties/CN042.json').read_text('utf8'))
 point=shape(next(f['geometry'] for f in geo['features'] if f['properties']['cityCode']==county['cityCode'])).representative_point()
 png=base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1EAAAAASUVORK5CYII=')
+from shared_storage_test_guard import check_storage
+check_storage(BASE)
 checks=[]
 def check(name,ok=True):
  assert ok,name

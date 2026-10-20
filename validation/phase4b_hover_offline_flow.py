@@ -5,6 +5,8 @@ from playwright.sync_api import sync_playwright,expect
 
 ROOT=Path(__file__).resolve().parents[1]
 BASE=sys.argv[1] if len(sys.argv)>1 else 'http://127.0.0.1:5173/'
+from shared_storage_test_guard import check_storage
+check_storage(BASE)
 checks=[]
 def check(name,ok=True):
     assert ok,name

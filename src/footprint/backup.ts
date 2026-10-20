@@ -1,5 +1,5 @@
 import JSZip, {type JSZipObject} from 'jszip'
-import type {FootprintRepository} from './repository'
+import type {FootprintStore} from './repository'
 import type {Photo,Visit} from './types'
 import {MAX_LIBRARY_BYTES,MAX_PHOTO_BYTES,MAX_PHOTOS} from './types'
 import {digest,processImage,imageSignature} from './imageProcessing'
@@ -44,7 +44,7 @@ function readBounded(file:JSZipObject,limit:number,expected:number):Promise<Blob
   stream.on('error',reject).on('end',()=>{if(!failed){if(size!==expected)reject(Error('ZIP实际长度与目录不一致。'));else resolve(new Blob(chunks))}}).resume()
  })
 }
-export async function exportBackup(repo:FootprintRepository){
+export async function exportBackup(repo:FootprintStore){
  const snapshot=await repo.snapshot();const zip=new JSZip();const photos:Metadata[]=[]
  for(const p of snapshot.photos){
   const {blob,thumbnailBlob,...meta}=p;void thumbnailBlob
@@ -59,7 +59,7 @@ export async function exportBackup(repo:FootprintRepository){
  return zip.generateAsync({type:'blob',compression:'STORE'})
 }
 /** All paths, ownership, hashes and decoded images are validated before a single DB write. */
-export async function importBackup(blob:Blob,repo:FootprintRepository,mode:'merge'|'replace',processor=processImage){
+export async function importBackup(blob:Blob,repo:FootprintStore,mode:'merge'|'replace',processor=processImage){
  if(blob.size>MAX_ZIP)throw Error('压缩包超过180MB。')
  const bytes=new Uint8Array(await blob.arrayBuffer()),entries=inspectZip(bytes)
  const zip=await JSZip.loadAsync(bytes)

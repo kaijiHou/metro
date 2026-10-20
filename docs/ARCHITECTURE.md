@@ -55,3 +55,12 @@ src/footprint分离只读adminCatalog/分区几何缓存、types、db/repository
 repo事务覆盖照片/封面一致性、删除修复、备份合并/覆盖。图片处理和ZIP验证在事务外完成，最终一次写入；事务失败回滚。组件读取有当前城市/卸载守卫，原图与缩略图ObjectURL清理，上传始终绑定发起城市。详情/底部回忆不复用其它城市的图。足迹异常显示独立消息，不改地铁通知或数据。
 
 县级市足迹：旅行库主键兼容原市级与县级市；同一地图始终加载339个市级轮廓，省直辖县级市直接显示，其余县级市6.5级以上按视野载入过滤后的几何。litRegions根据真实子市到访派生父市着色，不写合成记录，统计、地图和详情采用同一规则。样式重建后恢复feature-state；仍为单一地图实例。省份清单覆盖34类。详见FOOTPRINT_COUNTY_UPGRADE.md。
+
+
+## 本机共享旅行存储（2026-10-20，取代浏览器独立主库）
+
+Vite插件`server/footprint-server.mjs`为开发服务及生产预览挂载本机API。Node24内置SQLite，默认`data/travel.sqlite`，同步事务/忙等待/DELETE事务日志；无常驻WAL文件。元数据、原图和缩略图共用单个数据库。读快照也用事务，跨服务连接取得一致备份。访问限loopback、同源及随机请求令牌，禁止数据库静态下载；私有目录不入Git。
+
+`SharedFootprintRepository`提供现有FootprintStore契约；FootprintValidation复用领域校验，ZIP继续复用既有验证。浏览器旧Dexie库只作一次迁移输入，不是共享页写入目标。服务端迁移去重，按updatedAt选择新元数据并合并日期，删除标记抑制旧库复活；旧数据不清除。UI按revision两秒轮询与焦点刷新，未保存草稿保留，同城旧写入检测冲突。断线不切换独立数据库，不伪造空库或保存成功。SQLite操作与MetroProject业务隔离。
+
+测试`phase4b_shared_flow.py`自行维护独立服务/目录，真实Chrome和Edge验证共享、旧库迁移、照片实际字节、ZIP和服务重启。测试目录及数据库不可加入public或提交。
