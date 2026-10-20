@@ -16,7 +16,7 @@ def db_state(page):
  return page.evaluate("""async()=>({visits:(await fp.visits.toArray()).sort((a,b)=>a.cityCode.localeCompare(b.cityCode)),photos:await Promise.all((await fp.photos.toArray()).sort((a,b)=>a.photoId.localeCompare(b.photoId)).map(async p=>({photoId:p.photoId,cityCode:p.cityCode,caption:p.caption,takenAt:p.takenAt,sortOrder:p.sortOrder,fileName:p.fileName,sha:[...new Uint8Array(await crypto.subtle.digest('SHA-256',await p.blob.arrayBuffer()))].map(n=>n.toString(16).padStart(2,'0')).join(''),thumbnailSize:p.thumbnailBlob.size})))})""")
 def choose(page,name):
  page.get_by_role('textbox',name='搜索旅行城市').fill(name)
- page.locator('.footprint-city-list').get_by_role('button').filter(has_text=name).click()
+ page.locator('.footprint-city-list').get_by_role('button').filter(has_text=name).first.click()
  expect(page.get_by_role('complementary',name='城市旅行详情').locator('h2')).to_have_text(name)
  page.wait_for_timeout(100)
 
@@ -36,7 +36,6 @@ with sync_playwright() as p:
  before=metro_state()
  page.get_by_role('button',name='我的旅行足迹',exact=True).click()
  expect(page.get_by_role('textbox',name='搜索旅行城市')).to_be_visible()
- page.get_by_role('button',name='市级足迹',exact=True).click()
  page.wait_for_function("document.querySelector('.footprint-stats')")
  init_db(page);map_ref(page,'.footprint-map-canvas')
  page.wait_for_function("testMap.getLayer('footprint-fill')")

@@ -59,3 +59,16 @@ Data newpublic/footprint/counties: fixedgeoBoundaries9469f09 OSMADM3 2017 ODbL1.
 Verifiedcurrent: lintPASS;107unitPASS;countybrowser14checksPASS includingordinarycounty/districthidden,realHanchuanpolygonhover/click, oldWuhanphoto/note preserved, provinceclassificationandunlight, Xiantao, Liuyang, fullZIPrestoreinnewcontext+originalbytes,refresh,projectisolation,mobile390; rootand/metro/buildPASS;actualproduction/metro/smokePASS includingcountyandoldcity/upload/ZIP;58transitsnapshotcontentunchangedbaseline. SmallresultJSONtrackedcandidates; allscreenshots/logs/rawzips/geojson ignored. No userphotos touched.
 
 Remaining at write: inspect/stage/diffcheck/commit/pushmain andverifyfinalHEAD CI. Docs updatedinclTEST_REPORT; no furtherfeatures. Stop ownpreview5174 afterexactcommandlinecheck, keepdev5173 running. Restoreddistrootalready. Node24/Pythonpaths sameabove. No reset/rebase/forcepush. Final Chinese response says countycityonly + provincevisitedtabs + oldrecordspreserved +352historicalpartialcoverage +tests/CI.
+
+
+## ACTIVE correction: unified footprint map, 2026-10-20
+
+Baseline HEAD/origin main6311840f3e4a98a857a11b24fd4de8f9afef3871. Latest user requires Wuhan/prefecture cities retained, existing lit cities shown, Honghu lights all Jingzhou. Earlier exclusive county mode superseded. No subagents; pwsh; commit/pushmain + finalHEAD CI authorized.
+
+Implemented: one combined source, all339 citypolygons alwaysloaded, countycityoverlay>=6.5 byviewport; provinceadministered countycities load/display atnationalzoom. Unifiedlist includescity+352countycities, no ordinarycounty/district UI. litRegions derivesparentcitystates fromcounty visits withoutDB writes; map/list/stats/provincepanel/details aligned. Parentdetail explains inheritedlighting, explicitparentunlight preserveschildcontribution. OriginalDB schema/ZIP/IDs/photos untouched. Savedstatus shows realcounts andbrowserisolation. .local-recovery ignored andHTTPdenied; NEVERstageprivatecontents.
+
+Verified: lintPASS,108unitPASS,root+/metro/buildPASS;18isolatedChromechecksPASS incl339geometry,Wuhanoldvisit,Hanchuanrealhover, HonghuJingzhoulighting/unlight/style, Xiantao nationalzoom, ZIPactualphoto restore,newprofile refresh,metroisolation,mobile390;offline10checksPASS noexternalrequests;58transitsnapshotsunchangedLFnormalized;privateHTTP403PASS. Browserruntime0. Testwaitsinitialmetro snapshotbeforebaseline. Older tests updatedforunifiedscope. Docsupdated.
+
+At write: actualproduction/metro/ smoke running session63678, validation/phase4b-unified-production.log; reportpendingproductionrecord. Dev5173 running ownnode15424 (verifyexactcmdlinebeforestoppinganything); preview5174 alsoownVite. Distcurrently/metro/ build. Finishproduction, docreport, inspect/stageexplicitfiles,commit/pushmain,noreset/rebase/force;verifyfinalHEADCI. Keepdev5173;stopownpreviewafterexactcommandlinecheck. Avoidstagingignoredlogs,pngs,zipsorprivateuserdata. FinalconciseChinese refreshto seeWuhan+existingvisits+HonghulightsJingzhou. Existing62records shown inprevioususerscreenshotalreadyinbrowser;DONOTaskrecoveryagain.
+
+Production /metro/ smoke PASS (properpreview--base=/metro/), validation/phase4b-production-results.json updated; snapshot58 PASS withLFnormalization; allfinaltestsdone. Nextstage+commit+push+exactHEADCI. No moreoptionaltests.

@@ -1,5 +1,5 @@
 {
-  "base": "http://127.0.0.1:5174/",
+  "base": "http://127.0.0.1:5173/",
   "checks": 10,
   "passed": [
     "fresh profile renders national outlines and province names with all public internet blocked",

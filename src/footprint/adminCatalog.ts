@@ -18,7 +18,7 @@ export function getCatalog(){
  catalogPromise??=Promise.all(['catalog.json','counties/catalog.json'].map(file=>fetch(footprintUrl(file)).then(r=>{if(!r.ok)throw Error('旅行行政目录加载失败，可重试。');return r.json()}))).then(([city,county])=>parseCatalog({...city,counties:county.cities,provinces:county.provinces})).catch((e)=>{catalogPromise=undefined;throw e})
  return catalogPromise
 }
-export type CityGeometry=FeatureCollection<Polygon|MultiPolygon,{cityCode:string;name:string}>
+export type CityGeometry=FeatureCollection<Polygon|MultiPolygon,{cityCode:string;name:string;kind?:string}>
 const geometryCache=new Map<string,Promise<CityGeometry>>()
 export function getProvinceGeometry(province:string,catalog:Catalog){
  const key=`${catalog.geometryFolder??''}${province}`
@@ -34,15 +34,22 @@ export function getProvinceGeometry(province:string,catalog:Catalog){
 }
 export function allRegions(catalog:Catalog){return [...catalog.cities,...(catalog.counties??[])]}
 export function countyCities(catalog:Catalog){return (catalog.counties??[]).filter(r=>r.level==='County-level city')}
+// Derive parent lighting without creating or changing personal visit records.
+export function litRegions(catalog:Catalog,visits:Visit[]){
+ const lit=new Set(visits.filter(v=>v.status==='visited').map(v=>v.cityCode))
+ for(const c of countyCities(catalog))if(lit.has(c.cityCode)&&c.parentCityCode)lit.add(c.parentCityCode)
+ return lit
+}
 export function provinceProgress(catalog:Catalog,visits:Visit[]){
- const visited=new Set(visits.filter(v=>v.status==='visited').map(v=>v.cityCode)),regions=allRegions(catalog)
+ const visited=litRegions(catalog,visits),regions=allRegions(catalog)
  const provinces=catalog.provinces??[...new Map(regions.map(r=>[r.provinceCode,r.provinceName])).entries()].map(([code,name])=>({code,name}))
  return provinces.map(p=>{const local=regions.filter(r=>r.provinceCode===p.code),been=local.filter(r=>visited.has(r.cityCode));return {...p,visited:been.length>0,counties:been.filter(r=>r.level==='County-level city').length,cities:been.filter(r=>r.kind!=='county').length,totalCounties:local.filter(r=>r.level==='County-level city').length}})
 }
 export function footprintStats(catalog:Catalog,visits:Visit[]){
- const visited=new Set(visits.filter((v)=>v.status==='visited').map((v)=>v.cityCode))
- const cities=catalog.cities.filter((c)=>visited.has(c.cityCode))
- return {visited:cities.length,remaining:catalog.cities.length-cities.length,provinces:new Set(cities.map((c)=>c.provinceCode)).size,byProvince:Object.fromEntries([...new Set(catalog.cities.map((c)=>c.provinceCode))].map((p)=>[p,{visited:cities.filter((c)=>c.provinceCode===p).length,total:catalog.cities.filter((c)=>c.provinceCode===p).length}]))}
+ const visited=litRegions(catalog,visits)
+ const regions=[...catalog.cities,...countyCities(catalog).filter(c=>!c.parentCityCode)]
+ const cities=regions.filter((c)=>visited.has(c.cityCode))
+ return {total:regions.length,visited:cities.length,remaining:regions.length-cities.length,provinces:new Set(cities.map((c)=>c.provinceCode)).size,byProvince:Object.fromEntries([...new Set(regions.map((c)=>c.provinceCode))].map((p)=>[p,{visited:cities.filter((c)=>c.provinceCode===p).length,total:regions.filter((c)=>c.provinceCode===p).length}]))}
 }
 
 export type ProvinceGeometry=FeatureCollection<Polygon|MultiPolygon,{provinceCode:string;name:string;supported:boolean;labelPoint:[number,number]}>

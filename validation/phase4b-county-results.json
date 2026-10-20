@@ -1,24 +1,28 @@
 {
-  "checks": 14,
+  "checks": 18,
   "passed": [
-    "county footprint is the default and all 34 province categories are available",
+    "unified city map is the default and all 34 province categories are available",
     "ordinary counties and municipal districts are absent from search",
-    "ordinary counties and districts are hidden and old cities do not mark children",
+    "all 339 city polygons including Wuhan load and existing city visits light immediately",
     "actual Hanchuan county-city polygon supports hover and click with city/province context",
-    "only chosen county lights and original city photo/note remain",
+    "county visit preserves original city photo/note without creating parent records",
     "unlighting last county keeps province visited while an old city is still visited",
     "province returns to unvisited only after its last city/county record is unlit",
-    "province-administered county city can be recorded independently",
+    "province-administered county city lights its own polygon even at national zoom",
     "unvisited province list locates province and a new county updates both lists",
+    "lighting Honghu lights the entire Jingzhou parent polygon",
+    "canceling explicit parent visit preserves lighting supplied by the child",
+    "canceling last child unlights parent when no explicit parent visit remains",
+    "complete city base and derived parent lighting survive style reload",
     "mixed city/county ZIP restores original photo bytes, metadata and covers in a new profile",
     "mixed footprint records persist across refresh",
     "metro project persistence was not modified",
     "390px layout has no horizontal overflow",
     "no browser runtime exceptions"
   ],
+  "supportedCountyCandidates": 2467,
+  "displayedCountyCities": 352,
   "excludedSourceUnits": 397,
   "photoSHA256": "5340df9fa2360915b851e37696766aad26e50b327faeb8bf2a9de08583621e80",
-  "errors": [],
-  "supportedCountyCandidates": 2467,
-  "displayedCountyCities": 352
+  "errors": []
 }

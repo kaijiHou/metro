@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs'
 import JSZip from 'jszip'
 import {FootprintDB} from './db'
 import {FootprintRepository} from './repository'
-import {parseCatalog,footprintStats,allRegions,provinceProgress,countyCities,type CityGeometry} from './adminCatalog'
+import {parseCatalog,footprintStats,allRegions,provinceProgress,countyCities,litRegions,type CityGeometry} from './adminCatalog'
 import {blankVisit,cleanDates,MAX_PHOTO_BYTES,type Photo} from './types'
 import {exportBackup,importBackup,inspectZip} from './backup'
 import {digest,imageSignature} from './imageProcessing'
@@ -46,7 +46,7 @@ it('county visits, old city notes/photos and full ZIP restore coexist without ma
   await repo.saveVisit(county.cityCode,{status:'visited',visitedDates:['2026-10-17'],note:'去过汉川'});await repo.addPhoto(photo(county.cityCode,'county-photo'))
   const progress=provinceProgress(combined,await repo.visits())
   assert.equal(progress.filter(p=>p.visited).length,1);assert.equal(progress.filter(p=>!p.visited).length,33)
-  assert.equal(progress.find(p=>p.code==='CN042')!.counties,1);assert.equal(progress.find(p=>p.code==='CN042')!.cities,1)
+  assert.equal(progress.find(p=>p.code==='CN042')!.counties,1);assert.equal(progress.find(p=>p.code==='CN042')!.cities,2)
   assert.equal((await repo.visits()).length,2)
   await importBackup(await exportBackup(repo),copy,'replace',processor)
   assert.equal((await copy.db.visits.get(wuhan))!.note,'原武汉记录');assert.equal((await copy.db.visits.get(county.cityCode))!.note,'去过汉川')
@@ -55,6 +55,24 @@ it('county visits, old city notes/photos and full ZIP restore coexist without ma
   await repo.saveVisit(wuhan,{status:'unvisited'});assert.equal(provinceProgress(combined,await repo.visits()).find(p=>p.code==='CN042')!.visited,false)
   assert.equal((await repo.photos(county.cityCode)).length,1)
  }finally{for(const repo of repos)await repo.db.delete()}
+})
+it('Honghu lights all of Jingzhou without synthetic records; other children and explicit parent visits keep it lit',()=>{
+ const counties=JSON.parse(readFileSync(new URL('../../public/footprint/counties/catalog.json',import.meta.url),'utf8'))
+ const combined=parseCatalog({...catalog,counties:counties.cities,provinces:counties.provinces})
+ const honghu=countyCities(combined).find(c=>c.name==='洪湖市')!,jingzhou=byName('荆州市').cityCode
+ assert.equal(honghu.parentCityCode,jingzhou)
+ const sibling=countyCities(combined).find(c=>c.parentCityCode===jingzhou&&c.cityCode!==honghu.cityCode)!
+ const visits=[{...blankVisit(honghu.cityCode),status:'visited' as const}]
+ const before=structuredClone(visits)
+ assert.ok(litRegions(combined,visits).has(jingzhou));assert.equal(footprintStats(combined,visits).visited,1)
+ assert.equal(provinceProgress(combined,visits).find(p=>p.code==='CN042')!.cities,1)
+ const xiantao=countyCities(combined).find(c=>c.name==='仙桃市')!
+ assert.ok(!xiantao.parentCityCode);assert.equal(footprintStats(combined,[{...blankVisit(xiantao.cityCode),status:'visited'}]).visited,1)
+ assert.deepEqual(visits,before)
+ assert.ok(!litRegions(combined,[{...visits[0],status:'unvisited'}]).has(jingzhou))
+ assert.ok(litRegions(combined,[{...visits[0],status:'unvisited'},{...blankVisit(sibling.cityCode),status:'visited'}]).has(jingzhou))
+ assert.ok(litRegions(combined,[{...visits[0],status:'unvisited'},{...blankVisit(jingzhou),status:'visited'}]).has(jingzhou))
+ assert.ok(!litRegions(combined,[{...blankVisit(jingzhou),status:'visited'}]).has(honghu.cityCode))
 })
 it('339 licensed city units have stable unique codes, explicit parents, proper special levels and excluded Taiwan province',()=>{
  assert.equal(catalog.cities.length,339);assert.equal(new Set(catalog.cities.map((c)=>c.cityCode)).size,339)

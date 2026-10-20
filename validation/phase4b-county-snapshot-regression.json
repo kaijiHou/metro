@@ -1,5 +1,6 @@
 {
-  "baseline": "a785024a335a0486e9b7840c9b3634d65b88cb05",
+  "baseline": "6311840f3e4a98a857a11b24fd4de8f9afef3871",
   "originalCities": 58,
-  "allSnapshotContentUnchanged": true
+  "allSnapshotContentUnchanged": true,
+  "comparison": "UTF-8 bytes with checkout CRLF normalized to repository LF"
 }
