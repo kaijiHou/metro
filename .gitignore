@@ -33,3 +33,5 @@ test-results/
 /.local-recovery/
 /data/*.sqlite*
 /validation/shared-storage/
+/validation/tram-source/*
+!/validation/tram-source/README.md
