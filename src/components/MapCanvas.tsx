@@ -306,7 +306,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
       })
       addBrowseLayers(map)
       addJourneyLayers(map)
-      syncJourneyLayers(map,useViewStore.getState().journey)
+      syncJourneyLayers(map,useViewStore.getState().journey,true)
       map.setLayoutProperty('metro-readonly-stations','visibility',presentationRef.current?'visible':'none')
       if(presentationRef.current&&useViewStore.getState().existingOnly){(map.getSource('metro-lines') as GeoJSONSource).setData({type:'FeatureCollection',features:[]});(map.getSource('metro-station-labels') as GeoJSONSource).setData({type:'FeatureCollection',features:[]})}
       syncBrowseLayers(map,resultRef.current,useViewStore.getState().autoNetworks?catalogRef.current:[],useMetroStore.getState().project)
@@ -316,6 +316,15 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
     let ignoreLabelClick = false
     const onMapClick = (event: maplibregl.MapMouseEvent) => {
       if (ignoreLabelClick) { ignoreLabelClick = false; return }
+      const focused=useViewStore.getState().journey
+      if(focused){
+        const layers=['journey-stops','journey-station-names'].filter(id=>map.getLayer(id))
+        const feature=layers.length?map.queryRenderedFeatures(event.point,{layers})[0]:undefined
+        const station=focused.project.stations[String(feature?.properties?.id)]
+        if(station){const cityId=focused.project.cityId??'custom',city=catalogRef.current.find(c=>c.id===cityId)
+          useViewStore.getState().setStation({...station,cityId,cityName:city?.name??focused.project.name,sourceUrl:city?.sourceUrl??'',lineNames:focused.journey.legs.filter(l=>l.stationIds.includes(station.id)).map(l=>l.name),querySource:focused.project===useMetroStore.getState().project?'project':'snapshot'})}
+        return
+      }
       const readLayers=['browse-station-points','browse-station-names',...(presentationRef.current?['metro-readonly-stations','metro-station-labels']:[])].filter((id)=>map.getLayer(id))
       const readonly=readLayers.length?map.queryRenderedFeatures(event.point,{layers:readLayers})[0]:undefined
       if(readonly&&readonly.geometry.type==='Point'){
@@ -369,7 +378,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
     }
     let labelDrag: { id: string; start: maplibregl.Point; moved: boolean } | null = null
     const onLabelDown = (event: maplibregl.MapMouseEvent) => {
-      if (presentationRef.current || event.originalEvent.button !== 0 || useMetroStore.getState().editorMode !== 'browse' || !map.getLayer('metro-station-labels')) return
+      if (useViewStore.getState().journey || presentationRef.current || event.originalEvent.button !== 0 || useMetroStore.getState().editorMode !== 'browse' || !map.getLayer('metro-station-labels')) return
       const id = map.queryRenderedFeatures(event.point, { layers: ['metro-station-labels'] })[0]?.properties?.id
       if (typeof id !== 'string') return
       if (lockedNodeIds(useMetroStore.getState().project, 'station').has(id)) {
@@ -462,7 +471,20 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
     const points=journey.journey.legs.flatMap(l=>l.coordinates)
     if(!points.length){const s=journey.project.stations[journey.journey.from];if(s)map.flyTo({center:[s.lng,s.lat],zoom:15});return}
     const bounds=new maplibregl.LngLatBounds(points[0],points[0]);for(const p of points)bounds.extend(p)
-    map.fitBounds(bounds,{padding:{top:165,bottom:90,left:65,right:65},maxZoom:15,duration:700})
+    map.fitBounds(bounds,{padding:{top:165,bottom:130,left:100,right:100},maxZoom:15,duration:700})
+  },[journey])
+  useEffect(()=>{
+    const map=mapRef.current;if(!map||!journey)return
+    const endpoints=journey.journey.from===journey.journey.to?[['from','起终点',journey.journey.from]]:[['from','起点',journey.journey.from],['to','终点',journey.journey.to]]
+    const markers=endpoints.flatMap(([end,role,id])=>{
+      const station=journey.project.stations[id];if(!station)return []
+      const element=document.createElement('div');element.className=`journey-map-endpoint journey-map-endpoint--${end}`
+      element.setAttribute('role','img');element.setAttribute('aria-label',`${role}站：${station.name}`)
+      const badge=document.createElement('span');badge.className='journey-map-endpoint-badge';badge.textContent=role
+      const name=document.createElement('strong');name.textContent=station.name;element.append(badge,name)
+      return [new maplibregl.Marker({element,anchor:end==='from'?'bottom':'top',offset:[0,end==='from'?-24:24]}).setLngLat([station.lng,station.lat]).addTo(map)]
+    })
+    return()=>{markers.forEach(m=>m.remove())}
   },[journey])
 
   useEffect(() => {
@@ -486,10 +508,10 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
-    if(presentationMode){for(const record of markersRef.current.values())record.marker.remove();markersRef.current.clear();for(const record of waypointMarkersRef.current.values())record.marker.remove();waypointMarkersRef.current.clear();return}
+    if(presentationMode||journey){for(const record of markersRef.current.values())record.marker.remove();markersRef.current.clear();for(const record of waypointMarkersRef.current.values())record.marker.remove();waypointMarkersRef.current.clear();return}
     syncStationMarkers(map, markersRef.current)
     syncWaypointMarkers(map, waypointMarkersRef.current)
-  }, [project, selectedStationId, selectedStationIds, selectedWaypointId, editorMode,presentationMode])
+  }, [project, selectedStationId, selectedStationIds, selectedWaypointId, editorMode,presentationMode,journey])
 
   const onExits=useRef((exits:StationExit[])=>{exitsRef.current=exits;if(mapRef.current)syncExitLayers(mapRef.current,exits)}).current
 
@@ -497,15 +519,17 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
     <main className={`map-area${presentationMode ? ' map-area--presentation' : editorMode !== 'browse' ? ' map-area--adding' : ''}`}>
       <div ref={containerRef} className="map-canvas" aria-label="地铁线路规划地图" />
       <div className="transit-browse-controls">
+        {journey?<><strong>仅显示推荐路线</strong><button type="button" onClick={()=>useViewStore.getState().setJourney(null)}>清空路线，恢复线网</button></>:<>
         {basemapUnavailable&&<span role="status">网络底图暂不可用，显示本地线网。<button onClick={()=>{setBasemapUnavailable(false);mapRef.current?.setStyle(MAP_STYLE_URL,{diff:false})}}>重试底图</button></span>}
         <label><input type="checkbox" checked={autoNetworks} onChange={(event)=>useViewStore.getState().setAutoNetworks(event.target.checked)}/>全国线网自动展示</label>
         {presentationMode&&<label><input type="checkbox" checked={existingOnly} onChange={(event)=>useViewStore.getState().setExistingOnly(event.target.checked)}/>仅看已建成线路</label>}
         <button type="button" onClick={()=>{const city=catalog.find((item)=>item.id===project.cityId);if(city){const target=cityMapTarget(city);mapRef.current?.fitBounds(target.bounds!,{padding:60,maxZoom:12})}}}>返回我的规划城市</button>
         {browseResult.loading.length>0&&<small role="status">载入 {browseResult.loading.length} 个城市…</small>}
         {(catalogError||Object.keys(browseResult.errors).length>0)&&<span role="status">{catalogError||'部分城市暂未载入'} <button type="button" onClick={()=>{if(catalogError)retryCatalogRef.current();else reloadRef.current()}}>重试线网</button></span>}
+        </>}
       </div>
       {browseStation&&<StationDetailDrawer key={`${browseStation.cityId}:${browseStation.id}`} station={browseStation} onClose={()=>useViewStore.getState().setStation(null)} onExits={onExits} onLocate={(exit)=>mapRef.current?.flyTo({center:[exit.lng,exit.lat],zoom:17})}/>}
-      {!presentationMode && editorMode === 'browse' && selectedStationId && lockedNodeIds(project, 'station').has(selectedStationId) && <div className="map-unlock-station" role="status">
+      {!journey && !presentationMode && editorMode === 'browse' && selectedStationId && lockedNodeIds(project, 'station').has(selectedStationId) && <div className="map-unlock-station" role="status">
         <span>{project.stations[selectedStationId]?.name} · 已锁定</span>
         <button type="button" onClick={() => useMetroStore.getState().unlockStation(selectedStationId)}>解锁并拖动</button>
       </div>}
@@ -515,18 +539,20 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
         if (next) useMetroStore.getState().setEditorMode('browse')
         setPresentationMode(next)
       }}>{presentationMode ? '返回编辑' : '展示模式'}</button>
-      <details open className="map-line-legend" aria-label="线路名称与颜色"><summary>线路图例</summary><div className="map-line-legend-items">
+      <details open className="map-line-legend" aria-label="线路名称与颜色"><summary>{journey?'本次乘坐线路':'线路图例'}</summary><div className="map-line-legend-items">
+        {journey?<>{[...new Map(journey.journey.legs.map(l=>[l.lineId,l])).values()].map(line=><div key={line.lineId}><span className="map-line-swatch" style={{backgroundColor:line.color,height:5}} aria-hidden="true"/><span>{line.name}</span></div>)}</>:<>
         {!(presentationMode&&existingOnly)&&<strong className="map-legend-city">当前规划 · {catalog.find((city)=>city.id===project.cityId)?.name??project.name}</strong>}
         {(presentationMode&&existingOnly?[]:Object.values(project.lines)).filter((line) => !line.parentLineId && line.visible !== false).map((line) => <div key={line.id}>
           <span className="map-line-swatch" style={{ backgroundColor: line.color, height: lineStatus(line) === 'planned' ? 6 : 4 }} aria-hidden="true" />
           <span>{line.name} · {lineStatus(line) === 'construction' && line.existingSegments?.length ? '部分在建' : [...new Set(Object.values(project.lines).filter((part) => rootLine(project,part).id === line.id).map(lineStatus))].map((status) => statusNames[status]).join(' / ')}</span>
         </div>)}
         {Object.values(tramPreview(project).lines).filter(line=>!line.parentLineId&&!browseResult.projects[project.cityId??"_"]).map(line=><div key={line.id}><span className="map-line-swatch" style={{backgroundColor:line.color}}/><span>{line.name} · 电车补充</span></div>)}{Object.entries(browseResult.projects).map(([cityId,network])=><div key={cityId} style={{display:'contents'}}><strong className="map-legend-city">{catalog.find((city)=>city.id===cityId)?.name??cityId} · 现状快照</strong>{Object.values(network.lines).filter((line)=>!line.parentLineId).map((line)=><div key={`${cityId}:${line.id}`}><span className="map-line-swatch" style={{backgroundColor:line.color,height:4}} aria-hidden="true"/><span>{line.name}</span></div>)}</div>)}
+        </>}
       </div></details>
-      <div className="map-hint" role="status">
+      {!journey&&<div className="map-hint" role="status">
         <span className={`mode-dot${editorMode !== 'browse' ? ' mode-dot--active' : ''}`} />
         {presentationMode ? '只读浏览 · 拖动地图漫游，点击站点查看出入口' : editorMode === 'select-stations' ? `多选站点 · 已选 ${selectedStationIds.length} 个 · 再点取消选择` : editorMode === 'add-station' ? '添加站点 · 点空白处新建，点已有站直接接入' : editorMode === 'add-waypoint' ? pendingInsertIndex === null ? '点击线路插入控制点 · 拖动控制点调整走向' : '点击地图放置两节点间的控制点' : '浏览模式 · 拖动站点或站名，放到另一站上合并（保留目标站）'}
-      </div>
+      </div>}
     </main>
   )
 }

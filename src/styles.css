@@ -990,3 +990,9 @@ select:focus {
 .journey-warning { border-radius: 8px; padding: 10px; background: #fff0d8; color: #805b1b; }
 .journey-disclaimer { font-size: 11px; line-height: 1.8; }
 .journey-data { font-size: 12px; margin-top: 10px; }
+.journey-map-endpoint { display: flex; align-items: center; gap: 10px; padding: 9px 13px 9px 9px; background: #fff; border: 2px solid #138568; border-radius: 12px; color: #12674f; box-shadow: 0 4px 16px #153b4933; white-space: nowrap; pointer-events: none; }
+.journey-map-endpoint strong { font-size: 17px; line-height: 1.4; }
+.journey-map-endpoint-badge { padding: 5px 7px; border-radius: 6px; background: #138568; color: #fff; font-size: 12px; font-weight: 700; }
+.journey-map-endpoint--to { color: #a52e2a; border-color: #c34840; }
+.journey-map-endpoint--to .journey-map-endpoint-badge { background: #c34840; }
+.journey-result-endpoints { color: #245564; line-height: 1.7; }

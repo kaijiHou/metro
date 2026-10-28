@@ -27,6 +27,6 @@ type ViewState = {
 
 // UI and read-only selection are intentionally outside project persistence/history.
 export const useViewStore = create<ViewState>((set)=>({page:'transit',travelBusy:false,setPage:(page)=>set({page,station:null,journey:null,endpointRequest:null}),setTravelBusy:(travelBusy)=>set({travelBusy}),presentationMode:false,autoNetworks:true,existingOnly:false,station:null,
-  journey:null,endpointRequest:null,setJourney:(journey)=>set({journey}),requestEndpoint:(endpointRequest)=>set({endpointRequest}),
+  journey:null,endpointRequest:null,setJourney:(journey)=>set(journey?{journey,station:null}:{journey}),requestEndpoint:(endpointRequest)=>set({endpointRequest}),
   setPresentationMode:(presentationMode)=>set({presentationMode,station:null}),
   setAutoNetworks:(autoNetworks)=>set({autoNetworks}),setExistingOnly:(existingOnly)=>set({existingOnly}),setStation:(station)=>set({station})}))

@@ -44,6 +44,7 @@ with sync_playwright() as p:
  def route():
   panel.get_by_role('button',name='规划路线',exact=True).click()
   expect(panel.get_by_label('路线结果')).to_be_visible()
+  page.wait_for_function("name=>{const o=view.getState().journey;return o&&o.project.stations[o.journey.from].name===name}",arg=panel.get_by_role('combobox',name='起点站',exact=True).input_value())
   page.wait_for_function("testMap.getSource('journey-lines')._data.geojson.features.length>0")
  choose('起点站','华中科技园');choose('终点站','洪山广场');route()
  expect(panel.get_by_label('路线结果')).to_contain_text('1 次换乘')
@@ -53,11 +54,11 @@ with sync_playwright() as p:
  check('map contains two endpoint markers',page.evaluate("testMap.getSource('journey-stations')._data.geojson.features.filter(f=>f.properties.role).length")==2)
  panel.get_by_role('button',name='交换起点和终点').click()
  expect(panel.get_by_role('combobox',name='起点站',exact=True)).to_have_value('洪山广场')
- page.wait_for_function("testMap.getSource('journey-lines')._data.geojson.features.length===0")
- route();check('swap clears stale overlay and routes in reverse')
+ page.wait_for_function("testMap.getSource('journey-lines')._data.geojson.features.length>0")
+ route();check('swap preserves focus until a new reverse recommendation replaces the old route')
  for preference in ['transfers','stops']:
   panel.get_by_label('路线偏好').select_option(preference)
-  page.wait_for_function('view.getState().journey===null');route()
+  assert page.evaluate('view.getState().journey!==null');route()
  check('both alternative optimization criteria work')
  panel.get_by_label('路线偏好').select_option('fastest');route()
  page.evaluate("testMap.setStyle('https://tiles.openfreemap.org/styles/liberty',{diff:false})")
@@ -95,6 +96,7 @@ with sync_playwright() as p:
  # Undo correctly enables redo; subsequent read-only queries must preserve it too.
  before=state()
  # Readonly drawer selection (actual rendered station circle).
+ panel.get_by_role('button',name='清空路线',exact=True).click()
  page.get_by_role('button',name='浏览模式',exact=True).click()
  s=next(s for s in original['stations'].values() if s['name']=='洪山广场')
  page.evaluate('(s)=>void testMap.jumpTo({center:[s.lng,s.lat],zoom:15})',s)

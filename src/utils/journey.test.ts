@@ -5,7 +5,8 @@ import {emptyProject,type MetroProject} from '../models/metro'
 import {findJourney,journeyGraph} from './journey'
 import {validateProject} from './validation'
 import {mergeTrams,tramPreview} from './trams'
-import {journeyGeojson} from '../services/mapJourneyLayers'
+import {journeyGeojson,syncJourneyLayers} from '../services/mapJourneyLayers'
+import type {Map as MapLibreMap,FilterSpecification} from 'maplibre-gl'
 import {createMetroStore} from '../store/metroStore'
 import {fetchCityProject,parseCityCatalog} from './transit'
 function network(){
@@ -107,4 +108,22 @@ it('actual Wuhan interchange IDs support routes without changing the original ne
  const route=findJourney(p,find('洪山广场'),find('武汉火车站'))!
  assert.ok(route.stops>0);assert.equal(route.from,find('洪山广场'));assert.equal(route.to,find('武汉火车站'))
  assert.equal(JSON.stringify(p),before);assert.ok(journeyGraph(p).size>200)
+})
+
+it('route focus hides every background network and restores exact original filters, including after a style change',()=>{
+ const {p,line}=network();line('main',['a','b']);const overlay={project:p,journey:findJourney(p,'a','b')!}
+ const opened:FilterSpecification=['!=',['get','status'],'construction']
+ const original=new Map<string,FilterSpecification|undefined>([['metro-lines',opened],['metro-construction-lines',['==',['get','status'],'construction']],['metro-station-labels',undefined],['browse-network-lines',undefined],['browse-station-names',undefined],['road_transit_rail',['==',['get','class'],'transit']],['water',undefined]])
+ const filters=new Map(original),data=new Map()
+ const map={getStyle:()=>({layers:[...filters.keys()].map(id=>({id}))}),getLayer:(id:string)=>filters.has(id),getFilter:(id:string)=>filters.get(id),setFilter:(id:string,f:FilterSpecification|null)=>filters.set(id,f??undefined),getSource:(id:string)=>({setData:(d:unknown)=>data.set(id,d)})} as unknown as MapLibreMap
+ syncJourneyLayers(map,overlay)
+ for(const id of filters.keys())if(id!=='water')assert.deepEqual(filters.get(id),['==',['literal',true],false],id)
+ assert.equal(filters.get('water'),undefined)
+ syncJourneyLayers(map,overlay);syncJourneyLayers(map,null)
+ assert.deepEqual(filters,original,'repeated refresh must not replace saved filters with the hidden filter')
+ assert.equal(data.get('journey-lines').features.length,0)
+ const replacement:FilterSpecification=['==',['get','status'],'existing']
+ filters.set('metro-lines',replacement)
+ syncJourneyLayers(map,overlay,true);syncJourneyLayers(map,null)
+ assert.deepEqual(filters.get('metro-lines'),replacement,'new style restores its own filter')
 })

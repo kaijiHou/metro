@@ -59,12 +59,12 @@ export function JourneyPlanner(){
   useViewStore.getState().requestEndpoint(null)
   document.getElementById('journey-title')?.scrollIntoView({block:'nearest',behavior:'smooth'})
  },[request])
- useEffect(()=>{useViewStore.getState().setJourney(null);setMessage('')},[network,query,preference,planned])
+ useEffect(()=>{setMessage('')},[network,query,preference,planned])
  useEffect(()=>{
   if(query.source==='project'&&query.city!==(project.cityId??'custom'))setQuery(q=>({...q,city:project.cityId??'custom',from:blank(),to:blank()}))
  },[project.cityId,query.city,query.source])
  useEffect(()=>()=>useViewStore.getState().setJourney(null),[])
- const result=overlay?.project===network?overlay.journey:null
+ const result=overlay?.journey,displayProject=overlay?.project
  const missing=Object.keys(tramPreview(project).lines).length>0
  return <section className="panel-section journey-planner" aria-labelledby="journey-title">
   <div className="section-header"><h2 id="journey-title">站到站 · 路线查询</h2><span className="section-count">地铁 + 电车</span></div>
@@ -83,18 +83,19 @@ export function JourneyPlanner(){
   <div className="journey-actions"><button type="button" className="button-primary" disabled={!network} onClick={()=>{
    if(!network?.stations[query.from.id]||!network.stations[query.to.id]){setMessage('请从搜索结果中选中起点站和终点站。');return}
    const journey=findJourney(network,query.from.id,query.to.id,preference,query.source==='project'&&planned)
-   useViewStore.getState().setJourney(journey?{project:network,journey}:null)
-   setMessage(journey?journey.stops?'':'起点与终点相同，无需乘车。':'当前线网没有可达路线。请检查城市、线路连接和是否包含规划区间。')
+   if(journey)useViewStore.getState().setJourney({project:network,journey})
+   setMessage(journey?journey.stops?'':'起点与终点相同，无需乘车。':`当前线网没有可达路线。请检查城市、线路连接和是否包含规划区间。${overlay?'地图保留上次推荐，清空路线可恢复线网。':''}`)
   }}>规划路线</button><button type="button" onClick={()=>{useViewStore.getState().setJourney(null);setMessage('');setQuery(q=>({...q,from:blank(),to:blank()}))}}>清空路线</button></div>
   {message&&<p role="status">{message}</p>}
-  {result&&result.stops>0&&network&&<div className="journey-result" aria-label="路线结果" aria-live="polite">
+  {result&&result.stops>0&&displayProject&&<div className="journey-result" aria-label="路线结果" aria-live="polite">
+   <p className="journey-result-endpoints">当前显示：{displayProject.stations[result.from].name} → {displayProject.stations[result.to].name}</p>
    <strong className="journey-duration">约 {Math.ceil(result.minutes)} 分钟</strong><p>{result.transfers} 次换乘 · 乘坐 {result.stops} 站 · 约 {result.km.toFixed(1)} 公里</p>
    {result.unbuilt&&<p className="journey-warning">包含未开通区间，仅用于规划模拟。</p>}
    <ol className="journey-itinerary">{result.legs.map((leg,i)=><li key={i} style={{borderColor:leg.color}}>
-    <strong>{i?'换乘：':'上车：'}{network.stations[leg.stationIds[0]].name}</strong>
+    <strong>{i?'换乘：':'上车：'}{displayProject.stations[leg.stationIds[0]].name}</strong>
     <span className="journey-line" style={{color:leg.color}}>{leg.name}</span><small>{leg.transport==='tram'?'有轨电车':'轨道交通'} · {leg.direction} · {leg.stationIds.length-1} 站</small>
-    <details><summary>沿途 {leg.stationIds.length} 个站点</summary><ol>{leg.stationIds.map(id=><li key={id}>{network.stations[id].name}{network.stations[id].aliases?.length?<small>（{network.stations[id].aliases?.join(' / ')}）</small>:null}</li>)}</ol></details>
-    <strong>下车：{network.stations[leg.stationIds.at(-1)!].name}</strong>
+    <details><summary>沿途 {leg.stationIds.length} 个站点</summary><ol>{leg.stationIds.map(id=><li key={id}>{displayProject.stations[id].name}{displayProject.stations[id].aliases?.length?<small>（{displayProject.stations[id].aliases?.join(' / ')}）</small>:null}</li>)}</ol></details>
+    <strong>下车：{displayProject.stations[leg.stationIds.at(-1)!].name}</strong>
    </li>)}</ol>
   </div>}
   <p className="quiet journey-disclaimer">按内置线网估算，含候车及换乘时间；不含实时班次、首末班车和临时停运。地铁按40、电车按22公里/小时行驶估算，每站加30秒，候车约2.5／4分钟，换乘另加5分钟。站间连线距离仅供比较。</p>
