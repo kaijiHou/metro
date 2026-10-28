@@ -2,6 +2,10 @@
 
 本目录存放可公开、可溯源的应用数据，不放个人项目、照片、数据库或临时下载。
 
+`wuhan-service.json` 保存武汉地铁官网13线的首末班时间事实，按原表拆分日别、方向与不同终点末班列；28份表、1492条站点/方向/日别记录。`wuhan-tram-service.json` 是人工核对的4条电车交路两端首末班参考和7条地铁线特定高峰最小间隔。原来源发布日期不改写，官网旧表也保留旧日期；12号线官网当前仅提供一期23站。它们不是实时到站或每班运行图，不提供数据许可扩大授权的推断。来源URL/官方响应SHA256/抓取时间随数据保留，原始网页和响应放验证目录不发布。
+
+复现运营表：`python scripts/update-wuhan-service.py --refresh`；无 `--refresh` 从 `validation/wuhan-service/` 缓存复现，并生成 `docs/WUHAN_SERVICE_TIMES.md`。解析器遇到表头布局变化会报错，避免静默错列。人工电车资料有日期久远、来源间差异，程序注明“待复核”，未用这些参考资料生成实时到站预测。
+
 `trams.json` 是独立的武汉（车都T1、光谷L1/L2/L3）、南京（河西、麒麟）电车补充，© OpenStreetMap contributors，按 [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/) 提供。OSM WGS84站位，不是精确轨道。来源URL、原始响应SHA256、获取时间、人工核对链接和换乘对应表随数据发布。原有58份地铁快照没有改动。
 
 复现：先运行 `scripts/fetch-trams.py`（或下载 tram-data 工作流产物），再运行 `python scripts/build-trams.py <原始数据目录>`。原始下载放 `validation/tram-source/`，不放这里。

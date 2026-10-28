@@ -5,10 +5,12 @@ import {resolveLineNodeCoordinate} from './geojson'
 
 export type JourneyPreference='fastest'|'transfers'|'stops'
 export const journeyPreferences={fastest:'预计用时最短',transfers:'换乘最少',stops:'乘坐站数最少'}
+export const journeyEstimate={metroWait:4,tramWait:8,transferWalk:8,entryWalk:3}
+const waiting=(transport:'metro'|'tram')=>transport==='tram'?journeyEstimate.tramWait:journeyEstimate.metroWait
 export const lineTransport=(line:MetroLine)=>line.transport??(/有轨|电车|^蓉2|西郊线/.test(line.name)?'tram':'metro')
 export type JourneyEdge={from:string;to:string;lineId:string;name:string;color:string;transport:'metro'|'tram';direction:string;km:number;minutes:number;coordinates:[number,number][];unbuilt:boolean}
-export type JourneyLeg={lineId:string;name:string;color:string;transport:'metro'|'tram';direction:string;stationIds:string[];km:number;minutes:number;coordinates:[number,number][]}
-export type Journey={from:string;to:string;minutes:number;transfers:number;stops:number;km:number;legs:JourneyLeg[];unbuilt:boolean}
+export type JourneyLeg={lineId:string;name:string;color:string;transport:'metro'|'tram';direction:string;stationIds:string[];km:number;minutes:number;waitMinutes:number;walkMinutes:number;coordinates:[number,number][]}
+export type Journey={from:string;to:string;minutes:number;transfers:number;stops:number;km:number;legs:JourneyLeg[];unbuilt:boolean;timing:{rideMinutes:number;waitMinutes:number;walkMinutes:number}}
 type Cost={minutes:number;transfers:number;stops:number;km:number}
 
 export function journeyGraph(project:MetroProject,includePlanned=false){
@@ -47,7 +49,7 @@ function compare(a:Cost,b:Cost,preference:JourneyPreference){
 export function findJourney(project:MetroProject,from:string,to:string,preference:JourneyPreference='fastest',includePlanned=false):Journey|null{
  if(!project.stations[from]||!project.stations[to])return null
  const zero:Cost={minutes:0,transfers:0,stops:0,km:0}
- if(from===to)return {from,to,...zero,legs:[],unbuilt:false}
+ if(from===to)return {from,to,...zero,legs:[],unbuilt:false,timing:{rideMinutes:0,waitMinutes:0,walkMinutes:0}}
  const graph=journeyGraph(project,includePlanned),start=JSON.stringify([from,''])
  const costs=new Map<string,Cost>([[start,zero]]),pending=new Map([[start,{station:from,line:''}]]),done=new Set<string>(),parents=new Map<string,{key:string;edge:JourneyEdge}>()
  let end:string|undefined
@@ -60,7 +62,7 @@ export function findJourney(project:MetroProject,from:string,to:string,preferenc
   for(const edge of graph.get(current.station)??[]){
    const next=JSON.stringify([edge.to,edge.lineId]);if(done.has(next))continue
    const transfer=!!current.line&&current.line!==edge.lineId,boarding=current.line!==edge.lineId
-   const value={minutes:cost.minutes+edge.minutes+(boarding?(edge.transport==='tram'?4:2.5):0)+(transfer?5:0),transfers:cost.transfers+Number(transfer),stops:cost.stops+1,km:cost.km+edge.km}
+   const value={minutes:cost.minutes+edge.minutes+(boarding?waiting(edge.transport)+(transfer?journeyEstimate.transferWalk:journeyEstimate.entryWalk):0),transfers:cost.transfers+Number(transfer),stops:cost.stops+1,km:cost.km+edge.km}
    if(!costs.has(next)||compare(value,costs.get(next)!,preference)<0){costs.set(next,value);pending.set(next,{station:edge.to,line:edge.lineId});parents.set(next,{key,edge})}
   }
  }
@@ -71,7 +73,15 @@ export function findJourney(project:MetroProject,from:string,to:string,preferenc
  for(const edge of edges){
   const previous=legs.at(-1)
   if(previous?.lineId===edge.lineId){previous.stationIds.push(edge.to);previous.km+=edge.km;previous.minutes+=edge.minutes;previous.coordinates.push(...edge.coordinates.slice(1))}
-  else legs.push({lineId:edge.lineId,name:edge.name,color:edge.color,transport:edge.transport,direction:edge.direction,stationIds:[edge.from,edge.to],km:edge.km,minutes:edge.minutes,coordinates:[...edge.coordinates]})
+  else legs.push({lineId:edge.lineId,name:edge.name,color:edge.color,transport:edge.transport,direction:edge.direction,stationIds:[edge.from,edge.to],km:edge.km,minutes:edge.minutes,waitMinutes:waiting(edge.transport),walkMinutes:legs.length?journeyEstimate.transferWalk:journeyEstimate.entryWalk,coordinates:[...edge.coordinates]})
  }
- return {from,to,...costs.get(end)!,legs,unbuilt:edges.some(e=>e.unbuilt)}
+ const timing=legs.reduce((sum,l)=>({rideMinutes:sum.rideMinutes+l.minutes,waitMinutes:sum.waitMinutes+l.waitMinutes,walkMinutes:sum.walkMinutes+l.walkMinutes}),{rideMinutes:0,waitMinutes:0,walkMinutes:0})
+ return {from,to,...costs.get(end)!,legs,unbuilt:edges.some(e=>e.unbuilt),timing}
+}
+
+/** Clock offsets describe this journey estimate, never a live train prediction. */
+export function journeyArrival(departure:string,minutes:number):string|null{
+ if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(departure)||!Number.isFinite(minutes)||minutes<0)return null
+ const [hour,minute]=departure.split(':').map(Number),total=hour*60+minute+Math.ceil(minutes),days=Math.floor(total/1440),clock=total%1440
+ return `${days===1?'次日 ':days>1?`${days}天后 `:''}${String(Math.floor(clock/60)).padStart(2,'0')}:${String(clock%60).padStart(2,'0')}`
 }

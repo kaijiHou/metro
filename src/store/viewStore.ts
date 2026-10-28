@@ -3,7 +3,7 @@ import type { BrowseStation } from '../utils/browseGeojson'
 import type {MetroProject} from '../models/metro'
 import type {Journey} from '../utils/journey'
 
-export type JourneyOverlay={project:MetroProject;journey:Journey}
+export type JourneyOverlay={project:MetroProject;journey:Journey;departure?:string}
 export type EndpointRequest={end:'from'|'to';id:string;cityId:string;source:'snapshot'|'project'}
 
 type ViewState = {

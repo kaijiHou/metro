@@ -1,0 +1,19 @@
+{
+  "checkedAt": "2026-10-28",
+  "lines": [
+    {"id":"T1","name":"车都有轨电车T1","transport":"tram","quality":"reference","publishedAt":"","sourceUrl":"https://www.icauto.com.cn/chuxing/bl_66685.html","provider":"车主手册（第三方）","note":"只有两端发车首末班参考，未获取运营方现行全站时刻表。反向来源：bl_66686.html。约15—25分钟/趟为第三方参考，不是全天固定间隔，也不是下一班倒计时。","tables":[{"title":"双向首末班参考（生效日期待核对）","directions":[{"name":"得胜港 → 车轮广场","columns":["发车站","首班发车","末班发车"],"rows":[["得胜港","06:00","19:00"]]},{"name":"车轮广场 → 得胜港","columns":["发车站","首班发车","末班发车"],"rows":[["车轮广场","07:00","20:00"]]}]}],"references":["https://www.icauto.com.cn/chuxing/bl_66686.html"]},
+    {"id":"L1","name":"光谷有轨电车L1","transport":"tram","quality":"reference","publishedAt":"","sourceUrl":"https://m.icauto.com.cn/chuxing/bl_66265.html","provider":"车主手册（第三方）","note":"第三方现行页面参考：约4—10分钟/趟。与2024-06-11本地宝版本的华中大22:12、佛祖岭06:04有差异，未取得运营方新公告，须现场或向运营方复核；不把网页自动生成的当天日期当成生效日期。","tables":[{"title":"双向首末班参考（有版本差异）","directions":[{"name":"华中大 → 佛祖岭","columns":["发车站","首班发车","末班发车"],"rows":[["华中大","06:00","22:00"]]},{"name":"佛祖岭 → 华中大","columns":["发车站","首班发车","末班发车"],"rows":[["佛祖岭","06:00","21:30"]]}]}],"references":["https://m.icauto.com.cn/chuxing/bl_66264.html","https://wh.bendibao.com/tour/202466/180370.shtm"]},
+    {"id":"L2","name":"光谷有轨电车L2","transport":"tram","quality":"reference","publishedAt":"2024-06-11","sourceUrl":"https://wh.bendibao.com/tour/202466/180370.shtm","provider":"武汉本地宝（第三方）","note":"2024参考版本，尚未取得当前运营方时刻表或固定发车间隔；只提供两端发车时间，不能推算中间各站下一班到站时刻。","tables":[{"title":"2024版双向首末班参考（当前待复核）","directions":[{"name":"城铁汤逊湖 → 光谷植物园","columns":["发车站","首班发车","末班发车"],"rows":[["城铁汤逊湖","06:30","22:30"]]},{"name":"光谷植物园 → 城铁汤逊湖","columns":["发车站","首班发车","末班发车"],"rows":[["光谷植物园","06:30","21:30"]]}]}]},
+    {"id":"L3","name":"光谷有轨电车L3","transport":"tram","quality":"official","publishedAt":"2023-11-28","sourceUrl":"https://jtj.wuhan.gov.cn/jtzx/zwdt/202311/t20231128_2309248.shtml","provider":"武汉市交通运输局","note":"开通时官方公告，2024参考资料沿用相同时间；尚未取得2026完整逐站或每班时刻表，当前首末班仍须核对。","tables":[{"title":"开通公告双向首末班（当前待复核）","directions":[{"name":"华中大 → 城铁汤逊湖","columns":["发车站","首班发车","末班发车"],"rows":[["华中大","06:09","22:05"]]},{"name":"城铁汤逊湖 → 华中大","columns":["发车站","首班发车","末班发车"],"rows":[["城铁汤逊湖","06:00","21:30"]]}]}]}
+  ],
+  "headwaySource": {"url":"https://news.hubeidaily.net/pc/c_5891139.html","publishedAt":"2026-08-21","provider":"湖北日报（采访武汉地铁运营公司）"},
+  "headways": {
+    "1":"8月29日起，休息日高峰最小间隔4.5分钟。",
+    "2":"8月22日起，工作日早高峰及周六高峰最小2.7分钟，周日高峰最小3.2分钟。",
+    "3":"8月29日起，休息日高峰最小间隔5.8分钟。",
+    "4":"8月22日起，休息日高峰最小间隔4.4分钟。",
+    "5":"8月29日起，休息日高峰最小间隔5.2分钟。",
+    "7":"8月22日起，工作日早高峰最小间隔3.9分钟。",
+    "8":"8月29日起，休息日高峰最小间隔6.3分钟。"
+  }
+}

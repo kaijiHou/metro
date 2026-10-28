@@ -37,3 +37,5 @@ test-results/
 !/validation/tram-source/README.md
 /validation/journeys/*
 !/validation/journeys/README.md
+/validation/wuhan-service/*
+!/validation/wuhan-service/README.md

@@ -3,9 +3,10 @@ import type {MetroProject,Station} from '../models/metro'
 import {useMetroStore} from '../store/metroStore'
 import {useViewStore} from '../store/viewStore'
 import {fetchCityCatalog,fetchCityProject,type TransitCity} from '../utils/transit'
-import {findJourney,journeyPreferences,type JourneyPreference} from '../utils/journey'
+import {findJourney,journeyArrival,journeyEstimate,journeyPreferences,type JourneyPreference} from '../utils/journey'
 import {rootLine} from '../utils/planning'
 import {mergeTrams,tramPreview} from '../utils/trams'
+import {WuhanServicePanel} from './WuhanServicePanel'
 
 type Endpoint={id:string;text:string}
 const blank=():Endpoint=>({id:'',text:''})
@@ -34,6 +35,7 @@ export function JourneyPlanner(){
  const [cities,setCities]=useState<TransitCity[]>([]),[snapshot,setSnapshot]=useState<MetroProject|null>(null)
  const [query,setQuery]=useState({city:project.cityId??'wuhan',source:'snapshot' as 'snapshot'|'project',from:blank(),to:blank()})
  const [preference,setPreference]=useState<JourneyPreference>('fastest'),[planned,setPlanned]=useState(false)
+ const [departure,setDeparture]=useState(()=>new Date().toLocaleTimeString('en-GB',{timeZone:'Asia/Shanghai',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}))
  const [loadError,setLoadError]=useState(''),[catalogError,setCatalogError]=useState(''),[message,setMessage]=useState(''),[retry,setRetry]=useState(0)
  const network=query.source==='project'?project:snapshot?.cityId===query.city?snapshot:null
  const badges=useMemo(()=>{
@@ -59,7 +61,7 @@ export function JourneyPlanner(){
   useViewStore.getState().requestEndpoint(null)
   document.getElementById('journey-title')?.scrollIntoView({block:'nearest',behavior:'smooth'})
  },[request])
- useEffect(()=>{setMessage('')},[network,query,preference,planned])
+ useEffect(()=>{setMessage('')},[network,query,preference,planned,departure])
  useEffect(()=>{
   if(query.source==='project'&&query.city!==(project.cityId??'custom'))setQuery(q=>({...q,city:project.cityId??'custom',from:blank(),to:blank()}))
  },[project.cityId,query.city,query.source])
@@ -80,25 +82,32 @@ export function JourneyPlanner(){
   <div className="journey-swap"><button type="button" onClick={()=>setQuery(q=>({...q,from:q.to,to:q.from}))} aria-label="交换起点和终点">⇅ 交换起终点</button></div>
   <StationSearch label="终点站" value={query.to} stations={stations} badges={badges} onChange={to=>setQuery(q=>({...q,to}))}/>
   <label className="field-label" htmlFor="journey-preference">路线偏好</label><select id="journey-preference" value={preference} onChange={e=>setPreference(e.target.value as JourneyPreference)}>{Object.entries(journeyPreferences).map(([id,name])=><option value={id} key={id}>{name}</option>)}</select>
+  <label className="field-label" htmlFor="journey-departure">估算出发时间（北京时间）</label><input id="journey-departure" type="time" value={departure} onChange={e=>setDeparture(e.target.value)}/>
   <div className="journey-actions"><button type="button" className="button-primary" disabled={!network} onClick={()=>{
    if(!network?.stations[query.from.id]||!network.stations[query.to.id]){setMessage('请从搜索结果中选中起点站和终点站。');return}
+   if(!journeyArrival(departure,0)){setMessage('请选择估算出发时间。');return}
    const journey=findJourney(network,query.from.id,query.to.id,preference,query.source==='project'&&planned)
-   if(journey)useViewStore.getState().setJourney({project:network,journey})
+   if(journey)useViewStore.getState().setJourney({project:network,journey,departure})
    setMessage(journey?journey.stops?'':'起点与终点相同，无需乘车。':`当前线网没有可达路线。请检查城市、线路连接和是否包含规划区间。${overlay?'地图保留上次推荐，清空路线可恢复线网。':''}`)
   }}>规划路线</button><button type="button" onClick={()=>{useViewStore.getState().setJourney(null);setMessage('');setQuery(q=>({...q,from:blank(),to:blank()}))}}>清空路线</button></div>
   {message&&<p role="status">{message}</p>}
+  <WuhanServicePanel/>
   {result&&result.stops>0&&displayProject&&<div className="journey-result" aria-label="路线结果" aria-live="polite">
    <p className="journey-result-endpoints">当前显示：{displayProject.stations[result.from].name} → {displayProject.stations[result.to].name}</p>
    <strong className="journey-duration">约 {Math.ceil(result.minutes)} 分钟</strong><p>{result.transfers} 次换乘 · 乘坐 {result.stops} 站 · 约 {result.km.toFixed(1)} 公里</p>
+   {overlay?.departure&&<p className="journey-arrival">{overlay.departure} 出发 · 预计 {journeyArrival(overlay.departure,result.minutes)} 抵达目的地（估算）</p>}
+   {result.timing&&<details className="journey-time-breakdown"><summary>已计入候车和换乘余量</summary><p>车程与停站约{Math.ceil(result.timing.rideMinutes)}分钟，候车预留{result.timing.waitMinutes}分钟，进站与换乘步行预留{result.timing.walkMinutes}分钟。各项分别取整，可能相差1分钟。</p><p>进站{journeyEstimate.entryWalk}分钟；地铁候车约{journeyEstimate.metroWait}分钟／次、电车约{journeyEstimate.tramWait}分钟／次；每次换乘步行另留{journeyEstimate.transferWalk}分钟。仅为估算，未校验当天开收班及末班接续。</p></details>}
    {result.unbuilt&&<p className="journey-warning">包含未开通区间，仅用于规划模拟。</p>}
-   <ol className="journey-itinerary">{result.legs.map((leg,i)=><li key={i} style={{borderColor:leg.color}}>
+   <ol className="journey-itinerary">{result.legs.map((leg,i)=>{const prior=result.legs.slice(0,i).reduce((sum,l)=>sum+l.minutes+(l.walkMinutes??0)+(l.waitMinutes??0),0),boarding=prior+(leg.walkMinutes??0)+(leg.waitMinutes??0);return <li key={i} style={{borderColor:leg.color}}>
     <strong>{i?'换乘：':'上车：'}{displayProject.stations[leg.stationIds[0]].name}</strong>
     <span className="journey-line" style={{color:leg.color}}>{leg.name}</span><small>{leg.transport==='tram'?'有轨电车':'轨道交通'} · {leg.direction} · {leg.stationIds.length-1} 站</small>
+    {overlay?.departure&&<small>预计 {journeyArrival(overlay.departure,boarding)} 上车 → {journeyArrival(overlay.departure,boarding+leg.minutes)} 下车（估算）</small>}
+    {displayProject.cityId==='wuhan'&&<WuhanServicePanel lineName={leg.name} stationName={(leg.transport==='tram'?displayProject.stations[leg.stationIds[0]].aliases?.[0]:undefined)??displayProject.stations[leg.stationIds[0]].name}/>}
     <details><summary>沿途 {leg.stationIds.length} 个站点</summary><ol>{leg.stationIds.map(id=><li key={id}>{displayProject.stations[id].name}{displayProject.stations[id].aliases?.length?<small>（{displayProject.stations[id].aliases?.join(' / ')}）</small>:null}</li>)}</ol></details>
     <strong>下车：{displayProject.stations[leg.stationIds.at(-1)!].name}</strong>
-   </li>)}</ol>
+   </li>})}</ol>
   </div>}
-  <p className="quiet journey-disclaimer">按内置线网估算，含候车及换乘时间；不含实时班次、首末班车和临时停运。地铁按40、电车按22公里/小时行驶估算，每站加30秒，候车约2.5／4分钟，换乘另加5分钟。站间连线距离仅供比较。</p>
+  <p className="quiet journey-disclaimer">用时已增加进站、候车和换乘余量。预计抵达是行程估算，不是下一班列车的实时到站时间；未校验开收班及末班接续。车次以站台及运营方公告为准。</p>
   <details className="journey-data"><summary>电车覆盖与来源</summary><p className="quiet">新增武汉车都T1、光谷L1/L2/L3，南京河西／麒麟。北京西郊、佛山南海电车沿用原快照。其他电车系统尚未补齐。快照不代表实时运营。</p><p className="quiet">电车站位：© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap contributors</a> · ODbL 1.0。换乘使用核实的对应站点，异名保留为搜索别名；上下行停站可能不同。</p><a href="https://github.com/kaijiHou/metro/blob/main/src/data/README.md" target="_blank" rel="noreferrer">详细来源与数据说明</a></details>
  </section>
 }
