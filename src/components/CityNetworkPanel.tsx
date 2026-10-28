@@ -7,6 +7,7 @@ import { useViewStore } from '../store/viewStore'
 import { readCityProject } from '../utils/cityProjects'
 import { LEGACY_STORAGE_KEY, STORAGE_KEY } from '../utils/persistence'
 import { cityMapTarget, fetchCityCatalog, fetchCityProject, findTransitCity, type TransitCity } from '../utils/transit'
+import {mergeTrams,tramPreview} from '../utils/trams'
 
 type Props = {
   requestedTarget: MapTarget | null
@@ -22,6 +23,7 @@ export function CityNetworkPanel({ requestedTarget, onSelectCity, onCatalogLoade
   const [message, setMessage] = useState('')
   const controllerRef = useRef<AbortController | null>(null)
   const projectCityId = useMetroStore((state) => state.project.cityId)
+  const currentProject = useMetroStore((state)=>state.project)
   const activeCity = cities.find((city) => city.id === projectCityId)
   const navigateOnly = useViewStore((state)=>state.presentationMode)
 
@@ -143,6 +145,7 @@ export function CityNetworkPanel({ requestedTarget, onSelectCity, onCatalogLoade
       <span>内置数据获取：{activeCity.retrievedAt.slice(0, 10)} · <a href="https://map.amap.com/subway/index.html" target="_blank" rel="noreferrer">高德地铁图</a></span>
       <span>先复制为规划线路，或明确解锁后修改现状副本。各城市分别保存修改。</span>
       <span>按真实站点连线，非实际轨道走向；新开线路以运营方公告为准。</span>
+      {Object.keys(tramPreview(currentProject).lines).length>0&&<span>地图已显示只读电车补充。<button type="button" className="text-action" disabled={navigateOnly} onClick={()=>useMetroStore.getState().loadProject(mergeTrams(currentProject))}>把电车加入当前规划</button>可撤销，保留已有站点修改。</span>}
       <button type="button" className="text-action" disabled={!!opening||navigateOnly} onClick={() => {
         if (window.confirm(`恢复${activeCity.name}的内置原始线路？当前城市的修改将被替换，可用撤销恢复。`)) void openCity(activeCity, true)
       }}>恢复内置原始线路</button>

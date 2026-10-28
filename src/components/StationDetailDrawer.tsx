@@ -2,6 +2,7 @@ import { useEffect,useRef,useState } from 'react'
 import type { StationExit,StationExitResult } from '../models/exits'
 import type { BrowseStation } from '../utils/browseGeojson'
 import { exitInfo,parseUserExits } from '../services/exitInfo'
+import { JourneyEndpointButtons } from './JourneyEndpointButtons'
 
 export function StationDetailDrawer({station,onClose,onExits,onLocate}:{station:BrowseStation;onClose:()=>void;onExits:(exits:StationExit[])=>void;onLocate:(exit:StationExit)=>void}) {
   const [result,setResult]=useState<StationExitResult|null>(null)
@@ -19,7 +20,8 @@ export function StationDetailDrawer({station,onClose,onExits,onLocate}:{station:
   return <aside className="station-drawer" aria-label="车站详情">
     <div className="section-header"><span className="eyebrow">{station.cityName} · 只读车站详情</span><button onClick={onClose} aria-label="关闭车站详情">×</button></div>
     <h2>{station.name}</h2><p>{station.lineNames.join(' / ')}</p><a href={station.sourceUrl||'https://www.openstreetmap.org/copyright'} target="_blank" rel="noreferrer">线网数据来源</a>
-    <h3>地铁出入口</h3>
+    <JourneyEndpointButtons id={station.id} cityId={station.cityId} source={station.querySource??'snapshot'}/>
+    <h3>车站出入口</h3>
     {!result?<p role="status">正在按需查询OSM站区出口…</p>:<><p role="status">{result.message}</p>{result.exits.map((exit)=><article className="exit-card" key={exit.id}>
       <strong>{exit.ref?`${exit.ref} 出入口`:exit.name||'未编号出入口'}</strong><span>{exit.confidence==='verified'?'站区关系已关联':exit.confidence==='probable'?'候选关联，待核实':'用户补录，未核实'}</span>
       <p>{exit.exitTo?.length?`通往/邻近：${exit.exitTo.join('、')}`:'出口方向暂未收录'}</p>

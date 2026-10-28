@@ -1,0 +1,1731 @@
+{
+  "wuhan": {
+    "retrievedAt": "2026-10-27T11:09:47.569108+00:00",
+    "license": "ODbL-1.0",
+    "attribution": "© OpenStreetMap contributors",
+    "sources": [
+      {
+        "url": "https://api.openstreetmap.org/api/0.6/relation/16754867/full.json",
+        "sha256": "19cc4785416e2e0b7195e81917826f2559047322c008db41374631f6888f2ab6"
+      },
+      {
+        "url": "https://api.openstreetmap.org/api/0.6/relation/13962101/full.json",
+        "sha256": "1e6add08a424ec28ff07587fffb22e3f5c9f5772017c6c247aacc020a9ede63a"
+      },
+      {
+        "url": "https://api.openstreetmap.org/api/0.6/relation/11871070/full.json",
+        "sha256": "88b65fd5838c31301aa35a9d565f6be5fd1ebafcf2ffada46f2730e66e15b8ae"
+      },
+      {
+        "url": "https://api.openstreetmap.org/api/0.6/relation/11871039/full.json",
+        "sha256": "961516765b8142a87eb89021f4996d3e0707a6fc1f73020d1a5996933e9dd695"
+      },
+      {
+        "url": "https://api.openstreetmap.org/api/0.6/relation/11871033/full.json",
+        "sha256": "9318fba6f8886a2c35c9e4559992b337078407abfe72f16108da090a913a7ef3"
+      },
+      {
+        "url": "https://api.openstreetmap.org/api/0.6/relation/11871034/full.json",
+        "sha256": "ac2b3541ded39fce7147a2d468758edcce70591b56983aa38cb178cb9697a044"
+      },
+      {
+        "url": "https://api.openstreetmap.org/api/0.6/relation/11871075/full.json",
+        "sha256": "38cff2b86db51d6a5574c041cadb893865de4808b458616b3319550f90231b88"
+      },
+      {
+        "url": "https://api.openstreetmap.org/api/0.6/relation/11871074/full.json",
+        "sha256": "f8f4312e4bbf7d659af66ad7b35c87449aada354c6bb9c8bf14358de3062e7c8"
+      },
+      {
+        "url": "https://api.openstreetmap.org/api/0.6/relation/13962100/full.json",
+        "sha256": "67804e9b89c45dfe459bfbe13c50865149d2d05f554cfed56477eb950b0a3f7f"
+      },
+      {
+        "url": "https://api.openstreetmap.org/api/0.6/relation/13962099/full.json",
+        "sha256": "e6e5c36025bbb64d11b9cff10b07bcd1a929634f0773657a9d17ed57dafa2759"
+      }
+    ],
+    "references": [
+      "https://jtj.wuhan.gov.cn/jtzx/zwdt/202311/t20231128_2309248.shtml",
+      "https://media.hubei.gov.cn/zyxmt/push/weixin/202311/t20231129_4976176.shtml",
+      "https://news.cjn.cn/sywh/201707/t3044730.htm",
+      "https://www.icauto.com.cn/chuxing/bl_66264.html",
+      "https://www.icauto.com.cn/chuxing/bl_66265.html",
+      "https://www.icauto.com.cn/chuxing/bl_66685.html",
+      "https://zh.wikipedia.org/wiki/金融港北站",
+      "https://www.china-emu.cn/UrbanRails/Line/420192/"
+    ],
+    "transfers": [
+      {
+        "tram": "车轮广场",
+        "metro": "沌阳大道",
+        "stationId": "amap-4201-BV10060872",
+        "osmNode": 9605144715
+      },
+      {
+        "tram": "华中大",
+        "metro": "华中科技大学",
+        "stationId": "amap-4201-BV10890084",
+        "osmNode": 5292093125
+      },
+      {
+        "tram": "步行街省中医院",
+        "metro": "珞雄路",
+        "stationId": "amap-4201-BV10890085",
+        "osmNode": 5292093139
+      },
+      {
+        "tram": "光谷大道",
+        "metro": "金融港北",
+        "stationId": "amap-4201-BV10890077",
+        "osmNode": 5935121280
+      },
+      {
+        "tram": "佛祖岭",
+        "metro": "佛祖岭",
+        "stationId": "amap-4201-BV10890079",
+        "osmNode": 4564005457
+      },
+      {
+        "tram": "光谷七路",
+        "metro": "光谷七路",
+        "stationId": "amap-4201-BV10845603",
+        "osmNode": 6759863684
+      }
+    ],
+    "project": {
+      "version": 2,
+      "cityId": "wuhan",
+      "name": "武汉地铁规划 · 有轨电车补充",
+      "stations": {
+        "osm-tram-wuhan-4224651767": {
+          "id": "osm-tram-wuhan-4224651767",
+          "name": "得胜港",
+          "lng": 114.0591391,
+          "lat": 30.4028341
+        },
+        "osm-tram-wuhan-5003998406": {
+          "id": "osm-tram-wuhan-5003998406",
+          "name": "官莲湖车辆基地",
+          "lng": 114.0637621,
+          "lat": 30.4060065
+        },
+        "osm-tram-wuhan-5003998404": {
+          "id": "osm-tram-wuhan-5003998404",
+          "name": "蒲潭",
+          "lng": 114.0676721,
+          "lat": 30.4087004
+        },
+        "osm-tram-wuhan-5003998402": {
+          "id": "osm-tram-wuhan-5003998402",
+          "name": "幸福桥",
+          "lng": 114.07212,
+          "lat": 30.411791
+        },
+        "osm-tram-wuhan-5003998398": {
+          "id": "osm-tram-wuhan-5003998398",
+          "name": "黄陵正街",
+          "lng": 114.077111,
+          "lat": 30.4152784
+        },
+        "osm-tram-wuhan-4224651761": {
+          "id": "osm-tram-wuhan-4224651761",
+          "name": "凤凰苑",
+          "lng": 114.0830195,
+          "lat": 30.4221368
+        },
+        "osm-tram-wuhan-8239619036": {
+          "id": "osm-tram-wuhan-8239619036",
+          "name": "硃山",
+          "lng": 114.0824831,
+          "lat": 30.4315283
+        },
+        "osm-tram-wuhan-4224651746": {
+          "id": "osm-tram-wuhan-4224651746",
+          "name": "硃山湖（南）",
+          "lng": 114.0853376,
+          "lat": 30.4368965
+        },
+        "osm-tram-wuhan-4224651740": {
+          "id": "osm-tram-wuhan-4224651740",
+          "name": "硃山湖（北）",
+          "lng": 114.084584,
+          "lat": 30.4440777
+        },
+        "osm-tram-wuhan-5003998382": {
+          "id": "osm-tram-wuhan-5003998382",
+          "name": "硃山湖大道",
+          "lng": 114.0809676,
+          "lat": 30.4513797
+        },
+        "osm-tram-wuhan-4224651733": {
+          "id": "osm-tram-wuhan-4224651733",
+          "name": "东风大道",
+          "lng": 114.0792626,
+          "lat": 30.4557166
+        },
+        "osm-tram-wuhan-5003998380": {
+          "id": "osm-tram-wuhan-5003998380",
+          "name": "格力电器",
+          "lng": 114.0785521,
+          "lat": 30.4596502
+        },
+        "osm-tram-wuhan-5003998377": {
+          "id": "osm-tram-wuhan-5003998377",
+          "name": "武汉商学院",
+          "lng": 114.0847178,
+          "lat": 30.4614337
+        },
+        "osm-tram-wuhan-4224651722": {
+          "id": "osm-tram-wuhan-4224651722",
+          "name": "枫树六路",
+          "lng": 114.096779,
+          "lat": 30.4633032
+        },
+        "osm-tram-wuhan-5003998370": {
+          "id": "osm-tram-wuhan-5003998370",
+          "name": "枫树五路",
+          "lng": 114.1035941,
+          "lat": 30.4660058
+        },
+        "osm-tram-wuhan-6759772734": {
+          "id": "osm-tram-wuhan-6759772734",
+          "name": "枫树三路",
+          "lng": 114.112998,
+          "lat": 30.4704148
+        },
+        "osm-tram-wuhan-9605144711": {
+          "id": "osm-tram-wuhan-9605144711",
+          "name": "枫树一路",
+          "lng": 114.1229388,
+          "lat": 30.475041
+        },
+        "osm-tram-wuhan-9605144714": {
+          "id": "osm-tram-wuhan-9605144714",
+          "name": "莲湖路",
+          "lng": 114.13442,
+          "lat": 30.4806089
+        },
+        "osm-tram-wuhan-5003998361": {
+          "id": "osm-tram-wuhan-5003998361",
+          "name": "滨湖社区",
+          "lng": 114.1391595,
+          "lat": 30.4852197
+        },
+        "osm-tram-wuhan-9605144713": {
+          "id": "osm-tram-wuhan-9605144713",
+          "name": "车城大道",
+          "lng": 114.1391063,
+          "lat": 30.4923751
+        },
+        "osm-tram-wuhan-9605144712": {
+          "id": "osm-tram-wuhan-9605144712",
+          "name": "水府街",
+          "lng": 114.1439201,
+          "lat": 30.4965229
+        },
+        "amap-4201-BV10060872": {
+          "id": "amap-4201-BV10060872",
+          "name": "沌阳大道",
+          "lng": 114.151509,
+          "lat": 30.491743,
+          "aliases": [
+            "车轮广场"
+          ]
+        },
+        "amap-4201-BV10890084": {
+          "id": "amap-4201-BV10890084",
+          "name": "华中科技大学",
+          "lng": 114.408701,
+          "lat": 30.509715,
+          "aliases": [
+            "华中大"
+          ]
+        },
+        "amap-4201-BV10890085": {
+          "id": "amap-4201-BV10890085",
+          "name": "珞雄路",
+          "lng": 114.399296,
+          "lat": 30.509246,
+          "aliases": [
+            "步行街省中医院"
+          ]
+        },
+        "osm-tram-wuhan-5935121266": {
+          "id": "osm-tram-wuhan-5935121266",
+          "name": "常青藤路",
+          "lng": 114.403883,
+          "lat": 30.5063009
+        },
+        "osm-tram-wuhan-6313605958": {
+          "id": "osm-tram-wuhan-6313605958",
+          "name": "创业街",
+          "lng": 114.4073005,
+          "lat": 30.5044264
+        },
+        "osm-tram-wuhan-6967712980": {
+          "id": "osm-tram-wuhan-6967712980",
+          "name": "雄楚大道",
+          "lng": 114.406835,
+          "lat": 30.4999955
+        },
+        "osm-tram-wuhan-8099409055": {
+          "id": "osm-tram-wuhan-8099409055",
+          "name": "新竹路",
+          "lng": 114.4058393,
+          "lat": 30.4923196
+        },
+        "osm-tram-wuhan-6967712971": {
+          "id": "osm-tram-wuhan-6967712971",
+          "name": "武汉职院",
+          "lng": 114.4053097,
+          "lat": 30.4882432
+        },
+        "osm-tram-wuhan-8099409056": {
+          "id": "osm-tram-wuhan-8099409056",
+          "name": "光谷天地",
+          "lng": 114.4042413,
+          "lat": 30.4795966
+        },
+        "osm-tram-wuhan-6967712966": {
+          "id": "osm-tram-wuhan-6967712966",
+          "name": "软件园路",
+          "lng": 114.4038805,
+          "lat": 30.4766246
+        },
+        "osm-tram-wuhan-8099409057": {
+          "id": "osm-tram-wuhan-8099409057",
+          "name": "华夏学院",
+          "lng": 114.4032794,
+          "lat": 30.4691064
+        },
+        "osm-tram-wuhan-5935121279": {
+          "id": "osm-tram-wuhan-5935121279",
+          "name": "当代国际花园",
+          "lng": 114.4070762,
+          "lat": 30.4659799
+        },
+        "amap-4201-BV10890077": {
+          "id": "amap-4201-BV10890077",
+          "name": "金融港北",
+          "lng": 114.41489,
+          "lat": 30.464284,
+          "aliases": [
+            "光谷大道"
+          ]
+        },
+        "osm-tram-wuhan-5935121281": {
+          "id": "osm-tram-wuhan-5935121281",
+          "name": "工程大学",
+          "lng": 114.4257419,
+          "lat": 30.4671832
+        },
+        "osm-tram-wuhan-5935121282": {
+          "id": "osm-tram-wuhan-5935121282",
+          "name": "流芳园横路",
+          "lng": 114.4320387,
+          "lat": 30.4597582
+        },
+        "osm-tram-wuhan-5935121887": {
+          "id": "osm-tram-wuhan-5935121887",
+          "name": "高新四路",
+          "lng": 114.4334353,
+          "lat": 30.4533392
+        },
+        "osm-tram-wuhan-5935121892": {
+          "id": "osm-tram-wuhan-5935121892",
+          "name": "高新五路",
+          "lng": 114.4358272,
+          "lat": 30.4469196
+        },
+        "amap-4201-BV10890079": {
+          "id": "amap-4201-BV10890079",
+          "name": "佛祖岭",
+          "lng": 114.434284,
+          "lat": 30.441017,
+          "aliases": []
+        },
+        "osm-tram-wuhan-5292093185": {
+          "id": "osm-tram-wuhan-5292093185",
+          "name": "光谷植物园",
+          "lng": 114.5279972,
+          "lat": 30.5045545
+        },
+        "osm-tram-wuhan-7221376552": {
+          "id": "osm-tram-wuhan-7221376552",
+          "name": "九峰一路",
+          "lng": 114.5249082,
+          "lat": 30.5020504
+        },
+        "osm-tram-wuhan-6759863682": {
+          "id": "osm-tram-wuhan-6759863682",
+          "name": "华为武汉基地",
+          "lng": 114.5266279,
+          "lat": 30.4978521
+        },
+        "amap-4201-BV10845603": {
+          "id": "amap-4201-BV10845603",
+          "name": "光谷七路",
+          "lng": 114.528918,
+          "lat": 30.491024,
+          "aliases": []
+        },
+        "osm-tram-wuhan-4564005529": {
+          "id": "osm-tram-wuhan-4564005529",
+          "name": "神墩三路",
+          "lng": 114.5287664,
+          "lat": 30.4826196
+        },
+        "osm-tram-wuhan-4564005528": {
+          "id": "osm-tram-wuhan-4564005528",
+          "name": "高新二路",
+          "lng": 114.5287383,
+          "lat": 30.4779737
+        },
+        "osm-tram-wuhan-6952914061": {
+          "id": "osm-tram-wuhan-6952914061",
+          "name": "高科园二路",
+          "lng": 114.5210839,
+          "lat": 30.475657
+        },
+        "osm-tram-wuhan-6952914057": {
+          "id": "osm-tram-wuhan-6952914057",
+          "name": "高科园路",
+          "lng": 114.5165264,
+          "lat": 30.4753904
+        },
+        "osm-tram-wuhan-8099409061": {
+          "id": "osm-tram-wuhan-8099409061",
+          "name": "神墩五路",
+          "lng": 114.507266,
+          "lat": 30.474717
+        },
+        "osm-tram-wuhan-6759800679": {
+          "id": "osm-tram-wuhan-6759800679",
+          "name": "花溪路",
+          "lng": 114.5004198,
+          "lat": 30.4724719
+        },
+        "osm-tram-wuhan-7614792319": {
+          "id": "osm-tram-wuhan-7614792319",
+          "name": "光谷五路",
+          "lng": 114.4966669,
+          "lat": 30.4731558
+        },
+        "osm-tram-wuhan-8099409060": {
+          "id": "osm-tram-wuhan-8099409060",
+          "name": "光谷四路",
+          "lng": 114.4898786,
+          "lat": 30.4741483
+        },
+        "osm-tram-wuhan-6759800667": {
+          "id": "osm-tram-wuhan-6759800667",
+          "name": "大吕路",
+          "lng": 114.4811571,
+          "lat": 30.4744722
+        },
+        "osm-tram-wuhan-6759800674": {
+          "id": "osm-tram-wuhan-6759800674",
+          "name": "奥风路",
+          "lng": 114.4717237,
+          "lat": 30.4737022
+        },
+        "osm-tram-wuhan-4564005486": {
+          "id": "osm-tram-wuhan-4564005486",
+          "name": "奥体中心",
+          "lng": 114.4652213,
+          "lat": 30.4732881
+        },
+        "osm-tram-wuhan-5935121896": {
+          "id": "osm-tram-wuhan-5935121896",
+          "name": "国际网球中心",
+          "lng": 114.4601733,
+          "lat": 30.4732929
+        },
+        "osm-tram-wuhan-8099409059": {
+          "id": "osm-tram-wuhan-8099409059",
+          "name": "仪表学校",
+          "lng": 114.4395,
+          "lat": 30.4695237
+        },
+        "osm-tram-wuhan-6759799402": {
+          "id": "osm-tram-wuhan-6759799402",
+          "name": "万科城市花园",
+          "lng": 114.3999414,
+          "lat": 30.4624366
+        },
+        "osm-tram-wuhan-5935121269": {
+          "id": "osm-tram-wuhan-5935121269",
+          "name": "武大园",
+          "lng": 114.3963797,
+          "lat": 30.4578928
+        },
+        "osm-tram-wuhan-6759799410": {
+          "id": "osm-tram-wuhan-6759799410",
+          "name": "华中科技园",
+          "lng": 114.390669,
+          "lat": 30.4509802
+        },
+        "osm-tram-wuhan-4564005426": {
+          "id": "osm-tram-wuhan-4564005426",
+          "name": "三园路",
+          "lng": 114.3835928,
+          "lat": 30.4457713
+        },
+        "osm-tram-wuhan-5640004896": {
+          "id": "osm-tram-wuhan-5640004896",
+          "name": "城铁汤逊湖",
+          "lng": 114.3803772,
+          "lat": 30.447086
+        }
+      },
+      "waypoints": {},
+      "lines": {
+        "osm-tram-wuhan-t1": {
+          "id": "osm-tram-wuhan-t1",
+          "name": "车都有轨电车T1",
+          "color": "#d45434",
+          "transport": "tram",
+          "direction": "forward",
+          "status": "existing",
+          "visible": true,
+          "locked": true,
+          "nodes": [
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-4224651767"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5003998406"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5003998404"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5003998402"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5003998398"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-4224651761"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-8239619036"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-4224651746"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-4224651740"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5003998382"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-4224651733"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5003998380"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5003998377"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-4224651722"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5003998370"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6759772734"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-9605144711"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-9605144714"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5003998361"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-9605144713"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-9605144712"
+            },
+            {
+              "type": "station",
+              "id": "amap-4201-BV10060872"
+            }
+          ],
+          "planningNote": "OSM relation 13962099；站位连线，非精确轨道。上下行按各自停站顺序。"
+        },
+        "osm-tram-wuhan-t1-reverse": {
+          "id": "osm-tram-wuhan-t1-reverse",
+          "name": "车都有轨电车T1（反向）",
+          "color": "#d45434",
+          "transport": "tram",
+          "direction": "forward",
+          "status": "existing",
+          "visible": true,
+          "locked": true,
+          "nodes": [
+            {
+              "type": "station",
+              "id": "amap-4201-BV10060872"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-9605144712"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-9605144713"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5003998361"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-9605144714"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-9605144711"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6759772734"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5003998370"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-4224651722"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5003998377"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5003998380"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-4224651733"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5003998382"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-4224651740"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-4224651746"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-8239619036"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-4224651761"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5003998398"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5003998402"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5003998404"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5003998406"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-4224651767"
+            }
+          ],
+          "planningNote": "OSM relation 13962100；站位连线，非精确轨道。上下行按各自停站顺序。",
+          "parentLineId": "osm-tram-wuhan-t1"
+        },
+        "osm-tram-wuhan-l1": {
+          "id": "osm-tram-wuhan-l1",
+          "name": "光谷有轨电车L1",
+          "color": "#129b8b",
+          "transport": "tram",
+          "direction": "forward",
+          "status": "existing",
+          "visible": true,
+          "locked": true,
+          "nodes": [
+            {
+              "type": "station",
+              "id": "amap-4201-BV10890084"
+            },
+            {
+              "type": "station",
+              "id": "amap-4201-BV10890085"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5935121266"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6313605958"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6967712980"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-8099409055"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6967712971"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-8099409056"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6967712966"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-8099409057"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5935121279"
+            },
+            {
+              "type": "station",
+              "id": "amap-4201-BV10890077"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5935121281"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5935121282"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5935121887"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5935121892"
+            },
+            {
+              "type": "station",
+              "id": "amap-4201-BV10890079"
+            }
+          ],
+          "planningNote": "OSM relation 11871034；站位连线，非精确轨道。上下行按各自停站顺序。"
+        },
+        "osm-tram-wuhan-l1-reverse": {
+          "id": "osm-tram-wuhan-l1-reverse",
+          "name": "光谷有轨电车L1（反向）",
+          "color": "#129b8b",
+          "transport": "tram",
+          "direction": "forward",
+          "status": "existing",
+          "visible": true,
+          "locked": true,
+          "nodes": [
+            {
+              "type": "station",
+              "id": "amap-4201-BV10890079"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5935121892"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5935121887"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5935121282"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5935121281"
+            },
+            {
+              "type": "station",
+              "id": "amap-4201-BV10890077"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5935121279"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-8099409057"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6967712966"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-8099409056"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6967712971"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-8099409055"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6967712980"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6313605958"
+            },
+            {
+              "type": "station",
+              "id": "amap-4201-BV10890084"
+            }
+          ],
+          "planningNote": "OSM relation 11871033；站位连线，非精确轨道。上下行按各自停站顺序。",
+          "parentLineId": "osm-tram-wuhan-l1"
+        },
+        "osm-tram-wuhan-l2": {
+          "id": "osm-tram-wuhan-l2",
+          "name": "光谷有轨电车L2",
+          "color": "#7952ac",
+          "transport": "tram",
+          "direction": "forward",
+          "status": "existing",
+          "visible": true,
+          "locked": true,
+          "nodes": [
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5292093185"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-7221376552"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6759863682"
+            },
+            {
+              "type": "station",
+              "id": "amap-4201-BV10845603"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-4564005529"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-4564005528"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6952914061"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6952914057"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-8099409061"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6759800679"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-7614792319"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-8099409060"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6759800667"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6759800674"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-4564005486"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5935121896"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-8099409059"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5935121281"
+            },
+            {
+              "type": "station",
+              "id": "amap-4201-BV10890077"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5935121279"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6759799402"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5935121269"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6759799410"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-4564005426"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5640004896"
+            }
+          ],
+          "planningNote": "OSM relation 11871070；站位连线，非精确轨道。上下行按各自停站顺序。"
+        },
+        "osm-tram-wuhan-l2-reverse": {
+          "id": "osm-tram-wuhan-l2-reverse",
+          "name": "光谷有轨电车L2（反向）",
+          "color": "#7952ac",
+          "transport": "tram",
+          "direction": "forward",
+          "status": "existing",
+          "visible": true,
+          "locked": true,
+          "nodes": [
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5640004896"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-4564005426"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6759799410"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5935121269"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6759799402"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5935121279"
+            },
+            {
+              "type": "station",
+              "id": "amap-4201-BV10890077"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5935121281"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-8099409059"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5935121896"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-4564005486"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6759800674"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6759800667"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-8099409060"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-7614792319"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6759800679"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-8099409061"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6952914057"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6952914061"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-4564005528"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-4564005529"
+            },
+            {
+              "type": "station",
+              "id": "amap-4201-BV10845603"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6759863682"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-7221376552"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5292093185"
+            }
+          ],
+          "planningNote": "OSM relation 11871039；站位连线，非精确轨道。上下行按各自停站顺序。",
+          "parentLineId": "osm-tram-wuhan-l2"
+        },
+        "osm-tram-wuhan-l3": {
+          "id": "osm-tram-wuhan-l3",
+          "name": "光谷有轨电车L3",
+          "color": "#327bb2",
+          "transport": "tram",
+          "direction": "forward",
+          "status": "existing",
+          "visible": true,
+          "locked": true,
+          "nodes": [
+            {
+              "type": "station",
+              "id": "amap-4201-BV10890084"
+            },
+            {
+              "type": "station",
+              "id": "amap-4201-BV10890085"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5935121266"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6313605958"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6967712980"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-8099409055"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6967712971"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-8099409056"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6967712966"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-8099409057"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6759799402"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5935121269"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6759799410"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-4564005426"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5640004896"
+            }
+          ],
+          "planningNote": "L3：官方15站南向交路；北向依据L1单向段和L2共线段拼接。非实时班次，出行前核对运营公告。"
+        },
+        "osm-tram-wuhan-l3-reverse": {
+          "id": "osm-tram-wuhan-l3-reverse",
+          "name": "光谷有轨电车L3（反向）",
+          "color": "#327bb2",
+          "transport": "tram",
+          "direction": "forward",
+          "status": "existing",
+          "visible": true,
+          "locked": true,
+          "nodes": [
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5640004896"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-4564005426"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6759799410"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-5935121269"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6759799402"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-8099409057"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6967712966"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-8099409056"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6967712971"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-8099409055"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6967712980"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-wuhan-6313605958"
+            },
+            {
+              "type": "station",
+              "id": "amap-4201-BV10890084"
+            }
+          ],
+          "planningNote": "L3：官方15站南向交路；北向依据L1单向段和L2共线段拼接。非实时班次，出行前核对运营公告。",
+          "parentLineId": "osm-tram-wuhan-l3"
+        }
+      }
+    }
+  },
+  "nanjing": {
+    "retrievedAt": "2026-10-27T11:09:44.471312+00:00",
+    "license": "ODbL-1.0",
+    "attribution": "© OpenStreetMap contributors",
+    "sources": [
+      {
+        "url": "https://api.openstreetmap.org/api/0.6/relation/16159340/full.json",
+        "sha256": "78751eda7d80ad22de5ed572ac361f4a56be20e0411acb7a051f2e7e7deb74ea"
+      },
+      {
+        "url": "https://api.openstreetmap.org/api/0.6/relation/16159341/full.json",
+        "sha256": "752e4a9d196406b40424d31b5da99d962e4705266f521a02f1c859350d331e9a"
+      },
+      {
+        "url": "https://api.openstreetmap.org/api/0.6/relation/16159337/full.json",
+        "sha256": "e88ba3ce6edf98e85119451c2c385712a97cf32e9844fe4058d9bf82f88a7b11"
+      },
+      {
+        "url": "https://api.openstreetmap.org/api/0.6/relation/16159336/full.json",
+        "sha256": "a1f538418ae5baaabadec36699506f7571faf7652c831662d50497b3962e97ef"
+      },
+      {
+        "url": "https://api.openstreetmap.org/api/0.6/relation/16159339/full.json",
+        "sha256": "bd4f50941ebc4c876cd540f79d620da5776d6dc4fa1199d17125eab5f6c46d10"
+      },
+      {
+        "url": "https://api.openstreetmap.org/api/0.6/relation/16159338/full.json",
+        "sha256": "d84cc557a6ecb932a5b115522af07800ea681dc3fef4f3d2af74ed215c99a41e"
+      }
+    ],
+    "references": [
+      "https://newtown.nanjing.gov.cn/xcyx/pzxc/jtpt/201703/t20170317_2112581.html",
+      "https://jtj.nanjing.gov.cn/njsjtysj/202503/t20250305_5088720.html",
+      "https://www.nanjing.gov.cn/msxx/202407/t20240701_5125798.html",
+      "https://zh.wikipedia.org/wiki/南京有轨电车",
+      "https://www.china-emu.cn/UrbanRails/Line/320192/",
+      "https://qilinpark.nanjing.gov.cn/xwzx/gzdt/202512/t20251222_5748356.html"
+    ],
+    "transfers": [
+      {
+        "tram": "奥体中心东门",
+        "metro": "奥体东",
+        "stationId": "amap-3201-BV10057752",
+        "osmNode": 13026475682
+      },
+      {
+        "tram": "元通",
+        "metro": "元通",
+        "stationId": "amap-3201-BV10056679",
+        "osmNode": 12463089893
+      },
+      {
+        "tram": "平良大街",
+        "metro": "平良大街",
+        "stationId": "amap-3201-BV10713541",
+        "osmNode": 12463089890
+      },
+      {
+        "tram": "吴侯街",
+        "metro": "吴侯街",
+        "stationId": "amap-3201-BV10713540",
+        "osmNode": 4059246679
+      },
+      {
+        "tram": "鱼嘴",
+        "metro": "鱼嘴",
+        "stationId": "amap-3201-BV11095594",
+        "osmNode": 12463037073
+      },
+      {
+        "tram": "马群",
+        "metro": "马群",
+        "stationId": "amap-3201-BV10052240",
+        "osmNode": 12595676604
+      },
+      {
+        "tram": "石杨路",
+        "metro": "石杨路",
+        "stationId": "amap-3201-BV11339763",
+        "osmNode": 13026509304
+      }
+    ],
+    "project": {
+      "version": 2,
+      "cityId": "nanjing",
+      "name": "南京地铁规划 · 有轨电车补充",
+      "stations": {
+        "amap-3201-BV10057752": {
+          "id": "amap-3201-BV10057752",
+          "name": "奥体东",
+          "lng": 118.724029,
+          "lat": 32.006619,
+          "aliases": [
+            "奥体中心东门"
+          ]
+        },
+        "osm-tram-nanjing-4059246653": {
+          "id": "osm-tram-nanjing-4059246653",
+          "name": "富春江西街",
+          "lng": 118.7203072,
+          "lat": 32.0031515
+        },
+        "amap-3201-BV10056679": {
+          "id": "amap-3201-BV10056679",
+          "name": "元通",
+          "lng": 118.716255,
+          "lat": 31.997516,
+          "aliases": []
+        },
+        "osm-tram-nanjing-4059246648": {
+          "id": "osm-tram-nanjing-4059246648",
+          "name": "博览中心东门",
+          "lng": 118.7120277,
+          "lat": 31.992343
+        },
+        "osm-tram-nanjing-4059246655": {
+          "id": "osm-tram-nanjing-4059246655",
+          "name": "江山大街",
+          "lng": 118.7074107,
+          "lat": 31.9878051
+        },
+        "osm-tram-nanjing-4059246649": {
+          "id": "osm-tram-nanjing-4059246649",
+          "name": "友谊街",
+          "lng": 118.7022554,
+          "lat": 31.9828223
+        },
+        "amap-3201-BV10713541": {
+          "id": "amap-3201-BV10713541",
+          "name": "平良大街",
+          "lng": 118.697535,
+          "lat": 31.979898,
+          "aliases": []
+        },
+        "amap-3201-BV10713540": {
+          "id": "amap-3201-BV10713540",
+          "name": "吴侯街",
+          "lng": 118.687894,
+          "lat": 31.977549,
+          "aliases": []
+        },
+        "osm-tram-nanjing-4059248501": {
+          "id": "osm-tram-nanjing-4059248501",
+          "name": "龙王大街",
+          "lng": 118.6828601,
+          "lat": 31.9769222
+        },
+        "osm-tram-nanjing-4059246651": {
+          "id": "osm-tram-nanjing-4059246651",
+          "name": "天保街",
+          "lng": 118.6761963,
+          "lat": 31.97603
+        },
+        "osm-tram-nanjing-4059246645": {
+          "id": "osm-tram-nanjing-4059246645",
+          "name": "保双街",
+          "lng": 118.6693802,
+          "lat": 31.9751104
+        },
+        "osm-tram-nanjing-4059246646": {
+          "id": "osm-tram-nanjing-4059246646",
+          "name": "保双街东",
+          "lng": 118.6682527,
+          "lat": 31.9719144
+        },
+        "amap-3201-BV11095594": {
+          "id": "amap-3201-BV11095594",
+          "name": "鱼嘴",
+          "lng": 118.664325,
+          "lat": 31.96893,
+          "aliases": []
+        },
+        "amap-3201-BV10052240": {
+          "id": "amap-3201-BV10052240",
+          "name": "马群",
+          "lng": 118.889697,
+          "lat": 32.051864,
+          "aliases": []
+        },
+        "osm-tram-nanjing-12595676605": {
+          "id": "osm-tram-nanjing-12595676605",
+          "name": "百水桥路",
+          "lng": 118.9010392,
+          "lat": 32.0489241
+        },
+        "osm-tram-nanjing-11089188253": {
+          "id": "osm-tram-nanjing-11089188253",
+          "name": "马高路",
+          "lng": 118.9096122,
+          "lat": 32.0490431
+        },
+        "osm-tram-nanjing-4059270033": {
+          "id": "osm-tram-nanjing-4059270033",
+          "name": "北湾营街",
+          "lng": 118.9145811,
+          "lat": 32.0450526
+        },
+        "osm-tram-nanjing-4059270030": {
+          "id": "osm-tram-nanjing-4059270030",
+          "name": "天泉路",
+          "lng": 118.9095014,
+          "lat": 32.0390416
+        },
+        "osm-tram-nanjing-4059270029": {
+          "id": "osm-tram-nanjing-4059270029",
+          "name": "南湾营街",
+          "lng": 118.9042623,
+          "lat": 32.0338731
+        },
+        "osm-tram-nanjing-4059270031": {
+          "id": "osm-tram-nanjing-4059270031",
+          "name": "天兴路",
+          "lng": 118.8999956,
+          "lat": 32.0303814
+        },
+        "osm-tram-nanjing-4059270081": {
+          "id": "osm-tram-nanjing-4059270081",
+          "name": "启迪大街",
+          "lng": 118.8941652,
+          "lat": 32.026462
+        },
+        "osm-tram-nanjing-4059270026": {
+          "id": "osm-tram-nanjing-4059270026",
+          "name": "麒麟生态公园",
+          "lng": 118.8873175,
+          "lat": 32.0232131
+        },
+        "osm-tram-nanjing-4059270028": {
+          "id": "osm-tram-nanjing-4059270028",
+          "name": "光华路",
+          "lng": 118.8807185,
+          "lat": 32.0201551
+        },
+        "osm-tram-nanjing-4059270032": {
+          "id": "osm-tram-nanjing-4059270032",
+          "name": "水街坊",
+          "lng": 118.876521,
+          "lat": 32.016743
+        },
+        "osm-tram-nanjing-4059270027": {
+          "id": "osm-tram-nanjing-4059270027",
+          "name": "智汇路",
+          "lng": 118.8729831,
+          "lat": 32.0124902
+        },
+        "amap-3201-BV11339763": {
+          "id": "amap-3201-BV11339763",
+          "name": "石杨路",
+          "lng": 118.86906,
+          "lat": 32.007479,
+          "aliases": []
+        }
+      },
+      "waypoints": {},
+      "lines": {
+        "osm-tram-nanjing-hexi": {
+          "id": "osm-tram-nanjing-hexi",
+          "name": "河西有轨电车1号线",
+          "color": "#30935d",
+          "transport": "tram",
+          "direction": "forward",
+          "status": "existing",
+          "visible": true,
+          "locked": true,
+          "nodes": [
+            {
+              "type": "station",
+              "id": "amap-3201-BV10057752"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059246653"
+            },
+            {
+              "type": "station",
+              "id": "amap-3201-BV10056679"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059246648"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059246655"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059246649"
+            },
+            {
+              "type": "station",
+              "id": "amap-3201-BV10713541"
+            },
+            {
+              "type": "station",
+              "id": "amap-3201-BV10713540"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059248501"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059246651"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059246645"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059246646"
+            },
+            {
+              "type": "station",
+              "id": "amap-3201-BV11095594"
+            }
+          ],
+          "planningNote": "OSM relation 16159336；站位连线，非精确轨道。上下行按各自停站顺序。"
+        },
+        "osm-tram-nanjing-hexi-reverse": {
+          "id": "osm-tram-nanjing-hexi-reverse",
+          "name": "河西有轨电车1号线（反向）",
+          "color": "#30935d",
+          "transport": "tram",
+          "direction": "forward",
+          "status": "existing",
+          "visible": true,
+          "locked": true,
+          "nodes": [
+            {
+              "type": "station",
+              "id": "amap-3201-BV11095594"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059246646"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059246645"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059246651"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059248501"
+            },
+            {
+              "type": "station",
+              "id": "amap-3201-BV10713540"
+            },
+            {
+              "type": "station",
+              "id": "amap-3201-BV10713541"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059246649"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059246655"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059246648"
+            },
+            {
+              "type": "station",
+              "id": "amap-3201-BV10056679"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059246653"
+            },
+            {
+              "type": "station",
+              "id": "amap-3201-BV10057752"
+            }
+          ],
+          "planningNote": "OSM relation 16159337；站位连线，非精确轨道。上下行按各自停站顺序。",
+          "parentLineId": "osm-tram-nanjing-hexi"
+        },
+        "osm-tram-nanjing-qilin": {
+          "id": "osm-tram-nanjing-qilin",
+          "name": "麒麟有轨电车2号线",
+          "color": "#d47b20",
+          "transport": "tram",
+          "direction": "forward",
+          "status": "existing",
+          "visible": true,
+          "locked": true,
+          "nodes": [
+            {
+              "type": "station",
+              "id": "amap-3201-BV10052240"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-12595676605"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-11089188253"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059270033"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059270030"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059270029"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059270031"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059270081"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059270026"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059270028"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059270032"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059270027"
+            },
+            {
+              "type": "station",
+              "id": "amap-3201-BV11339763"
+            }
+          ],
+          "planningNote": "OSM relation 16159338；站位连线，非精确轨道。上下行按各自停站顺序。"
+        },
+        "osm-tram-nanjing-qilin-reverse": {
+          "id": "osm-tram-nanjing-qilin-reverse",
+          "name": "麒麟有轨电车2号线（反向）",
+          "color": "#d47b20",
+          "transport": "tram",
+          "direction": "forward",
+          "status": "existing",
+          "visible": true,
+          "locked": true,
+          "nodes": [
+            {
+              "type": "station",
+              "id": "amap-3201-BV11339763"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059270027"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059270032"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059270028"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059270026"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059270081"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059270031"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059270029"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059270030"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-4059270033"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-11089188253"
+            },
+            {
+              "type": "station",
+              "id": "osm-tram-nanjing-12595676605"
+            },
+            {
+              "type": "station",
+              "id": "amap-3201-BV10052240"
+            }
+          ],
+          "planningNote": "OSM relation 16159339；站位连线，非精确轨道。上下行按各自停站顺序。",
+          "parentLineId": "osm-tram-nanjing-qilin"
+        }
+      }
+    }
+  }
+}

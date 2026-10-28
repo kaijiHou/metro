@@ -15,6 +15,8 @@ import { cityMapTarget,fetchCityCatalog,type TransitCity } from '../utils/transi
 import type { BrowseStation } from '../utils/browseGeojson'
 import type { StationExit } from '../models/exits'
 import { StationDetailDrawer } from './StationDetailDrawer'
+import {addJourneyLayers,syncJourneyLayers} from '../services/mapJourneyLayers'
+import {tramPreview} from '../utils/trams'
 
 maplibregl.setWorkerUrl(mapWorkerUrl)
 
@@ -193,6 +195,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
   const autoNetworks = useViewStore((state)=>state.autoNetworks)
   const existingOnly = useViewStore((state)=>state.existingOnly)
   const browseStation = useViewStore((state)=>state.station)
+  const journey = useViewStore((state)=>state.journey)
   const [catalog,setCatalog]=useState<TransitCity[]>([])
   const [browseResult,setBrowseResult]=useState<BrowseResult>({projects:{},loading:[],errors:{}})
   const [catalogError,setCatalogError]=useState('')
@@ -250,7 +253,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
         const bounds=map.getBounds()
         const view=useViewStore.getState()
         const visibleCatalog=view.autoNetworks?catalogRef.current:catalogRef.current.filter((city)=>view.presentationMode&&view.existingOnly&&city.id===useMetroStore.getState().project.cityId)
-        void loader.update(visibleCatalog,{west:bounds.getWest(),south:bounds.getSouth(),east:bounds.getEast(),north:bounds.getNorth(),zoom:map.getZoom()},view.presentationMode&&view.existingOnly?undefined:useMetroStore.getState().project.cityId,view.autoNetworks||(view.presentationMode&&view.existingOnly),(next)=>{resultRef.current=next;setBrowseResult(next);syncBrowseLayers(map,next,view.autoNetworks?catalogRef.current:[])})
+        void loader.update(visibleCatalog,{west:bounds.getWest(),south:bounds.getSouth(),east:bounds.getEast(),north:bounds.getNorth(),zoom:map.getZoom()},view.presentationMode&&view.existingOnly?undefined:useMetroStore.getState().project.cityId,view.autoNetworks||(view.presentationMode&&view.existingOnly),(next)=>{resultRef.current=next;setBrowseResult(next);syncBrowseLayers(map,next,view.autoNetworks?catalogRef.current:[],useMetroStore.getState().project)})
       },250)
     }
     reloadRef.current=refreshNetworks
@@ -302,9 +305,11 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
         paint: { 'text-color': '#193b4c', 'text-halo-color': '#ffffff', 'text-halo-width': 2.5 },
       })
       addBrowseLayers(map)
+      addJourneyLayers(map)
+      syncJourneyLayers(map,useViewStore.getState().journey)
       map.setLayoutProperty('metro-readonly-stations','visibility',presentationRef.current?'visible':'none')
       if(presentationRef.current&&useViewStore.getState().existingOnly){(map.getSource('metro-lines') as GeoJSONSource).setData({type:'FeatureCollection',features:[]});(map.getSource('metro-station-labels') as GeoJSONSource).setData({type:'FeatureCollection',features:[]})}
-      syncBrowseLayers(map,resultRef.current,useViewStore.getState().autoNetworks?catalogRef.current:[])
+      syncBrowseLayers(map,resultRef.current,useViewStore.getState().autoNetworks?catalogRef.current:[],useMetroStore.getState().project)
       syncExitLayers(map,exitsRef.current)
       refreshNetworks()
     }
@@ -321,7 +326,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
         const cityId=isBackground?properties.cityId:current.cityId??'custom'
         const city=catalogRef.current.find((item)=>item.id===cityId)
         const lineNames=isBackground?JSON.parse(String(properties.lineNames??'[]')) as string[]:[...new Set(Object.values(current.lines).filter((line)=>line.nodes.some((node)=>node.type==='station'&&node.id===stationId)).map((line)=>rootLine(current,line).name))]
-        const selected:BrowseStation={id:stationId,name:String(properties.name),lng:readonly.geometry.coordinates[0],lat:readonly.geometry.coordinates[1],cityId,cityName:city?.name??current.name,lineNames,sourceUrl:isBackground?String(properties.sourceUrl):city?.sourceUrl??''}
+        const selected:BrowseStation={id:stationId,name:String(properties.name),lng:readonly.geometry.coordinates[0],lat:readonly.geometry.coordinates[1],cityId,cityName:city?.name??current.name,lineNames,sourceUrl:isBackground?String(properties.sourceUrl):city?.sourceUrl??'',querySource:isBackground?'snapshot':'project'}
         useViewStore.getState().setStation(selected);return
       }
       if(presentationRef.current){
@@ -450,6 +455,15 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
 
   useEffect(()=>{presentationRef.current=presentationMode;if(presentationMode)useMetroStore.getState().setEditorMode('browse');const map=mapRef.current;if(map?.getLayer('metro-readonly-stations'))map.setLayoutProperty('metro-readonly-stations','visibility',presentationMode?'visible':'none')},[presentationMode])
   useEffect(()=>{reloadRef.current()},[autoNetworks,project.cityId,presentationMode,existingOnly])
+  useEffect(()=>{
+    const map=mapRef.current;if(!map)return
+    syncJourneyLayers(map,journey)
+    if(!journey)return
+    const points=journey.journey.legs.flatMap(l=>l.coordinates)
+    if(!points.length){const s=journey.project.stations[journey.journey.from];if(s)map.flyTo({center:[s.lng,s.lat],zoom:15});return}
+    const bounds=new maplibregl.LngLatBounds(points[0],points[0]);for(const p of points)bounds.extend(p)
+    map.fitBounds(bounds,{padding:{top:165,bottom:90,left:65,right:65},maxZoom:15,duration:700})
+  },[journey])
 
   useEffect(() => {
     if (target?.bounds) mapRef.current?.fitBounds(target.bounds, { padding: 55, maxZoom: 12, duration: 1000 })
@@ -466,6 +480,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
     const labels = map.getSource('metro-station-labels') as GeoJSONSource | undefined
     labels?.setData(stationLabelCollection(project, presentationMode&&existingOnly?'none':presentationMode ? 'all' : stationLabelMode, selectedLineId))
     if (map.getLayer('metro-station-labels')) map.setLayoutProperty('metro-station-labels', 'visibility', 'visible')
+    syncBrowseLayers(map,resultRef.current,catalogRef.current,project)
   }, [project, selectedLineId, presentationMode, stationLabelMode,existingOnly])
 
   useEffect(() => {
@@ -506,7 +521,7 @@ export function MapCanvas({ target }: { target: MapTarget | null }) {
           <span className="map-line-swatch" style={{ backgroundColor: line.color, height: lineStatus(line) === 'planned' ? 6 : 4 }} aria-hidden="true" />
           <span>{line.name} · {lineStatus(line) === 'construction' && line.existingSegments?.length ? '部分在建' : [...new Set(Object.values(project.lines).filter((part) => rootLine(project,part).id === line.id).map(lineStatus))].map((status) => statusNames[status]).join(' / ')}</span>
         </div>)}
-        {Object.entries(browseResult.projects).map(([cityId,network])=><div key={cityId} style={{display:'contents'}}><strong className="map-legend-city">{catalog.find((city)=>city.id===cityId)?.name??cityId} · 现状快照</strong>{Object.values(network.lines).filter((line)=>!line.parentLineId).map((line)=><div key={`${cityId}:${line.id}`}><span className="map-line-swatch" style={{backgroundColor:line.color,height:4}} aria-hidden="true"/><span>{line.name}</span></div>)}</div>)}
+        {Object.values(tramPreview(project).lines).filter(line=>!line.parentLineId&&!browseResult.projects[project.cityId??"_"]).map(line=><div key={line.id}><span className="map-line-swatch" style={{backgroundColor:line.color}}/><span>{line.name} · 电车补充</span></div>)}{Object.entries(browseResult.projects).map(([cityId,network])=><div key={cityId} style={{display:'contents'}}><strong className="map-legend-city">{catalog.find((city)=>city.id===cityId)?.name??cityId} · 现状快照</strong>{Object.values(network.lines).filter((line)=>!line.parentLineId).map((line)=><div key={`${cityId}:${line.id}`}><span className="map-line-swatch" style={{backgroundColor:line.color,height:4}} aria-hidden="true"/><span>{line.name}</span></div>)}</div>)}
       </div></details>
       <div className="map-hint" role="status">
         <span className={`mode-dot${editorMode !== 'browse' ? ' mode-dot--active' : ''}`} />

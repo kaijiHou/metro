@@ -3,6 +3,7 @@ export type Station = {
   name: string
   lng: number
   lat: number
+  aliases?: string[]
 }
 
 export type Waypoint = { id: string; lng: number; lat: number; name?: string }
@@ -23,6 +24,8 @@ export type MetroLine = {
   parentLineId?: string
   planningNote?: string
   existingSegments?: [string, string][]
+  transport?: 'metro' | 'tram'
+  direction?: 'both' | 'forward'
 }
 
 export type MetroProject = {

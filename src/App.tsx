@@ -12,6 +12,7 @@ import { StationPanel } from './components/StationPanel'
 import { WaypointPanel } from './components/WaypointPanel'
 import { MapCanvas } from './components/MapCanvas'
 import { useViewStore } from './store/viewStore'
+import { JourneyPlanner } from './components/JourneyPlanner'
 
 const FootprintPage=lazy(()=>import('./footprint/FootprintPage'))
 
@@ -48,7 +49,7 @@ export default function App() {
     <nav className="primary-navigation" aria-label="主导航"><div className="primary-tabs"><button disabled={travelBusy} aria-pressed={page==='transit'} onClick={()=>useViewStore.getState().setPage('transit')}>轨道交通地图</button><button disabled={travelBusy} aria-pressed={page==='travel'} onClick={()=>{useViewStore.getState().setPage('travel');setMapTarget(null)}}>我的旅行足迹</button></div>{page==='transit'&&<div className="transit-mode-tabs"><button type="button" onClick={()=>useViewStore.getState().setPresentationMode(true)} aria-pressed={presentationMode}>浏览模式</button><button type="button" onClick={()=>useViewStore.getState().setPresentationMode(false)} aria-pressed={!presentationMode}>规划模式</button></div>}</nav>
     {page==='travel'?<Suspense fallback={<p>正在打开旅行足迹…</p>}><FootprintPage/></Suspense>:<>
     <div className="workspace">
-      <aside className="sidebar"><div className="sidebar-scroll">{presentationMode ? <div className="project-heading"><span className="eyebrow">正在保留的规划</span><strong>{useMetroStore.getState().project.name}</strong></div> : <ProjectName />}<CitySearch onSelectCity={setMapTarget} />{!presentationMode&&<><ScenarioPanel /><ModePanel /><MapDisplayPanel /><LineStatsPanel /><LinePanel /><StationPanel /><WaypointPanel /></>}{presentationMode&&<section className="panel-section"><h2>全国地铁漫游</h2><p>直接拖动地图到其他城市，自动显示现状线网。点击站名或站点查看详情与出入口。</p><p className="quiet">当前规划仍保留，切回规划模式可继续编辑。原始快照日期和来源见城市资料。</p></section>}</div></aside>
+      <aside className="sidebar"><div className="sidebar-scroll">{presentationMode ? <div className="project-heading"><span className="eyebrow">正在保留的规划</span><strong>{useMetroStore.getState().project.name}</strong></div> : <ProjectName />}<CitySearch onSelectCity={setMapTarget} /><JourneyPlanner />{!presentationMode&&<><ScenarioPanel /><ModePanel /><MapDisplayPanel /><LineStatsPanel /><LinePanel /><StationPanel /><WaypointPanel /></>}{presentationMode&&<section className="panel-section"><h2>全国地铁漫游</h2><p>直接拖动地图到其他城市，自动显示现状线网。点击站名或站点查看详情与出入口。</p><p className="quiet">当前规划仍保留，切回规划模式可继续编辑。原始快照日期和来源见城市资料。</p></section>}</div></aside>
       <MapCanvas target={mapTarget} />
     </div>
     </>}

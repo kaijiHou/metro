@@ -2,6 +2,7 @@ import { useLayoutEffect, useState } from 'react'
 import { useMetroStore } from '../store/metroStore'
 import { lockedNodeIds } from '../utils/planning'
 import { stationLineCounts } from '../utils/geojson'
+import { JourneyEndpointButtons } from './JourneyEndpointButtons'
 
 export function StationPanel() {
   const project = useMetroStore((state) => state.project)
@@ -46,6 +47,7 @@ export function StationPanel() {
       </div> : <>
       {Object.keys(project.stations).length > 0 && <><label className="field-label" htmlFor="station-select">选择站点</label><select id="station-select" value={selectedStationId ?? ''} onChange={(event) => selectStation(event.target.value || null)}><option value="">选择一个站点</option>{Object.values(project.stations).map((item) => <option key={item.id} value={item.id}>{item.name}{(counts[item.id] ?? 0) >= 2 ? ' · 换乘' : ''}</option>)}</select></>}
       {station ? <div className="station-editor">
+        <JourneyEndpointButtons id={station.id} cityId={project.cityId??'custom'} source="project"/>
         {(counts[station.id] ?? 0) >= 2 && <span className="transfer-badge">换乘站 · {counts[station.id]} 条线路</span>}
         <label className="field-label" htmlFor="station-name">站点名称</label>
         <input disabled={locked} id="station-name" value={name} onChange={(event) => setName(event.target.value)} onBlur={() => { updateStation(station.id, { name }); setName(useMetroStore.getState().project.stations[station.id]?.name ?? '') }} onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur() }} />

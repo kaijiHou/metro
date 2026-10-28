@@ -956,3 +956,37 @@ select:focus {
 .map-legend-city {width:100%;font-size:12px;color:#526978;border-top:1px solid #dce5e9;padding-top:6px;}
 
 @media(max-width:700px){.map-presentation-toggle{top:12px;right:12px;}}
+/* Station-to-station queries share the existing sidebar controls. */
+.journey-planner { scroll-margin-top: 16px; }
+.journey-planner .field-label { margin-top: 12px; }
+.journey-planner select, .journey-search input { width: 100%; min-width: 0; }
+.journey-search { position: relative; }
+.journey-search > small { display: block; margin-top: 5px; line-height: 1.6; }
+.journey-search-results { position: absolute; top: 100%; left: 0; right: 0; z-index: 30; max-height: 240px; overflow-y: auto; margin-top: 5px; border: 1px solid #c8dce0; border-radius: 10px; background: #fff; box-shadow: 0 8px 20px #163c4c22; }
+.journey-search-results > button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 10px; border: 0; border-radius: 0; text-align: left; background: #fff; }
+.journey-search-results > button[aria-selected="true"], .journey-search-results > button:hover { background: #edf6f5; }
+.journey-search-results small { display: block; color: #5b7280; font-size: 11px; }
+.journey-search-results p { padding: 0 10px; font-size: 12px; }
+.journey-badges { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; max-width: 50%; }
+.journey-badges > span { border: 1px solid; border-radius: 5px; padding: 1px 5px; font-size: 11px; }
+.journey-swap { text-align: right; margin: 8px 0 -4px; }
+.journey-swap button { font-size: 12px; padding: 5px 10px; }
+.journey-actions, .journey-endpoints { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.journey-actions > button:first-child { flex: 1; }
+.journey-planned { display: flex; align-items: center; gap: 6px; margin: 14px 0; font-size: 13px; }
+.journey-result { margin-top: 18px; border-top: 1px solid #dce7eb; padding-top: 16px; }
+.journey-duration { font-size: 26px; color: #087b78; letter-spacing: -.7px; }
+.journey-result > p { margin: 5px 0 16px; font-size: 13px; }
+.journey-itinerary { list-style: none; padding: 0; margin: 0; }
+.journey-itinerary > li { border-left: 4px solid; padding: 0 0 8px 13px; margin: 0 0 16px 4px; }
+.journey-itinerary strong, .journey-itinerary small, .journey-line { display: block; }
+.journey-itinerary strong { font-size: 13px; }
+.journey-line { margin: 8px 0 4px; font-size: 15px; font-weight: 700; }
+.journey-itinerary small { color: #657780; line-height: 1.6; }
+.journey-itinerary details { margin: 10px 0; font-size: 12px; }
+.journey-itinerary summary, .journey-data summary { cursor: pointer; }
+.journey-itinerary details ol { padding-left: 22px; line-height: 1.9; }
+.journey-itinerary details small { display: inline; }
+.journey-warning { border-radius: 8px; padding: 10px; background: #fff0d8; color: #805b1b; }
+.journey-disclaimer { font-size: 11px; line-height: 1.8; }
+.journey-data { font-size: 12px; margin-top: 10px; }

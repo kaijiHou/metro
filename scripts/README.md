@@ -7,3 +7,5 @@ Windows 用户双击 `start-metro.cmd` 即可启动项目并打开浏览器。�
 地址固定为 `http://127.0.0.1:5173/`。已经启动时只打开页面；首次启动后请保留运行窗口，关闭窗口即停止服务。端口被其他程序占用时会提示失败，不会自动切换到其他端口。
 
 `update-transit.py` 更新城市线网快照；原始下载放在 `validation/transit-source/`，生成数据放在 `public/transit/`。
+
+`fetch-trams.py` 从 OSM relation 下载电车网络，保留URL与响应SHA256；网络受限时可运行 GitHub Actions 的 Tram data 工作流。`build-trams.py <原始下载目录>` 根据明确核对的停站方向和换乘白名单生成 `src/data/trams.json`，不改原58个城市快照。不发布尚未核实的系统，详见补充数据README。原始文件放 `validation/tram-source/`。

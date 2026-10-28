@@ -4,7 +4,7 @@ import type { TransitCity } from './transit'
 import { lineFeatureCollection, stationLineCounts } from './geojson'
 import { rootLine } from './planning'
 
-export type BrowseStation = Station & { cityId:string; cityName:string; lineNames:string[]; sourceUrl:string; relationId?:number }
+export type BrowseStation = Station & { cityId:string; cityName:string; lineNames:string[]; sourceUrl:string; relationId?:number;querySource?:'snapshot'|'project' }
 export type BrowseStationProperties = {id:string;stationId:string;cityId:string;name:string;cityName:string;lineNames:string;sourceUrl:string;transfer:boolean}
 
 export function browseGeojson(projects: Record<string,MetroProject>, catalog: TransitCity[]) {
